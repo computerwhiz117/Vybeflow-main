@@ -1,0 +1,92 @@
+{
+  "livepersist_1771243433@example.com": {
+    "username": "livepersist_1771243433",
+    "email": "livepersist_1771243433@example.com",
+    "password_hash": "scrypt:32768:8:1$fYXKsxHXL36JnYEm$7708854323cb89f6ea0a73e940204e4400d15d962049db3efe12b21f964c232c1db32a2d5b65892d3d69775e55ed27f93fe97aec9e86401352516b7847c0edf1",
+    "account_type": "regular",
+    "bio": "",
+    "avatar_url": "/static/VFlogo_clean.png",
+    "profile_bg_url": "",
+    "theme_vars": {},
+    "settings_email_notifications": true,
+    "settings_live_collab": true,
+    "settings_auto_captions": false,
+    "retro_2011": false
+  },
+  "u@example.com": {
+    "username": "u",
+    "email": "u@example.com",
+    "password_hash": "scrypt:32768:8:1$K5Z5tb4qZaeEpz9B$0aa585d1b18cada63eca48ca7de10c4ef8944877c629a0cd8482d157436b26c076be0411c0adc96d9a10bfaa8032c1d4e339af939aeb04d23b1e0bf7169388df",
+    "account_type": "regular",
+    "bio": "",
+    "avatar_url": "/static/VFlogo_clean.png",
+    "profile_bg_url": "",
+    "theme_vars": {},
+    "settings_email_notifications": true,
+    "settings_live_collab": true,
+    "settings_auto_captions": false,
+    "retro_2011": false
+  },
+  "dalbertk24@gmail.com": {
+    "username": "notofthisworld",
+    "email": "dalbertk24@gmail.com",
+    "password_hash": "scrypt:32768:8:1$4DbxwERbIlbJhMj5$0bd912cf83a2520e4f4eae85f9d4b6253f58dc5e6e26f997c7768d4db4c8d5d02b9b0bb2e41797b31b111d6ac4bd3ff2b3855e5e288210307633f58ffbcf0612",
+    "account_type": "regular",
+    "bio": "im a man of god",
+    "avatar_url": "/static/uploads/stories/1ae671547a754b5b83409777ed1cbc76.png",
+    "profile_bg_url": "",
+    "theme_vars": {
+      "--bg": "#091110",
+      "--brand1": "#ff9a3d",
+      "--brand2": "#ff6a00",
+      "--brand3": "#ff4800",
+      "--line": "rgba(255,173,117,.20)"
+    },
+    "settings_email_notifications": false,
+    "settings_live_collab": false,
+    "settings_auto_captions": false,
+    "retro_2011": false
+  },
+  "qa@vybeflow.app": {
+    "username": "qa_user",
+    "email": "qa@vybeflow.app",
+    "password_hash": "",
+    "account_type": "regular",
+    "bio": "",
+    "avatar_url": "/static/VFlogo_clean.png",
+    "profile_bg_url": "",
+    "theme_vars": {},
+    "settings_email_notifications": false,
+    "settings_live_collab": false,
+    "settings_auto_captions": false,
+    "retro_2011": false
+  },
+  "createcheck_1771263274@example.com": {
+    "username": "createcheck_1771263274",
+    "email": "createcheck_1771263274@example.com",
+    "password_hash": "scrypt:32768:8:1$1nfsgsUE0kn4NvNB$57fa995bff7c7109099f7f0f1adf70db4484a4fc8a6476591221486ecb2908f2f3629cf8a9fb98bd7a6dd06c27954462768cf32bd5f247cee0b49223980f9eac",
+    "account_type": "regular",
+    "bio": "",
+    "avatar_url": "/static/VFlogo_clean.png",
+    "profile_bg_url": "",
+    "theme_vars": {},
+    "settings_email_notifications": true,
+    "settings_live_collab": true,
+    "settings_auto_captions": false,
+    "retro_2011": false
+  },
+  "createcheck_1771263333@example.com": {
+    "username": "createcheck_1771263333",
+    "email": "createcheck_1771263333@example.com",
+    "password_hash": "scrypt:32768:8:1$7hcmTdm5C84pudr8$6c4b25f69fece425a59960641ffb738910c87d2af2050ff7bd7efd343eca58353bebe11409060a7e2402e4d865312beb3de514ea98f70f0c6d4a9ebe2d7d963b",
+    "account_type": "regular",
+    "bio": "",
+    "avatar_url": "/static/VFlogo_clean.png",
+    "profile_bg_url": "",
+    "theme_vars": {},
+    "settings_email_notifications": true,
+    "settings_live_collab": true,
+    "settings_auto_captions": false,
+    "retro_2011": false
+  }
+}

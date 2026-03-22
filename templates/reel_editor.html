@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+{% block body_class %}reel-editor{% endblock %}
+{% block content %}
+<style>
+  :root {
+    --bg: #0b0f18;
+    --panel: rgba(18,22,37,.12);
+    --border: rgba(255,255,255,.10);
+    --text: #f4f6ff;
+    --dim: rgba(244,246,255,.72);
+    --accent: #ff6a00;
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+  }
+
+  body.reel-editor {
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  .reel-main {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 12px;
+    height: calc(100vh - var(--sab));
+    padding: calc(12px + var(--sat)) 12px calc(12px + var(--sab));
+    overflow: hidden;
+  }
+
+  .reel-preview-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  .reel-canvas-wrapper {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    min-height: 0;
+  }
+
+  .reel-canvas {
+    width: 320px;
+    aspect-ratio: 9/16;
+    border-radius: 20px;
+    border: 2px solid var(--border);
+    background: linear-gradient(135deg, rgba(0,0,0,.08), rgba(255,106,0,.04));
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,.60);
+  }
+
+  .reel-canvas video,
+  .reel-canvas img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .reel-placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,.03);
+    border: 2px dashed var(--border);
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all .3s ease;
+  }
+
+  .reel-placeholder:hover {
+    border-color: var(--accent);
+    background: rgba(255,106,0,.08);
+  }
+
+  .reel-placeholder p {
+    text-align: center;
+    margin: 0;
+    font-size: 13px;
+    opacity: .8;
+  }
+
+  .reel-toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  .reel-btn-small {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+
+  .reel-btn-small:hover {
+    background: rgba(255,255,255,.12);
+    border-color: var(--accent);
+  }
+
+  .reel-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 6px;
+  }
+
+  .reel-panel {
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+  }
+
+  .reel-panel h3 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: .9;
+  }
+
+  .reel-form-group {
+    margin-bottom: 12px;
+  }
+
+  .reel-form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .reel-form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    opacity: .8;
+  }
+
+  .reel-form-group input,
+  .reel-form-group textarea,
+  .reel-form-group select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    font-size: 13px;
+    box-sizing: border-box;
+    outline: none;
+  }
+
+  .reel-form-group textarea {
+    resize: vertical;
+    min-height: 50px;
+  }
+
+  .reel-template-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .reel-template-btn {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.04);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s ease;
+    text-align: center;
+  }
+
+  .reel-template-btn:hover {
+    background: rgba(255,106,0,.15);
+    border-color: var(--accent);
+  }
+
+  .reel-template-btn.active {
+    background: rgba(255,106,0,.25);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(255,106,0,.20);
+  }
+
+  .reel-submit-btn {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(135deg, rgba(255,106,0,.9), rgba(255,157,0,.8));
+    color: var(--text);
+    font-weight: 900;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .3s ease;
+    box-shadow: 0 0 24px rgba(255,106,0,.28);
+  }
+
+  .reel-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 32px rgba(255,106,0,.40);
+  }
+
+  .reel-submit-btn:active {
+    transform: translateY(0);
+  }
+
+  .reel-cancel-btn {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.04);
+    color: var(--text);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+
+  .reel-cancel-btn:hover {
+    border-color: var(--accent);
+    background: rgba(255,106,0,.08);
+  }
+
+  .reel-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 10px 0;
+  }
+
+  @media (max-width: 768px) {
+    .reel-main {
+      grid-template-columns: 1fr;
+    }
+    .reel-sidebar {
+      max-height: none;
+    }
+  }
+</style>
+
+<div class="reel-main">
+  <!-- Preview Area -->
+  <div class="reel-preview-area">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 900;">Edit Vibe Snap</h2>
+      <a href="{{ url_for('feed.feed_page') }}" style="color: var(--text); opacity: .7; text-decoration: none; font-size: 20px;">×</a>
+    </div>
+
+    <div class="reel-canvas-wrapper">
+      <div class="reel-canvas" id="reelCanvas" onclick="document.getElementById('reelVideoFile').click()">
+        <div class="reel-placeholder" id="reelPlaceholder">
+          <div>
+            <p style="font-size: 32px; margin-bottom: 8px;">🎬</p>
+            <p>Tap to upload<br>your video</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reel-toolbar">
+      <button class="reel-btn-small" type="button" onclick="document.getElementById('reelVideoFile').click()">📹 Upload</button>
+      <button class="reel-btn-small" type="button" onclick="toggleTextMode()">📝 Text</button>
+      <button class="reel-btn-small" type="button" onclick="toggleEffects()">✨ Effects</button>
+      <button class="reel-btn-small" type="button" onclick="toggleMusic()">🎵 Music</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="reel-sidebar">
+    <form id="reelForm" method="POST" enctype="multipart/form-data" onsubmit="return validateReelForm(event)">
+      <input type="file" id="reelVideoFile" name="video_file" accept="video/*" style="display: none;" onchange="previewReelVideo(this)">
+
+      <!-- Video Info -->
+      <div class="reel-panel">
+        <h3>Video Details</h3>
+        <div class="reel-form-group">
+          <label>Caption</label>
+          <textarea name="caption" placeholder="What's in your reel?" maxlength="220"></textarea>
+        </div>
+        <div class="reel-form-group">
+          <label>Hashtags</label>
+          <input type="text" name="hashtags" placeholder="#trending #viral" maxlength="200">
+        </div>
+      </div>
+
+      <!-- Templates -->
+      <div class="reel-panel">
+        <h3>Templates</h3>
+        <div class="reel-template-grid" id="templateGrid">
+          <button class="reel-template-btn active" type="button" onclick="selectTemplate(this, 'classic')">Classic</button>
+          <button class="reel-template-btn" type="button" onclick="selectTemplate(this, 'trendy')">Trendy</button>
+          <button class="reel-template-btn" type="button" onclick="selectTemplate(this, 'cinematic')">Cinematic</button>
+          <button class="reel-template-btn" type="button" onclick="selectTemplate(this, 'vibrant')">Vibrant</button>
+        </div>
+        <input type="hidden" name="template" id="templateInput" value="classic">
+      </div>
+
+      <!-- Music Search -->
+      <div class="reel-panel" id="reel-music-panel">
+        <h3>🎵 Music</h3>
+        <div class="reel-form-group">
+          <label>Search for a song</label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="reel-music-search" placeholder="Search any song, artist…" style="flex:1;">
+            <button type="button" class="reel-btn-small" style="flex:none;width:auto;padding:8px 14px;" onclick="doReelMusicSearch()">Search</button>
+          </div>
+        </div>
+        <div id="reel-music-grid" style="max-height:180px;overflow-y:auto;display:grid;gap:6px;margin-top:8px;"></div>
+        <div id="reel-music-selected" style="margin-top:6px;padding:6px 10px;border-radius:8px;background:rgba(255,149,0,.12);color:#ffc27a;font-size:12px;font-weight:700;display:none;align-items:center;gap:8px;">
+          <span id="reel-music-sel-label" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          <button type="button" style="background:none;border:none;color:#ff9500;cursor:pointer;font-size:16px;" onclick="clearReelMusic()">✕</button>
+        </div>
+        <div style="margin-top:8px;">
+          <audio id="reel-music-player" controls style="width:100%;height:32px;border-radius:8px;display:none;"></audio>
+        </div>
+        <input type="hidden" id="reel-music-track" name="music_track">
+        <input type="hidden" id="reel-music-url" name="music_preview_url">
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="reel-divider"></div>
+      <button type="submit" class="reel-submit-btn">🚀 Publish Vibe Snap</button>
+      <button type="button" class="reel-submit-btn" style="background:rgba(255,255,255,.08);box-shadow:none;margin-top:8px;" onclick="submitReel('private', event)">💾 Save as Draft</button>
+      <button type="button" class="reel-cancel-btn" onclick="history.back()">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<script>
+let currentTemplate = 'classic';
+
+function previewReelVideo(input) {
+  const canvas = document.getElementById('reelCanvas');
+  const placeholder = document.getElementById('reelPlaceholder');
+  const file = input.files[0];
+
+  if(file && file.type.startsWith('video/')) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      placeholder.style.display = 'none';
+      canvas.innerHTML = '<video src="' + e.target.result + '" controls autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function selectTemplate(btn, template) {
+  document.querySelectorAll('.reel-template-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentTemplate = template;
+  document.getElementById('templateInput').value = template;
+}
+
+function toggleTextMode() {
+  const canvas = document.getElementById('reelCanvas');
+  if (!canvas) return;
+  /* Check if text overlay already exists */
+  let overlay = document.getElementById('reelTextOverlay');
+  if (overlay) { overlay.remove(); return; }
+  overlay = document.createElement('div');
+  overlay.id = 'reelTextOverlay';
+  overlay.contentEditable = 'true';
+  overlay.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:22px;font-weight:900;text-shadow:0 2px 8px rgba(0,0,0,.7);text-align:center;min-width:60px;min-height:30px;padding:4px 12px;outline:none;z-index:10;cursor:text;user-select:text;background:rgba(0,0,0,.25);border-radius:8px;';
+  overlay.textContent = 'Tap to edit';
+  canvas.style.position = 'relative';
+  canvas.appendChild(overlay);
+  overlay.focus();
+  /* Select all text on first focus */
+  const range = document.createRange();
+  range.selectNodeContents(overlay);
+  const sel = window.getSelection();
+  sel.removeAllRanges(); sel.addRange(range);
+}
+
+function toggleEffects() {
+  const canvas = document.getElementById('reelCanvas');
+  if (!canvas) return;
+  const effects = ['none','saturate(1.4)','grayscale(1)','sepia(.8)','contrast(1.3) brightness(1.1)','hue-rotate(30deg)','blur(1px)','invert(.85)'];
+  const current = canvas.dataset.effectIdx ? parseInt(canvas.dataset.effectIdx) : 0;
+  const next = (current + 1) % effects.length;
+  canvas.dataset.effectIdx = next;
+  canvas.style.filter = effects[next];
+  const names = ['Normal','Vivid','B&W','Sepia','High Contrast','Warm Shift','Dreamy','Negative'];
+  /* Flash effect name */
+  let badge = document.getElementById('reelEffectBadge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'reelEffectBadge';
+    badge.style.cssText = 'position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;z-index:20;pointer-events:none;transition:opacity .3s;';
+    canvas.style.position = 'relative';
+    canvas.appendChild(badge);
+  }
+  badge.textContent = '✨ ' + names[next];
+  badge.style.opacity = '1';
+  clearTimeout(badge._timer);
+  badge._timer = setTimeout(() => { badge.style.opacity = '0'; }, 1200);
+}
+
+/* ── Music search ── */
+function toggleMusic() {
+  const panel = document.getElementById('reel-music-panel');
+  if (panel) panel.scrollIntoView({ behavior: 'smooth' });
+  const input = document.getElementById('reel-music-search');
+  if (input) input.focus();
+}
+
+function doReelMusicSearch() {
+  const q = (document.getElementById('reel-music-search').value || '').trim();
+  if (!q) return;
+  const grid = document.getElementById('reel-music-grid');
+  grid.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:12px;padding:6px;">Searching…</div>';
+  fetch('/api/music/search?q=' + encodeURIComponent(q))
+    .then(r => r.json())
+    .then(data => {
+      const tracks = data.results || data.tracks || [];
+      if (!tracks.length) { grid.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:12px;padding:6px;">No results found.</div>'; return; }
+      grid.innerHTML = '';
+      tracks.forEach(t => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.style.cssText = 'border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(255,255,255,.06);color:#fff;padding:8px 10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;';
+        let art = t.artwork_url ? '<img src="' + t.artwork_url + '" style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0;" alt="">' : '';
+        item.innerHTML = art + '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.title || t.name || '') + '</div><div style="font-size:11px;color:rgba(255,255,255,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.artist || '') + '</div></div>';
+        item.addEventListener('click', function () { selectReelTrack(t); });
+        grid.appendChild(item);
+      });
+    })
+    .catch(() => { grid.innerHTML = '<div style="color:rgba(255,120,120,.8);font-size:12px;padding:6px;">Search failed.</div>'; });
+}
+
+document.getElementById('reel-music-search').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { e.preventDefault(); doReelMusicSearch(); }
+});
+
+function selectReelTrack(t) {
+  const label = (t.title || t.name || '') + ' – ' + (t.artist || '');
+  document.getElementById('reel-music-track').value = label;
+  document.getElementById('reel-music-url').value = t.preview_url || '';
+  const sel = document.getElementById('reel-music-selected');
+  document.getElementById('reel-music-sel-label').textContent = '♫ ' + label;
+  sel.style.display = 'flex';
+  const player = document.getElementById('reel-music-player');
+  if (t.preview_url) { player.src = t.preview_url; player.style.display = 'block'; }
+}
+
+function clearReelMusic() {
+  document.getElementById('reel-music-track').value = '';
+  document.getElementById('reel-music-url').value = '';
+  document.getElementById('reel-music-selected').style.display = 'none';
+  const player = document.getElementById('reel-music-player');
+  player.pause(); player.src = ''; player.style.display = 'none';
+}
+
+/* ── Form submission ── */
+function submitReel(visibility, evt) {
+  const fileInput = document.getElementById('reelVideoFile');
+  if (!fileInput || !fileInput.files || !fileInput.files.length) { vfToast('Please upload a video for your reel.'); return; }
+
+  const form = new FormData();
+  form.append('video', fileInput.files[0]);
+  form.append('caption', document.querySelector('textarea[name="caption"]').value || '');
+  form.append('hashtags', document.querySelector('input[name="hashtags"]').value || '');
+  form.append('template', currentTemplate);
+  form.append('visibility', visibility);
+  const mt = document.getElementById('reel-music-track').value;
+  const mu = document.getElementById('reel-music-url').value;
+  if (mt) form.append('music_track', mt);
+  if (mu) form.append('music_preview_url', mu);
+
+  var btn = (evt && evt.target) || null;
+  if (btn && btn.tagName === 'BUTTON') { btn.disabled = true; btn.textContent = visibility === 'private' ? 'Saving…' : 'Publishing…'; }
+
+  vfUploadWithProgress('/api/reels/create', form)
+    .then(resp => {
+      if (!resp.ok) { var _em = document.getElementById('reel-error-msg'); if (_em) { _em.textContent = (resp.data && resp.data.error) || 'Failed (status ' + resp.status + ')'; _em.hidden = false; } else { vfToast((resp.data && resp.data.error) || 'Failed', 'error'); } return; }
+      window.location.href = '{{ url_for("feed.feed_page") }}';
+    })
+    .catch(function (err) { console.error('Reel upload error:', err); vfToast('Upload failed — check your connection and try again.'); })
+    .finally(() => { if (btn && btn.tagName === 'BUTTON') { btn.disabled = false; btn.textContent = visibility === 'private' ? '💾 Save as Draft' : '🚀 Publish Reel'; } });
+}
+
+function validateReelForm(e) {
+  e.preventDefault();
+  submitReel('public', e);
+  return false;
+}
+</script>
+{% endblock %}

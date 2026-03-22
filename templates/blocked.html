@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block body_class %}login-page{% endblock %}
+
+{% block content %}
+<style>
+    @keyframes stampSlam {
+        0%   { transform: scale(4) rotate(-18deg); opacity: 0; }
+        30%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+        50%  { transform: scale(0.92) rotate(-12deg); }
+        70%  { transform: scale(1.05) rotate(-12deg); }
+        100% { transform: scale(1) rotate(-12deg); }
+    }
+    @keyframes pulseRed {
+        0%, 100% { box-shadow: 0 0 30px rgba(255,60,60,.25), 0 14px 36px rgba(0,0,0,.34); }
+        50%      { box-shadow: 0 0 60px rgba(255,60,60,.45), 0 14px 36px rgba(0,0,0,.34); }
+    }
+    @keyframes vfGlow {
+        0%,100% { filter: drop-shadow(0 0 18px rgba(255,60,60,.5)); }
+        50%     { filter: drop-shadow(0 0 35px rgba(255,80,80,.7)); }
+    }
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .blocked-shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+    }
+    .blocked-card {
+        position: relative;
+        width: min(94%, 500px);
+        border-radius: 26px;
+        border: 1px solid rgba(255,80,80,.3);
+        background: rgba(255,255,255,.04);
+        box-shadow: 0 0 60px rgba(0,0,0,.4);
+        backdrop-filter: blur(22px) saturate(1.2);
+        -webkit-backdrop-filter: blur(22px) saturate(1.2);
+        padding: 36px 28px 28px;
+        color: rgba(255,255,255,.95);
+        text-align: center;
+        animation: pulseRed 3s ease-in-out infinite;
+        overflow: hidden;
+    }
+    .blocked-logo {
+        display: block;
+        margin: 0 auto 14px;
+        width: 60px; height: 60px;
+        border-radius: 16px;
+        animation: vfGlow 3s ease-in-out infinite;
+    }
+    .blocked-card h1 {
+        font-size: 20px;
+        font-weight: 800;
+        color: #fff;
+        margin: 0 0 4px;
+    }
+
+    /* ── BLOCKED stamp ── */
+    .stamp-wrapper {
+        position: relative;
+        margin: 22px auto 18px;
+    }
+    .blocked-stamp {
+        display: inline-block;
+        padding: 16px 40px;
+        font-size: 38px;
+        font-weight: 900;
+        letter-spacing: 8px;
+        text-transform: uppercase;
+        color: #ff3333;
+        border: 5px double #ff3333;
+        border-radius: 14px;
+        background: rgba(255,50,50,.06);
+        animation: stampSlam 0.7s cubic-bezier(.22, .68, .36, 1.15) forwards;
+        transform-origin: center center;
+        text-shadow: 0 0 20px rgba(255,50,50,.4);
+    }
+    .stamp-date {
+        display: block;
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: rgba(255,100,100,.5);
+        margin-top: 6px;
+        font-weight: 600;
+    }
+
+    /* ── Reason box ── */
+    .blocked-reason {
+        text-align: left;
+        font-size: 14px;
+        color: rgba(255,255,255,.7);
+        line-height: 1.7;
+        margin: 18px 0;
+        padding: 16px 20px;
+        background: rgba(255,68,68,.06);
+        border: 1px solid rgba(255,68,68,.18);
+        border-radius: 14px;
+        animation: fadeUp 0.5s ease-out 0.7s both;
+    }
+    .blocked-reason strong { color: rgba(255,255,255,.9); }
+    .blocked-reason .reason-label {
+        display: block;
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: rgba(255,100,100,.6);
+        margin-bottom: 6px;
+        font-weight: 700;
+    }
+
+    .blocked-warnings {
+        font-size: 13px;
+        color: rgba(255,255,255,.5);
+        margin: 0 0 18px;
+        animation: fadeUp 0.5s ease-out 0.9s both;
+    }
+
+    /* ── Appeal section ── */
+    .appeal-section {
+        animation: fadeUp 0.5s ease-out 1.1s both;
+    }
+    .appeal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: rgba(255,255,255,.8);
+        margin: 0 0 6px;
+    }
+    .appeal-subtitle {
+        font-size: 12px;
+        color: rgba(255,255,255,.4);
+        margin: 0 0 14px;
+    }
+    .appeal-textarea {
+        width: 100%;
+        min-height: 100px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,.12);
+        background: rgba(255,255,255,.06);
+        color: #fff;
+        font-size: 14px;
+        padding: 14px 16px;
+        resize: vertical;
+        outline: none;
+        font-family: inherit;
+        line-height: 1.5;
+        transition: border-color .2s;
+        box-sizing: border-box;
+    }
+    .appeal-textarea:focus {
+        border-color: rgba(255,160,80,.5);
+    }
+    .appeal-textarea::placeholder { color: rgba(255,255,255,.25); }
+    .appeal-char-count {
+        text-align: right;
+        font-size: 11px;
+        color: rgba(255,255,255,.3);
+        margin: 4px 4px 12px 0;
+    }
+
+    .appeal-btn {
+        display: inline-block;
+        padding: 14px 40px;
+        background: linear-gradient(90deg, #ff9a3d, #ff6a00, #ff4800);
+        color: #fff;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 15px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(255,106,0,.35);
+        transition: transform .15s, box-shadow .15s, opacity .15s;
+        width: 100%;
+    }
+    .appeal-btn:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 6px 28px rgba(255,106,0,.5);
+    }
+    .appeal-btn:disabled {
+        opacity: .5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* ── Success / Error states ── */
+    .appeal-result {
+        display: none;
+        padding: 16px 20px;
+        border-radius: 14px;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-top: 14px;
+    }
+    .appeal-result.success {
+        display: block;
+        background: rgba(68,221,136,.08);
+        border: 1px solid rgba(68,221,136,.2);
+        color: #66ffaa;
+    }
+    .appeal-result.error {
+        display: block;
+        background: rgba(255,68,68,.08);
+        border: 1px solid rgba(255,68,68,.2);
+        color: #ff8888;
+    }
+
+    .response-note {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 16px;
+        font-size: 13px;
+        color: rgba(255,255,255,.55);
+    }
+    .response-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #44dd88;
+        display: inline-block;
+        animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: .3; }
+    }
+
+    .back-link {
+        display: block;
+        margin-top: 22px;
+        color: rgba(255,255,255,.3);
+        font-size: 12px;
+        text-decoration: none;
+    }
+    .back-link:hover { color: rgba(255,255,255,.5); text-decoration: underline; }
+
+    @media (max-width: 640px) {
+        .blocked-card { margin: 12px; padding: 26px 18px 22px; }
+        .blocked-stamp { font-size: 28px; letter-spacing: 5px; padding: 12px 28px; }
+    }
+</style>
+
+<section class="blocked-shell">
+    <div class="blocked-card">
+        <img src="{{ url_for('static', filename='VFlogo_clean.png') }}" alt="VybeFlow" class="blocked-logo" />
+        <h1>VybeFlow</h1>
+
+        <!-- ▸ BLOCKED/BANNED STAMP -->
+        <div class="stamp-wrapper">
+            {% if "BANNED" in (reason|default("", true)|upper) or "3 strikes" in (reason|default("", true)|lower) %}
+            <div class="blocked-stamp" style="color:#ff2020;border-color:#ff2020;">BANNED</div>
+            {% else %}
+            <div class="blocked-stamp">BLOCKED</div>
+            {% endif %}
+            <span class="stamp-date">{{ now|default("", true) }}</span>
+        </div>
+
+        <!-- ▸ REASON -->
+        <div class="blocked-reason">
+            <span class="reason-label">Reason for block</span>
+            <strong>{{ reason|default("Your account has been restricted due to a policy violation.", true) }}</strong>
+        </div>
+
+        {% if warnings %}
+        <p class="blocked-warnings">
+            ⚠️ Warnings received: <strong style="color:#ff8888;">{{ warnings }}</strong> of 3
+        </p>
+        {% endif %}
+
+        <!-- ▸ APPEAL FORM -->
+        <div class="appeal-section" id="appealSection">
+            <p class="appeal-title">Think this was a mistake?</p>
+            <p class="appeal-subtitle">Tell us why you believe your account should be unblocked. We'll review it and get back to you.</p>
+
+            <form id="appealForm" onsubmit="return submitAppeal(event)" data-username="{{ username|default('', true) }}">
+                <textarea class="appeal-textarea" id="appealReason" name="reason"
+                    placeholder="Explain why you believe your account should be unblocked..."
+                    maxlength="2000" required></textarea>
+                <div class="appeal-char-count"><span id="charCount">0</span> / 2000</div>
+                <button type="submit" class="appeal-btn" id="appealBtn">📧 Submit Appeal</button>
+            </form>
+
+            <div class="appeal-result" id="appealResult"></div>
+
+            <div class="response-note">
+                <span class="response-dot"></span>
+                We typically respond within minutes
+            </div>
+        </div>
+
+        <a href="{{ url_for('login') }}" class="back-link">← Back to Login</a>
+    </div>
+</section>
+
+<script src="data:text/javascript,void(0)"></script>
+<script>
+var appealForm = document.getElementById('appealForm');
+var appealTA = document.getElementById('appealReason');
+var charCounter = document.getElementById('charCount');
+appealTA.addEventListener('input', function() { charCounter.textContent = appealTA.value.length; });
+
+function submitAppeal(e) {
+    e.preventDefault();
+    var btn = document.getElementById('appealBtn');
+    var resultDiv = document.getElementById('appealResult');
+    var reason = appealTA.value.trim();
+    if (!reason) return false;
+
+    btn.disabled = true;
+    btn.textContent = '\u23F3 Sending...';
+    resultDiv.className = 'appeal-result';
+    resultDiv.style.display = 'none';
+
+    var uname = appealForm.getAttribute('data-username') || '';
+    fetch('/api/appeal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: uname, reason: reason })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.ok) {
+            resultDiv.className = 'appeal-result success';
+            resultDiv.innerHTML = '\u2705 <strong>Appeal submitted!</strong><br>We have received your message and will review it. Check back soon.';
+            resultDiv.style.display = 'block';
+            btn.textContent = '\u2705 Appeal Sent';
+            appealTA.disabled = true;
+        } else {
+            throw new Error(data.error || 'Failed to submit');
+        }
+    })
+    .catch(function() {
+        resultDiv.className = 'appeal-result error';
+        resultDiv.innerHTML = '\u274C Could not submit appeal. Try emailing us directly at <a href="mailto:chatcirclebusiness16@gmail.com" style="color:#ffa552;">chatcirclebusiness16@gmail.com</a>';
+        resultDiv.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '\uD83D\uDCE7 Submit Appeal';
+    });
+    return false;
+}
+</script>
+{% endblock %}

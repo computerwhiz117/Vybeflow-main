@@ -1,0 +1,13 @@
+﻿          <a class="composer-box" id="open-creator-main" href="{{ url_for('upload') }}?mode=post">
+            What’s the vybe today, {{ current_user.username }}?
+          </a>
+        </div>
+
+        <div class="composer-actions">
+          <a class="chip" href="{{ url_for('upload') }}?mode=post">📝 Post</a>
+          <a class="chip" href="{{ url_for('upload') }}?mode=live">🔴 Live</a>
+        </div>
+      </section>
+
+      <section class="panel game-card">
+        <h3>Feed Game: Guess 1-10</h3>

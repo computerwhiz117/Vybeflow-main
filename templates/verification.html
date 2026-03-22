@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block body_class %}verification-page{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --bg: #2a1204;
+    --card: rgba(255,255,255,.04);
+    --card2: rgba(255,255,255,.06);
+    --text: rgba(255,255,255,.94);
+    --muted: rgba(255,255,255,.60);
+    --brand1:#ffb562; --brand2:#ff8226; --brand3:#ff4d00;
+    --green: #10b981; --red: #ef4444;
+    --radius: 16px;
+  }
+  .verify-wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  .verify-wrap h1 {
+    font-size: 28px; font-weight: 800; margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--brand1), var(--brand3));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .verify-wrap .subtitle {
+    font-size: 14px; color: var(--muted); margin-bottom: 28px;
+  }
+
+  /* Trust badge display */
+  .badge-display {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--card); border: 1px solid rgba(255,160,90,.18);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 28px;
+    backdrop-filter: blur(12px);
+  }
+  .badge-icon {
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+  }
+  .badge-icon.none { background: rgba(107,114,128,.15); }
+  .badge-icon.phone_verified { background: rgba(16,185,129,.15); }
+  .badge-icon.id_verified { background: rgba(59,130,246,.15); }
+  .badge-icon.trusted { background: linear-gradient(135deg, rgba(255,180,98,.2), rgba(255,75,0,.2)); }
+
+  .badge-info h3 { font-size: 16px; font-weight: 700; color: var(--text); margin: 0 0 4px; }
+  .badge-info p { font-size: 13px; color: var(--muted); margin: 0; }
+
+  /* Verification sections */
+  .verify-section {
+    background: var(--card); border: 1px solid rgba(255,160,90,.18);
+    border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+    backdrop-filter: blur(12px);
+  }
+  .verify-section h2 {
+    font-size: 18px; font-weight: 700; color: var(--text);
+    margin: 0 0 6px; display: flex; align-items: center; gap: 8px;
+  }
+  .verify-section .section-desc {
+    font-size: 13px; color: var(--muted); margin-bottom: 16px;
+  }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;
+  }
+  .status-badge.verified { background: rgba(16,185,129,.15); color: var(--green); }
+  .status-badge.pending { background: rgba(251,191,36,.15); color: #fbbf24; }
+  .status-badge.not-verified { background: rgba(107,114,128,.15); color: #6b7280; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-group label {
+    display: block; font-size: 13px; font-weight: 600; color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .form-group input, .form-group select {
+    width: 100%; padding: 11px 14px; border-radius: 12px;
+    border: 1px solid rgba(255,160,90,.22);
+    background: rgba(255,255,255,.06); color: var(--text);
+    font-size: 14px; outline: none;
+  }
+  .form-group input:focus { border-color: var(--brand2); }
+  .form-group input[type="file"] {
+    padding: 10px; font-size: 13px;
+  }
+
+  .form-row { display: flex; gap: 10px; align-items: flex-end; }
+  .form-row .form-group { flex: 1; }
+
+  .btn-verify {
+    padding: 10px 22px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, var(--brand2), var(--brand3));
+    color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+    transition: transform .15s;
+  }
+  .btn-verify:hover { transform: scale(1.03); }
+
+  .trust-levels {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin-top: 20px;
+  }
+  .trust-level {
+    text-align: center; padding: 16px 10px; border-radius: 14px;
+    background: var(--card2); border: 1px solid rgba(255,160,90,.12);
+  }
+  .trust-level .level-icon { font-size: 28px; margin-bottom: 6px; }
+  .trust-level .level-name { font-size: 12px; font-weight: 700; color: var(--text); }
+  .trust-level .level-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .back-link { display: inline-block; margin-bottom: 16px; color: var(--brand2); font-size: 14px; text-decoration: none; }
+</style>
+
+<div class="verify-wrap">
+  <a href="{{ url_for('feed.feed_page') }}" class="back-link">← Back to Feed</a>
+  <h1>🛡️ Account Verification</h1>
+  <p class="subtitle">Verify your account to earn trust badges and fight fake accounts.</p>
+
+  <!-- Current Trust Badge -->
+  <div class="badge-display">
+    {% set badge = verification.trust_badge if verification else 'none' %}
+    <div class="badge-icon {{ badge }}">
+      {% if badge == 'id_verified' %}✅
+      {% elif badge == 'phone_verified' %}📱
+      {% elif badge == 'trusted' %}🔥
+      {% else %}🔘{% endif %}
+    </div>
+    <div class="badge-info">
+      <h3>
+        {% if badge == 'id_verified' %}ID Verified
+        {% elif badge == 'phone_verified' %}Phone Verified
+        {% elif badge == 'trusted' %}Trusted Member
+        {% else %}Not Verified{% endif %}
+      </h3>
+      <p>
+        {% if badge == 'none' %}Complete verification below to earn your first badge.
+        {% elif badge == 'phone_verified' %}Your phone is verified. Upload an ID for full trust status.
+        {% elif badge == 'id_verified' %}Your identity is fully verified. You have a trust badge!
+        {% elif badge == 'trusted' %}You're a trusted member of VybeFlow! 🔥
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <!-- Phone Verification -->
+  <div class="verify-section">
+    <h2>📱 Phone Verification</h2>
+    <p class="section-desc">Verify your phone number to prove you're a real person.</p>
+
+    {% if verification and verification.phone_verified %}
+      <span class="status-badge verified">✅ Verified</span>
+      <p style="margin-top:8px; font-size:13px; color:var(--muted);">
+        Phone: {{ verification.phone_number }} — Verified {{ verification.phone_verified_at.strftime('%b %d, %Y') if verification.phone_verified_at else '' }}
+      </p>
+    {% else %}
+      {% if verification and verification.phone_code and not verification.phone_verified %}
+        <!-- Step 2: Enter code -->
+        <form method="POST" action="{{ url_for('verification.phone_verify_code') }}">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Enter 6-digit code</label>
+              <input type="text" name="code" placeholder="000000" maxlength="6" required pattern="[0-9]{6}">
+            </div>
+            <button type="submit" class="btn-verify">Verify</button>
+          </div>
+        </form>
+        <p style="margin-top:8px; font-size:12px; color:var(--muted);">
+          Code sent to {{ verification.phone_number }}.
+          <form method="POST" action="{{ url_for('verification.phone_send_code') }}" style="display:inline;">
+            <input type="hidden" name="phone" value="{{ verification.phone_number }}">
+            <button type="submit" style="background:none;border:none;color:var(--brand2);cursor:pointer;font-size:12px;">Resend code</button>
+          </form>
+        </p>
+      {% else %}
+        <!-- Step 1: Enter phone -->
+        <form method="POST" action="{{ url_for('verification.phone_send_code') }}">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="tel" name="phone" placeholder="+1 (555) 123-4567" required>
+            </div>
+            <button type="submit" class="btn-verify">Send Code</button>
+          </div>
+        </form>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <!-- ID Verification -->
+  <div class="verify-section">
+    <h2>🪪 ID Verification (Optional)</h2>
+    <p class="section-desc">Upload a government-issued ID for the highest trust level. Your document is securely stored and reviewed by admins only.</p>
+
+    {% if verification and verification.id_verified %}
+      <span class="status-badge verified">✅ ID Verified</span>
+    {% elif verification and verification.id_review_status == 'pending' %}
+      <span class="status-badge pending">⏳ Under Review</span>
+      <p style="margin-top:8px; font-size:13px; color:var(--muted);">
+        Your ID is being reviewed by VybeFlow admins. You'll be notified when it's approved.
+      </p>
+    {% elif verification and verification.id_review_status == 'rejected' %}
+      <span class="status-badge not-verified">❌ Rejected</span>
+      <p style="margin-top:8px; font-size:13px; color:var(--muted);">
+        Your ID was not accepted. Please upload a clearer image.
+      </p>
+      <form method="POST" action="{{ url_for('verification.id_submit') }}" enctype="multipart/form-data" style="margin-top:12px;">
+        <div class="form-group">
+          <label>Upload Government ID</label>
+          <input type="file" name="id_document" accept="image/*,.pdf" required>
+        </div>
+        <button type="submit" class="btn-verify">Re-submit ID</button>
+      </form>
+    {% else %}
+      <form method="POST" action="{{ url_for('verification.id_submit') }}" enctype="multipart/form-data">
+        <div class="form-group">
+          <label>Upload Government ID</label>
+          <input type="file" name="id_document" accept="image/*,.pdf" required>
+        </div>
+        <button type="submit" class="btn-verify">Submit for Review</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <!-- Trust Levels Explained -->
+  <div class="trust-levels">
+    <div class="trust-level">
+      <div class="level-icon">📱</div>
+      <div class="level-name">Phone Verified</div>
+      <div class="level-desc">Proves you own a real phone number</div>
+    </div>
+    <div class="trust-level">
+      <div class="level-icon">🪪</div>
+      <div class="level-name">ID Verified</div>
+      <div class="level-desc">Government ID confirmed by admins</div>
+    </div>
+    <div class="trust-level">
+      <div class="level-icon">🔥</div>
+      <div class="level-name">Trusted</div>
+      <div class="level-desc">Highest trust level on VybeFlow</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

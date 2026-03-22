@@ -1,0 +1,1610 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stories_vybe.css') }}">
+
+<!-- ═══ VYBEFLOW EXCLUSIVE FEATURES CSS ═══ -->
+<style>
+  /* Feature buttons row */
+  .vj-features-row{
+    display:flex; gap:6px; justify-content:center; padding:8px 0 4px;
+    flex-wrap:wrap;
+  }
+  .vj-feat-btn{
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+    border-radius:50%; width:38px; height:38px; font-size:18px;
+    cursor:pointer; transition:all .2s; display:grid; place-items:center;
+  }
+  .vj-feat-btn:hover{
+    background:rgba(255,140,40,.25); border-color:rgba(255,140,40,.5);
+    transform:scale(1.15); box-shadow:0 0 12px rgba(255,140,40,.3);
+  }
+
+  /* Modal base */
+  .vjModal{
+    position:fixed; inset:0; z-index:9999;
+    background:rgba(0,0,0,.85); backdrop-filter:blur(12px);
+    display:grid; place-items:center;
+    opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .vjModal[aria-hidden="false"]{ opacity:1; pointer-events:auto; }
+  .vjSheet{
+    background:linear-gradient(135deg,rgba(30,20,10,.95),rgba(20,12,5,.98));
+    border:1px solid rgba(255,140,40,.25); border-radius:20px;
+    padding:20px; width:min(90vw,420px); max-height:80vh; overflow-y:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,.6), 0 0 40px rgba(255,106,0,.08);
+  }
+  .vjHead{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:8px; color:#fff; font-size:16px;
+  }
+  .vjClose{
+    background:rgba(255,255,255,.1); border:none; color:#fff;
+    border-radius:50%; width:32px; height:32px; cursor:pointer;
+    font-size:16px; display:grid; place-items:center;
+  }
+  .vjClose:hover{ background:rgba(255,80,80,.3); }
+  .vjDesc{
+    font-size:12px; color:rgba(255,255,255,.55); margin:0 0 12px;
+    line-height:1.4;
+  }
+
+  /* Input styles */
+  .vjInputRow{ display:flex; gap:8px; }
+  .vjInput{
+    flex:1; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+    border-radius:12px; padding:10px 14px; color:#fff; font-size:14px; outline:none;
+  }
+  .vjInput:focus{ border-color:rgba(255,140,40,.5); }
+  .vjInput.vjHalf{ width:48%; flex:none; }
+  .vjTextarea{
+    width:100%; min-height:80px; background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.15); border-radius:12px;
+    padding:10px 14px; color:#fff; font-size:14px; resize:vertical;
+    outline:none; margin:8px 0;
+  }
+  .vjTextarea:focus{ border-color:rgba(255,140,40,.5); }
+  .vjSelect{
+    width:100%; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+    border-radius:12px; padding:10px 14px; color:#fff; font-size:14px;
+    margin-bottom:8px; outline:none;
+  }
+  .vjSelect option{ background:#1a0d03; color:#fff; }
+  .vjSendBtn{
+    background:linear-gradient(135deg,#ff6a00,#ff9a3d); color:#fff;
+    border:none; border-radius:12px; padding:10px 20px; font-weight:800;
+    cursor:pointer; font-size:14px; margin-top:8px; transition:all .2s;
+  }
+  .vjSendBtn:hover{ transform:scale(1.03); box-shadow:0 4px 16px rgba(255,106,0,.3); }
+
+  /* Voice controls */
+  .vjVoiceControls{ text-align:center; }
+  .vjRecBtn{
+    background:rgba(255,50,50,.15); border:2px solid rgba(255,50,50,.4);
+    color:#ff6666; border-radius:16px; padding:14px 24px; font-size:15px;
+    font-weight:800; cursor:pointer; transition:all .2s;
+  }
+  .vjRecBtn:hover{ background:rgba(255,50,50,.25); }
+  .vjRecBtn.recording{ background:rgba(255,50,50,.35); animation:vjPulse 1s infinite; }
+  @keyframes vjPulse{ 0%,100%{box-shadow:0 0 0 0 rgba(255,50,50,.4)} 50%{box-shadow:0 0 0 12px rgba(255,50,50,0)} }
+  .vjTimer{ margin-top:8px; color:rgba(255,255,255,.6); font-size:13px; }
+  .vjSendVoice{
+    background:linear-gradient(135deg,#ff6a00,#ff9a3d); color:#fff;
+    border:none; border-radius:12px; padding:10px 20px; font-weight:800;
+    cursor:pointer; margin-top:8px;
+  }
+
+  /* Poll styles */
+  .vjPollForm{ display:flex; flex-direction:column; gap:8px; }
+  .vjPollOptions{ display:flex; gap:8px; }
+  .vjPollVoting{ text-align:center; }
+  .vjPollQ{ font-size:16px; font-weight:800; color:#fff; margin-bottom:12px; }
+  .vjPollBtns{ display:flex; gap:10px; justify-content:center; }
+  .vjVoteBtn{
+    flex:1; padding:14px; border-radius:14px; font-size:14px; font-weight:700;
+    cursor:pointer; border:2px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.06); color:#fff; transition:all .2s;
+  }
+  .vjVoteBtn:hover{ border-color:rgba(255,140,40,.5); background:rgba(255,140,40,.12); }
+  .vjPollResults{
+    margin-top:12px; font-size:13px; color:rgba(255,255,255,.6);
+  }
+
+  /* Reality check & Truth meter buttons */
+  .vjRealityBtns, .vjTruthBtns{
+    display:flex; flex-wrap:wrap; gap:8px; justify-content:center;
+  }
+  .vjRealityBtn, .vjTruthBtn{
+    padding:10px 16px; border-radius:14px; font-size:14px; font-weight:700;
+    cursor:pointer; border:2px solid rgba(255,255,255,.15);
+    background:rgba(255,255,255,.06); color:#fff; transition:all .2s;
+  }
+  .vjRealityBtn:hover, .vjTruthBtn:hover{
+    border-color:rgba(255,140,40,.5); background:rgba(255,140,40,.15);
+    transform:scale(1.05);
+  }
+  .vjRealityBtn.active, .vjTruthBtn.active{
+    border-color:#ff6a00; background:rgba(255,106,0,.2);
+    box-shadow:0 0 12px rgba(255,106,0,.3);
+  }
+  .vjResults{ margin-top:12px; color:rgba(255,255,255,.6); font-size:13px; text-align:center; }
+
+  /* Mood suggestions */
+  .vjMoodSuggestions{
+    display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;
+  }
+  .vjMoodChip{
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+    border-radius:20px; padding:6px 14px; font-size:12px; color:rgba(255,255,255,.8);
+    cursor:pointer; transition:all .2s;
+  }
+  .vjMoodChip:hover{
+    background:rgba(255,140,40,.2); border-color:rgba(255,140,40,.4);
+  }
+
+  /* List items */
+  .vjList{ margin-top:12px; max-height:200px; overflow-y:auto; }
+  .vjListItem{
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+    border-radius:12px; padding:10px; margin-bottom:6px; font-size:13px;
+    color:rgba(255,255,255,.8);
+  }
+  .vjListItem .vjItemMeta{
+    font-size:11px; color:rgba(255,255,255,.4); margin-top:4px;
+  }
+
+  /* Debate cards */
+  .vjDebateCard{
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,140,40,.15);
+    border-radius:14px; padding:12px; margin-bottom:8px;
+  }
+  .vjDebateTopic{
+    font-weight:800; font-size:14px; color:#ff9a3d; margin-bottom:8px;
+  }
+  .vjDebateSides{ display:flex; gap:8px; }
+  .vjDebateSide{
+    flex:1; padding:8px; border-radius:10px; font-size:12px;
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+    color:rgba(255,255,255,.7);
+  }
+  .vjDebateVotes{ text-align:center; margin-top:8px; font-size:12px; color:rgba(255,255,255,.5); }
+
+  /* Chapter list */
+  .vjChapter{
+    background:rgba(255,255,255,.04); border-left:3px solid #ff6a00;
+    border-radius:0 12px 12px 0; padding:10px 12px; margin-bottom:6px;
+  }
+  .vjChapterNum{ font-size:11px; color:#ff9a3d; font-weight:800; }
+  .vjChapterText{ font-size:13px; color:rgba(255,255,255,.8); margin-top:4px; }
+
+  /* Challenge cards */
+  .vjChallengeCard{
+    background:linear-gradient(135deg,rgba(255,140,40,.08),rgba(255,106,0,.04));
+    border:1px solid rgba(255,140,40,.2); border-radius:14px;
+    padding:12px; margin-bottom:8px; display:flex; align-items:center; gap:10px;
+  }
+  .vjChallengeEmoji{ font-size:28px; }
+  .vjChallengePrompt{ font-size:14px; color:#fff; font-weight:600; flex:1; }
+  .vjChallengeEnter{
+    background:rgba(255,140,40,.2); border:1px solid rgba(255,140,40,.4);
+    color:#ff9a3d; border-radius:10px; padding:6px 14px; font-size:12px;
+    font-weight:700; cursor:pointer;
+  }
+  .vjChallengeEnter:hover{ background:rgba(255,140,40,.3); }
+
+  /* Confession feed */
+  .vjConfession{
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+    border-radius:14px; padding:12px; margin-bottom:8px;
+  }
+  .vjConfessionCat{
+    font-size:10px; font-weight:800; color:#ff9a3d;
+    text-transform:uppercase; margin-bottom:4px;
+  }
+  .vjConfessionText{ font-size:14px; color:rgba(255,255,255,.85); line-height:1.4; }
+  .vjConfessionMeta{
+    font-size:11px; color:rgba(255,255,255,.35); margin-top:6px;
+    display:flex; justify-content:space-between;
+  }
+</style>
+
+<div class="vybeStoriesPage">
+  <header class="vybeTop">
+    <div class="vybeBrand">
+      <span class="vybePill">Stories</span>
+      <span>VybeFlow</span>
+    </div>
+    <div class="vybeTopRight">
+      <button class="vybeBtn" id="openSeenBtn" type="button">Seen</button>
+    </div>
+  </header>
+
+  <!-- Story tray (circles) -->
+  <section class="tray" id="tray">
+    {% if story_tray and story_tray|length %}
+      {% for s in story_tray %}
+        <button class="trayItem"
+                type="button"
+                data-action="open-story"
+                data-story-id="{{ s.id }}"
+                data-close-friends="{{ 1 if s.close_friends else 0 }}">
+          <span class="ring {{ 'cf' if s.close_friends else '' }} {{ 'seen' if s.seen else '' }}">
+            <img class="trayAvatar" src="{{ s.avatar_url or '' }}" alt="" onerror="this.style.display='none'">
+            <span class="trayFallback">{{ (s.username or 'U')[:1]|upper }}</span>
+          </span>
+          <span class="trayName">{{ s.username or 'user' }}</span>
+        </button>
+      {% endfor %}
+    {% else %}
+      <div class="emptyTray">
+        <span class="emptyTrayIcon">🎬</span>
+        <span>No stories yet &mdash; drop one</span>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Viewer Modal -->
+  <div class="viewer" id="viewer" aria-hidden="true">
+    <div class="viewerStage" id="viewerStage" role="dialog" aria-modal="true" aria-label="Story viewer">
+      <div class="segments" id="segments"></div>
+
+      <div class="viewerTop">
+        <div class="viewerUser">
+          <span class="viewerAvatar" id="vAvatar">{{ (current_user or 'U')[:1]|upper }}</span>
+          <div class="viewerUserMeta">
+            <div class="viewerName" id="vName">@{{ current_user or 'user' }}</div>
+            <div class="viewerTime" id="vTime">now</div>
+          </div>
+          <span class="viewerBadge" id="vBadge">Close Friends</span>
+        </div>
+        <div class="viewerTopBtns">
+          <button class="iconBtn" type="button" data-action="toggle-sound" title="Sound">🔊</button>
+          <button class="iconBtn" type="button" data-action="pause" title="Pause">⏸</button>
+          <button class="iconBtn" type="button" data-action="close" title="Close">✕</button>
+        </div>
+      </div>
+
+      <div class="mediaWrap" id="mediaWrap">
+        <!-- media injected -->
+        <div class="tapZones">
+          <button class="tapZone left" type="button" data-action="prev"></button>
+          <button class="tapZone right" type="button" data-action="next"></button>
+        </div>
+
+        <div class="centerToast" id="toast">Paused</div>
+      </div>
+
+      <div class="viewerBottom">
+        <div class="reactRow" id="reactRow">
+          <button class="reactBtn" type="button" data-reaction="🔥"><span class="vybe-emoji-slot" data-e="🔥"></span></button>
+          <button class="reactBtn" type="button" data-reaction="😂"><span class="vybe-emoji-slot" data-e="😂"></span></button>
+          <button class="reactBtn" type="button" data-reaction="😍"><span class="vybe-emoji-slot" data-e="😍"></span></button>
+          <button class="reactBtn" type="button" data-reaction="💯"><span class="vybe-emoji-slot" data-e="💯"></span></button>
+          <button class="reactBtn" type="button" data-reaction="😈"><span class="vybe-emoji-slot" data-e="😈"></span></button>
+          <button class="reactBtn stickerToggle" type="button" id="openStickersBtn" title="Stickers">🎨</button>
+        </div>
+
+        <div class="replyRow">
+          <input class="replyInput" id="replyInput" type="text" placeholder="Reply to @user…" autocomplete="off">
+          <button class="sendBtn" id="sendReply" type="button">Send</button>
+        </div>
+
+        <div class="metaRow">
+          <button class="metaBtn" id="seenBtn" type="button">👁 Seen</button>
+          <div class="metaSpacer"></div>
+          <button class="metaBtn" id="shareBtn" type="button">↗ Share</button>
+        </div>
+
+        <!-- ═══ VYBEFLOW EXCLUSIVE STORY FEATURES ═══ -->
+        <div class="vj-features-row" id="vjFeaturesRow">
+          <button class="vj-feat-btn" id="voiceCommentaryBtn" type="button" title="Voice Commentary">🎤</button>
+          <button class="vj-feat-btn" id="askQuestionBtn" type="button" title="React With a Question">❓</button>
+          <button class="vj-feat-btn" id="decisionPollBtn" type="button" title="Decision Poll">🗳️</button>
+          <button class="vj-feat-btn" id="realityCheckBtn" type="button" title="Reality Check">✔️</button>
+          <button class="vj-feat-btn" id="truthMeterBtn" type="button" title="Truth Meter">🔎</button>
+          <button class="vj-feat-btn" id="continueStoryBtn" type="button" title="Continue the Story">📖</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STICKER PANEL -->
+  <div class="stickerPanel" id="stickerPanel" aria-hidden="true">
+    <div class="stickerSheet">
+      <div class="stickerHandle"></div>
+      <div class="stickerHead">
+        <div class="stickerSearchWrap">
+          <span class="stickerSearchIcon">🔍</span>
+          <input class="stickerSearch" id="stickerSearch" type="text" placeholder="Search stickers…" autocomplete="off">
+        </div>
+        <button class="stickerCloseBtn" id="closeStickerPanel" type="button">✕</button>
+      </div>
+
+      <!-- CATEGORY TABS -->
+      <div class="stickerTabs" id="stickerTabs">
+        <button class="stickerTab active" data-cat="all">ALL</button>
+        <button class="stickerTab" data-cat="street">🔫 STREET</button>
+        <button class="stickerTab" data-cat="drip">💎 DRIP</button>
+        <button class="stickerTab" data-cat="money">💰 MONEY</button>
+        <button class="stickerTab" data-cat="music">🎵 MUSIC</button>
+        <button class="stickerTab" data-cat="vibes">🌊 VIBES</button>
+        <button class="stickerTab" data-cat="react">🗣 REACT</button>
+        <button class="stickerTab" data-cat="tools">🛠 TOOLS</button>
+      </div>
+
+      <!-- STICKER GRID -->
+      <div class="stickerGrid" id="stickerGrid"></div>
+    </div>
+  </div>
+
+  <!-- Seen list modal -->
+  <div class="seenModal" id="seenModal" aria-hidden="true">
+    <div class="seenSheet" role="dialog" aria-modal="true" aria-label="Seen list">
+      <div class="seenHead">
+        <b>Seen by</b>
+        <button class="vybeBtn" id="closeSeen" type="button">Close</button>
+      </div>
+      <div class="seenList" id="seenList"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       VYBEFLOW EXCLUSIVE FEATURE MODALS
+       ═══════════════════════════════════════════════════════════ -->
+
+  <!-- 1. Voice Commentary Modal 🎤 -->
+  <div class="vjModal" id="voiceModal" aria-hidden="true">
+    <div class="vjSheet">
+      <div class="vjHead"><b>🎤 Voice Commentary</b><button class="vybeBtn vjClose" data-close="voiceModal" type="button">✕</button></div>
+      <p class="vjDesc">Record your voice over this story — feels more human than text</p>
+      <div class="vjVoiceControls">
+        <button class="vjRecBtn" id="vjRecordBtn" type="button">🔴 Tap to Record (max 30s)</button>
+        <div class="vjTimer" id="vjVoiceTimer" style="display:none;">⏱ <span id="vjVoiceSec">0</span>s / 30s</div>
+        <audio id="vjVoicePreview" style="display:none;width:100%;margin-top:8px;" controls></audio>
+        <button class="vjSendVoice" id="vjSendVoice" type="button" style="display:none;">📤 Attach Voice</button>
+      </div>
+      <div id="vjVoiceList" class="vjList"></div>
+    </div>
+  </div>
+
+  <!-- 2. React With a Question Modal ❓ -->
+  <div class="vjModal" id="questionModal" aria-hidden="true">
+    <div class="vjSheet">
+      <div class="vjHead"><b>❓ Ask a Question</b><button class="vybeBtn vjClose" data-close="questionModal" type="button">✕</button></div>
+      <p class="vjDesc">Respond with a question instead of just emojis — create conversation chains</p>
+      <div class="vjInputRow">
+        <input class="vjInput" id="vjQuestionInput" type="text" placeholder="Ask something about this story…" maxlength="300" autocomplete="off">
+        <button class="vjSendBtn" id="vjSendQuestion" type="button">Ask</button>
+      </div>
+      <div id="vjQuestionList" class="vjList"></div>
+    </div>
+  </div>
+
+  <!-- 3. Decision Poll Modal 🗳️ -->
+  <div class="vjModal" id="pollModal" aria-hidden="true">
+    <div class="vjSheet">
+      <div class="vjHead"><b>🗳️ Decision Poll</b><button class="vybeBtn vjClose" data-close="pollModal" type="button">✕</button></div>
+      <p class="vjDesc">Let viewers control what happens next — people stay to see the result</p>
+      <div id="vjPollCreate" class="vjPollForm">
+        <input class="vjInput" id="vjPollQuestion" type="text" placeholder="What should happen next?" maxlength="300">
+        <div class="vjPollOptions">
+          <input class="vjInput vjHalf" id="vjPollA" type="text" placeholder="Option A" maxlength="120">
+          <input class="vjInput vjHalf" id="vjPollB" type="text" placeholder="Option B" maxlength="120">
+        </div>
+        <button class="vjSendBtn" id="vjCreatePoll" type="button">Create Poll</button>
+      </div>
+      <div id="vjPollVote" class="vjPollVoting" style="display:none;">
+        <div class="vjPollQ" id="vjPollQuestionDisplay"></div>
+        <div class="vjPollBtns">
+          <button class="vjVoteBtn" id="vjVoteA" type="button" data-choice="a"></button>
+          <button class="vjVoteBtn" id="vjVoteB" type="button" data-choice="b"></button>
+        </div>
+        <div class="vjPollResults" id="vjPollResults"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Anonymous Confession Modal 🤫 -->
+  <div class="vjModal" id="confessionModal" aria-hidden="true">
+    <div class="vjSheet">
+      <div class="vjHead"><b>🤫 Anonymous Confession</b><button class="vybeBtn vjClose" data-close="confessionModal" type="button">✕</button></div>
+      <p class="vjDesc">Post anonymously — raw, honest, no judgement on your identity</p>
+      <select class="vjSelect" id="vjConfessionCat">
+        <option value="general">💬 General</option>
+        <option value="work">💼 Work</option>
+        <option value="relationships">❤️ Relationships</option>
+        <option value="life">🌎 Life</option>
+        <option value="secrets">🤐 Secrets</option>
+      </select>
+      <textarea class="vjTextarea" id="vjConfessionText" placeholder="Share your anonymous confession..." maxlength="1000"></textarea>
+      <button class="vjSendBtn" id="vjSendConfession" type="button">Post Anonymously</button>
+      <div id="vjConfessionFeed" class="vjList"></div>
+    </div>
+  </div>
+
+  <!-- 5. Location Mood Modal 🌎 -->
+  <div class="vjModal" id="moodModal" aria-hidden="true">
+    <div class="vjSheet">
+      <div class="vjHead"><b>🌎 Tag the Vibe</b><button class="vybeBtn vjClose" data-close="moodModal" type="button">✕</button></div>
+      <p class="vjDesc">Forget location tags — tag the VIBE instead. Browse stories by mood.</p>
+      <div class="vjInputRow">
+        <input class="vjInput" id="vjMoodInput" type="text" placeholder="e.g. Chaotic Walmart trip, Late night thoughts..." maxlength="100">
+        <button class="vjSendBtn" id="vjSetMood" type="button">Tag</button>
+      </div>
+      <div class="vjMoodSuggestions">
+        <button class="vjMoodChip" type="button" data-mood="Late night thoughts">🌙 Late night thoughts</button>
+        <button class="vjMoodChip" type="button" data-mood="Chaotic Walmart trip">🛒 Chaotic Walmart trip</button>
+        <button class="vjMoodChip" type="button" data-mood="Bad customer service story">😤 Bad customer service</button>
+        <button class="vjMoodChip" type="button" data-mood="Work from home vibes">💻 WFH vibes</button>
+        <button class="vjMoodChip" type="button" data-mood="Gym transformation">💪 Gym transformation</button>
+        <button class="vjMoodChip" type="button" data-mood="Cooking disaster">🔥 Cooking disaster</button>
+        <button class="vjMoodChip" type="button" data-mood="Road trip energy">🚗 Road trip energy</button>
+        <button class="vjMoodChip" type="button" data-mood="3AM thoughts">🧠 3AM thoughts</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Story Debate Modal ⚖️ -->
+  <div class="vjModal" id="debateModal" aria-hidden="true">
+    <div class="vjSheet">
+      <div class="vjHead"><b>⚖️ Story Debate</b><button class="vybeBtn vjClose" data-close="debateModal" type="button">✕</button></div>
+      <p class="vjDesc">Start a debate — two sides, viewers vote. Creates engagement wars.</p>
+      <div id="vjDebateCreate">
+        <input class="vjInput" id="vjDebateTopic" type="text" placeholder="Debate topic: e.g. Is cable TV dying?" maxlength="300">
+        <textarea class="vjTextarea" id="vjDebateSideA" placeholder="Your side of the argument..." maxlength="500"></textarea>
+        <button class="vjSendBtn" id="vjStartDebate" type="button">⚡ Start Debate</button>
+      </div>
+      <div id="vjDebateFeed" class="vjList"></div>
+    </div>
+  </div>
+
+  <!-- 7. Reality Check Modal ✔️ -->
+  <div class="vjModal" id="realityModal" aria-hidden="true">
+    <div class="vjSheet">
+      <div class="vjHead"><b>✔️ Reality Check</b><button class="vybeBtn vjClose" data-close="realityModal" type="button">✕</button></div>
+      <p class="vjDesc">Mark this story — helps prevent misinformation</p>
+      <div class="vjRealityBtns">
+        <button class="vjRealityBtn" type="button" data-label="verified">✅ Verified</button>
+        <button class="vjRealityBtn" type="button" data-label="opinion">💭 Opinion</button>
+        <button class="vjRealityBtn" type="button" data-label="joke">😂 Joke</button>
+        <button class="vjRealityBtn" type="button" data-label="rumor">👀 Rumor</button>
+      </div>
+      <div id="vjRealityResults" class="vjResults"></div>
+    </div>
+  </div>
+
+  <!-- 8. Continue the Story Modal 📖 -->
+  <div class="vjModal" id="continueModal" aria-hidden="true">
+    <div class="vjSheet">
+      <div class="vjHead"><b>📖 Continue the Story</b><button class="vybeBtn vjClose" data-close="continueModal" type="button">✕</button></div>
+      <p class="vjDesc">Add the next chapter — collaborative storytelling, VybeFlow exclusive</p>
+      <div id="vjChaptersList" class="vjList"></div>
+      <textarea class="vjTextarea" id="vjChapterText" placeholder="Write the next chapter..." maxlength="500"></textarea>
+      <button class="vjSendBtn" id="vjAddChapter" type="button">📝 Add Chapter</button>
+    </div>
+  </div>
+
+  <!-- 9. Micro Challenge Modal 🏆 -->
+  <div class="vjModal" id="challengeModal" aria-hidden="true">
+    <div class="vjSheet">
+      <div class="vjHead"><b>🏆 Daily Challenges</b><button class="vybeBtn vjClose" data-close="challengeModal" type="button">✕</button></div>
+      <p class="vjDesc">Daily prompts that keep the content flowing</p>
+      <div id="vjChallengeList" class="vjList"></div>
+    </div>
+  </div>
+
+  <!-- 10. Truth Meter Modal 🔎 -->
+  <div class="vjModal" id="truthModal" aria-hidden="true">
+    <div class="vjSheet">
+      <div class="vjHead"><b>🔎 Truth Meter</b><button class="vybeBtn vjClose" data-close="truthModal" type="button">✕</button></div>
+      <p class="vjDesc">Rate how believable this story is — fun social judgment</p>
+      <div class="vjTruthBtns">
+        <button class="vjTruthBtn" type="button" data-rating="100_true">💯 100% True</button>
+        <button class="vjTruthBtn" type="button" data-rating="sounds_fake">🧢 Sounds Fake</button>
+        <button class="vjTruthBtn" type="button" data-rating="probably_exaggerated">🤥 Probably Exaggerated</button>
+      </div>
+      <div id="vjTruthResults" class="vjResults"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Minimal client wiring for Seen / Likes using the new APIs.
+  (function () {
+    const viewer = document.getElementById('viewer');
+    const seenModal = document.getElementById('seenModal');
+    const seenList = document.getElementById('seenList');
+    const openSeenBtn = document.getElementById('openSeenBtn');
+    const seenBtn = document.getElementById('seenBtn');
+    const closeSeen = document.getElementById('closeSeen');
+
+    let activeStoryId = null;
+
+    function getActiveStoryId() {
+      const active = document.querySelector('.trayItem.is-active');
+      if (active && active.dataset.storyId) return active.dataset.storyId;
+      return activeStoryId;
+    }
+
+    function openSeenList() {
+      const storyId = getActiveStoryId();
+      if (!storyId || !seenModal || !seenList) return;
+      fetch('/api/story/' + encodeURIComponent(storyId) + '/views')
+        .then(function (res) { return res.ok ? res.json() : { ok: false }; })
+        .then(function (data) {
+          if (!data.ok) return;
+          seenList.innerHTML = '';
+          if (!data.viewers || !data.viewers.length) {
+            seenList.innerHTML = '<p style="padding:8px 0;opacity:.7;">No views yet.</p>';
+          } else {
+            data.viewers.forEach(function (v) {
+              const row = document.createElement('div');
+              row.className = 'seenRow';
+              row.innerHTML = '<div class="seenAvatar">' + (v.display_name || v.username || 'U').slice(0,1).toUpperCase() + '</div>' +
+                              '<div class="seenMeta"><div>' + (v.display_name || v.username) + '</div><div class="seenSub">@' + (v.username || '') + '</div></div>';
+              seenList.appendChild(row);
+            });
+          }
+          seenModal.setAttribute('aria-hidden', 'false');
+        })
+        .catch(function () {});
+    }
+
+    if (openSeenBtn) {
+      openSeenBtn.addEventListener('click', openSeenList);
+    }
+    if (seenBtn) {
+      seenBtn.addEventListener('click', openSeenList);
+    }
+    if (closeSeen && seenModal) {
+      closeSeen.addEventListener('click', function () {
+        seenModal.setAttribute('aria-hidden', 'true');
+      });
+    }
+  })();
+</script>
+
+<!-- ═══ VYBEFLOW EXCLUSIVE FEATURES JS ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  // Helper: get active story ID
+  function getStoryId() {
+    var active = document.querySelector('.trayItem.is-active');
+    if (active && active.dataset.storyId) return active.dataset.storyId;
+    return null;
+  }
+
+  // Modal open/close
+  document.querySelectorAll('.vjClose').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var id = btn.getAttribute('data-close');
+      var modal = document.getElementById(id);
+      if(modal) modal.setAttribute('aria-hidden','true');
+    });
+  });
+
+  function openModal(id){
+    var m = document.getElementById(id);
+    if(m) m.setAttribute('aria-hidden','false');
+  }
+
+  // Feature buttons
+  var voiceBtn = document.getElementById('voiceCommentaryBtn');
+  var askBtn = document.getElementById('askQuestionBtn');
+  var pollBtn = document.getElementById('decisionPollBtn');
+  var realityBtn = document.getElementById('realityCheckBtn');
+  var truthBtn = document.getElementById('truthMeterBtn');
+  var continueBtn = document.getElementById('continueStoryBtn');
+
+  if(voiceBtn) voiceBtn.addEventListener('click', function(){ openModal('voiceModal'); loadVoiceCommentaries(); });
+  if(askBtn) askBtn.addEventListener('click', function(){ openModal('questionModal'); loadQuestions(); });
+  if(pollBtn) pollBtn.addEventListener('click', function(){ openModal('pollModal'); loadPoll(); });
+  if(realityBtn) realityBtn.addEventListener('click', function(){ openModal('realityModal'); loadRealityCheck(); });
+  if(truthBtn) truthBtn.addEventListener('click', function(){ openModal('truthModal'); loadTruthMeter(); });
+  if(continueBtn) continueBtn.addEventListener('click', function(){ openModal('continueModal'); loadChapters(); });
+
+  // Close modals by clicking backdrop
+  document.querySelectorAll('.vjModal').forEach(function(modal){
+    modal.addEventListener('click', function(e){
+      if(e.target === modal) modal.setAttribute('aria-hidden','true');
+    });
+  });
+
+  // ── 1. Voice Commentary 🎤 ──
+  var mediaRecorder = null, audioChunks = [], recordingTimer = null, recSec = 0;
+  var recBtn = document.getElementById('vjRecordBtn');
+  var voiceTimer = document.getElementById('vjVoiceTimer');
+  var voiceSec = document.getElementById('vjVoiceSec');
+  var voicePreview = document.getElementById('vjVoicePreview');
+  var sendVoiceBtn = document.getElementById('vjSendVoice');
+
+  if(recBtn) recBtn.addEventListener('click', function(){
+    if(mediaRecorder && mediaRecorder.state === 'recording'){
+      mediaRecorder.stop();
+      recBtn.textContent = '🔴 Tap to Record (max 30s)';
+      recBtn.classList.remove('recording');
+      clearInterval(recordingTimer);
+      if(voiceTimer) voiceTimer.style.display = 'none';
+      return;
+    }
+    audioChunks = []; recSec = 0;
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = function(e){ audioChunks.push(e.data); };
+      mediaRecorder.onstop = function(){
+        stream.getTracks().forEach(function(t){t.stop();});
+        var blob = new Blob(audioChunks, {type:'audio/webm'});
+        var url = URL.createObjectURL(blob);
+        if(voicePreview){ voicePreview.src = url; voicePreview.style.display = 'block'; }
+        if(sendVoiceBtn){
+          sendVoiceBtn.style.display = 'inline-block';
+          sendVoiceBtn.onclick = function(){
+            var storyId = getStoryId();
+            if(!storyId){ vfToast('Select a story first'); return; }
+            var fd = new FormData();
+            fd.append('audio', blob, 'voice.webm');
+            fd.append('duration', recSec);
+            fetch('/api/story/'+storyId+'/voice-commentary',{method:'POST',body:fd})
+              .then(function(r){return r.json();})
+              .then(function(d){
+                if(d.ok){ sendVoiceBtn.textContent = '✅ Attached!'; loadVoiceCommentaries(); }
+                else vfToast(d.error || 'Failed');
+              });
+          };
+        }
+      };
+      mediaRecorder.start();
+      recBtn.textContent = '⏹ Stop Recording';
+      recBtn.classList.add('recording');
+      if(voiceTimer) voiceTimer.style.display = 'block';
+      recordingTimer = setInterval(function(){
+        recSec++;
+        if(voiceSec) voiceSec.textContent = recSec;
+        if(recSec >= 30){ mediaRecorder.stop(); clearInterval(recordingTimer); }
+      }, 1000);
+    }).catch(function(){ vfToast('Microphone access required'); });
+  });
+
+  function loadVoiceCommentaries(){
+    var storyId = getStoryId();
+    if(!storyId) return;
+    var list = document.getElementById('vjVoiceList');
+    if(!list) return;
+    fetch('/api/story/'+storyId+'/voice-commentary')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d.ok) return;
+        list.innerHTML = '';
+        d.commentaries.forEach(function(vc){
+          var item = document.createElement('div');
+          item.className = 'vjListItem';
+          item.innerHTML = '🎤 Voice (' + vc.duration_sec + 's)<br><audio controls style="width:100%;margin-top:4px;"><source src="'+vc.audio_url+'"></audio>';
+          list.appendChild(item);
+        });
+      });
+  }
+
+  // ── 2. React With a Question ❓ ──
+  var sendQBtn = document.getElementById('vjSendQuestion');
+  if(sendQBtn) sendQBtn.addEventListener('click', function(){
+    var storyId = getStoryId();
+    var input = document.getElementById('vjQuestionInput');
+    if(!storyId || !input || !input.value.trim()) return;
+    fetch('/api/story/'+storyId+'/question',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({question:input.value.trim()})
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){ input.value=''; loadQuestions(); }
+      else vfToast(d.error||'Failed');
+    });
+  });
+
+  function loadQuestions(){
+    var storyId = getStoryId();
+    if(!storyId) return;
+    var list = document.getElementById('vjQuestionList');
+    if(!list) return;
+    fetch('/api/story/'+storyId+'/questions')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d.ok) return;
+        list.innerHTML = '';
+        d.questions.forEach(function(q){
+          var item = document.createElement('div');
+          item.className = 'vjListItem';
+          item.innerHTML = '❓ ' + q.question + '<div class="vjItemMeta">' + (q.created_at||'') + '</div>';
+          list.appendChild(item);
+        });
+        if(!d.questions.length) list.innerHTML = '<div class="vjListItem" style="opacity:.5;">No questions yet — be the first!</div>';
+      });
+  }
+
+  // ── 3. Decision Polls 🗳️ ──
+  var createPollBtn = document.getElementById('vjCreatePoll');
+  if(createPollBtn) createPollBtn.addEventListener('click', function(){
+    var storyId = getStoryId();
+    var q = document.getElementById('vjPollQuestion');
+    var a = document.getElementById('vjPollA');
+    var b = document.getElementById('vjPollB');
+    if(!storyId||!q||!a||!b||!q.value.trim()||!a.value.trim()||!b.value.trim()) return;
+    fetch('/api/story/'+storyId+'/poll',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({question:q.value.trim(),option_a:a.value.trim(),option_b:b.value.trim()})
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){ q.value='';a.value='';b.value=''; loadPoll(); }
+      else vfToast(d.error||'Failed');
+    });
+  });
+
+  function loadPoll(){
+    var storyId = getStoryId();
+    if(!storyId) return;
+    var createDiv = document.getElementById('vjPollCreate');
+    var voteDiv = document.getElementById('vjPollVote');
+    fetch('/api/story/'+storyId+'/poll')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d.ok||!d.poll){ if(createDiv)createDiv.style.display='flex'; if(voteDiv)voteDiv.style.display='none'; return; }
+        var p = d.poll;
+        if(createDiv)createDiv.style.display='none';
+        if(voteDiv)voteDiv.style.display='block';
+        var qDisp = document.getElementById('vjPollQuestionDisplay');
+        var btnA = document.getElementById('vjVoteA');
+        var btnB = document.getElementById('vjVoteB');
+        var results = document.getElementById('vjPollResults');
+        if(qDisp) qDisp.textContent = p.question;
+        if(btnA) btnA.textContent = p.option_a;
+        if(btnB) btnB.textContent = p.option_b;
+        var total = p.votes_a + p.votes_b;
+        if(results && total > 0){
+          var pctA = Math.round((p.votes_a/total)*100);
+          var pctB = Math.round((p.votes_b/total)*100);
+          results.innerHTML = p.option_a+': '+pctA+'% ('+p.votes_a+') | '+p.option_b+': '+pctB+'% ('+p.votes_b+') | Total: '+total;
+        }
+        [btnA,btnB].forEach(function(btn){
+          if(!btn) return;
+          btn.onclick = function(){
+            fetch('/api/poll/'+p.id+'/vote',{
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({choice:btn.getAttribute('data-choice')})
+            }).then(function(r){return r.json();})
+            .then(function(d2){
+              if(d2.ok) loadPoll();
+              else vfToast(d2.error||'Vote failed');
+            });
+          };
+        });
+      });
+  }
+
+  // ── 4. Reality Check ✔️ ──
+  document.querySelectorAll('.vjRealityBtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var storyId = getStoryId();
+      if(!storyId) return;
+      var label = btn.getAttribute('data-label');
+      fetch('/api/story/'+storyId+'/reality-check',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({label:label})
+      }).then(function(r){return r.json();})
+      .then(function(d){
+        if(d.ok){
+          document.querySelectorAll('.vjRealityBtn').forEach(function(b){b.classList.remove('active');});
+          btn.classList.add('active');
+          loadRealityCheck();
+        }
+      });
+    });
+  });
+
+  function loadRealityCheck(){
+    var storyId = getStoryId();
+    if(!storyId) return;
+    var results = document.getElementById('vjRealityResults');
+    if(!results) return;
+    fetch('/api/story/'+storyId+'/reality-check')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d.ok) return;
+        var labels = d.labels;
+        var parts = [];
+        if(labels.verified) parts.push('✅ Verified: '+labels.verified);
+        if(labels.opinion) parts.push('💭 Opinion: '+labels.opinion);
+        if(labels.joke) parts.push('😂 Joke: '+labels.joke);
+        if(labels.rumor) parts.push('👀 Rumor: '+labels.rumor);
+        results.innerHTML = parts.length ? parts.join(' | ') : 'No votes yet';
+      });
+  }
+
+  // ── 5. Truth Meter 🔎 ──
+  document.querySelectorAll('.vjTruthBtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var storyId = getStoryId();
+      if(!storyId) return;
+      var rating = btn.getAttribute('data-rating');
+      fetch('/api/story/'+storyId+'/truth-meter',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({rating:rating})
+      }).then(function(r){return r.json();})
+      .then(function(d){
+        if(d.ok){
+          document.querySelectorAll('.vjTruthBtn').forEach(function(b){b.classList.remove('active');});
+          btn.classList.add('active');
+          loadTruthMeter();
+        }
+      });
+    });
+  });
+
+  function loadTruthMeter(){
+    var storyId = getStoryId();
+    if(!storyId) return;
+    var results = document.getElementById('vjTruthResults');
+    if(!results) return;
+    fetch('/api/story/'+storyId+'/truth-meter')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d.ok) return;
+        var r = d.results; var t = d.total || 1;
+        results.innerHTML = '💯 True: '+Math.round((r['100_true']/t)*100)+'% | 🧢 Fake: '+Math.round((r['sounds_fake']/t)*100)+'% | 🤥 Exaggerated: '+Math.round((r['probably_exaggerated']/t)*100)+'% ('+d.total+' votes)';
+      });
+  }
+
+  // ── 6. Continue the Story 📖 ──
+  var addChapterBtn = document.getElementById('vjAddChapter');
+  if(addChapterBtn) addChapterBtn.addEventListener('click', function(){
+    var storyId = getStoryId();
+    var input = document.getElementById('vjChapterText');
+    if(!storyId||!input||!input.value.trim()) return;
+    fetch('/api/story/'+storyId+'/continue',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({caption:input.value.trim()})
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){ input.value=''; loadChapters(); }
+      else vfToast(d.error||'Failed');
+    });
+  });
+
+  function loadChapters(){
+    var storyId = getStoryId();
+    if(!storyId) return;
+    var list = document.getElementById('vjChaptersList');
+    if(!list) return;
+    fetch('/api/story/'+storyId+'/chapters')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d.ok) return;
+        list.innerHTML = '';
+        d.chapters.forEach(function(ch){
+          var item = document.createElement('div');
+          item.className = 'vjChapter';
+          item.innerHTML = '<div class="vjChapterNum">Chapter '+ch.chapter_number+'</div><div class="vjChapterText">'+ch.caption+'</div>';
+          list.appendChild(item);
+        });
+        if(!d.chapters.length) list.innerHTML = '<div class="vjListItem" style="opacity:.5;">No chapters yet — start the chain!</div>';
+      });
+  }
+
+  // ── Also add: Sidebar links for Confessions, Debates, Challenges ──
+  // These are accessible from the stories header
+  var topRight = document.querySelector('.vybeTopRight');
+  if(topRight){
+    var confBtn = document.createElement('button');
+    confBtn.className = 'vybeBtn';
+    confBtn.textContent = '🤫';
+    confBtn.title = 'Anonymous Confessions';
+    confBtn.addEventListener('click', function(){ openModal('confessionModal'); loadConfessions(); });
+    topRight.appendChild(confBtn);
+
+    var debBtn = document.createElement('button');
+    debBtn.className = 'vybeBtn';
+    debBtn.textContent = '⚖️';
+    debBtn.title = 'Story Debates';
+    debBtn.addEventListener('click', function(){ openModal('debateModal'); loadDebates(); });
+    topRight.appendChild(debBtn);
+
+    var chalBtn = document.createElement('button');
+    chalBtn.className = 'vybeBtn';
+    chalBtn.textContent = '🏆';
+    chalBtn.title = 'Daily Challenges';
+    chalBtn.addEventListener('click', function(){ openModal('challengeModal'); loadChallenges(); });
+    topRight.appendChild(chalBtn);
+
+    var moodBtn = document.createElement('button');
+    moodBtn.className = 'vybeBtn';
+    moodBtn.textContent = '🌎';
+    moodBtn.title = 'Browse by Vibe/Mood';
+    moodBtn.addEventListener('click', function(){ openModal('moodModal'); });
+    topRight.appendChild(moodBtn);
+  }
+
+  // ── Anonymous Confessions 🤫 ──
+  var sendConfBtn = document.getElementById('vjSendConfession');
+  if(sendConfBtn) sendConfBtn.addEventListener('click', function(){
+    var text = document.getElementById('vjConfessionText');
+    var cat = document.getElementById('vjConfessionCat');
+    if(!text||!text.value.trim()) return;
+    fetch('/api/confessions',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:text.value.trim(), category:cat?cat.value:'general'})
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){ text.value=''; loadConfessions(); }
+      else vfToast(d.error||'Failed');
+    });
+  });
+
+  function loadConfessions(){
+    var list = document.getElementById('vjConfessionFeed');
+    if(!list) return;
+    fetch('/api/confessions')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d.ok) return;
+        list.innerHTML = '';
+        d.confessions.forEach(function(c){
+          var item = document.createElement('div');
+          item.className = 'vjConfession';
+          item.innerHTML = '<div class="vjConfessionCat">'+c.category+'</div>' +
+            '<div class="vjConfessionText">'+c.text+'</div>' +
+            '<div class="vjConfessionMeta"><span>❤️ '+c.likes+'</span><span>'+c.created_at+'</span></div>';
+          list.appendChild(item);
+        });
+      });
+  }
+
+  // ── Story Debates ⚖️ ──
+  var startDebateBtn = document.getElementById('vjStartDebate');
+  if(startDebateBtn) startDebateBtn.addEventListener('click', function(){
+    var topic = document.getElementById('vjDebateTopic');
+    var sideA = document.getElementById('vjDebateSideA');
+    if(!topic||!sideA||!topic.value.trim()||!sideA.value.trim()) return;
+    fetch('/api/debates',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({topic:topic.value.trim(), side_a:sideA.value.trim()})
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){ topic.value=''; sideA.value=''; loadDebates(); }
+      else vfToast(d.error||'Failed');
+    });
+  });
+
+  function loadDebates(){
+    var list = document.getElementById('vjDebateFeed');
+    if(!list) return;
+    fetch('/api/debates')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d.ok) return;
+        list.innerHTML = '';
+        d.debates.forEach(function(db){
+          var card = document.createElement('div');
+          card.className = 'vjDebateCard';
+          card.innerHTML = '<div class="vjDebateTopic">⚖️ '+db.topic+'</div>' +
+            '<div class="vjDebateSides">' +
+            '<div class="vjDebateSide"><b>Side A:</b> '+db.side_a+'</div>' +
+            (db.side_b ? '<div class="vjDebateSide"><b>Side B:</b> '+db.side_b+'</div>' : '<div class="vjDebateSide" style="opacity:.5;">Waiting for opponent...</div>') +
+            '</div>' +
+            '<div class="vjDebateVotes">A: '+db.votes_a+' votes | B: '+db.votes_b+' votes</div>';
+          list.appendChild(card);
+        });
+        if(!d.debates.length) list.innerHTML = '<div class="vjListItem" style="opacity:.5;">No debates yet — start one!</div>';
+      });
+  }
+
+  // ── Micro Challenges 🏆 ──
+  function loadChallenges(){
+    var list = document.getElementById('vjChallengeList');
+    if(!list) return;
+    fetch('/api/challenges')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d.ok) return;
+        list.innerHTML = '';
+        d.challenges.forEach(function(ch){
+          var card = document.createElement('div');
+          card.className = 'vjChallengeCard';
+          card.innerHTML = '<div class="vjChallengeEmoji">'+ch.emoji+'</div>' +
+            '<div class="vjChallengePrompt">'+ch.prompt+'</div>' +
+            '<button class="vjChallengeEnter" data-cid="'+ch.id+'">Enter</button>';
+          card.querySelector('.vjChallengeEnter').addEventListener('click', function(){
+            fetch('/api/challenges/'+ch.id+'/enter',{
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({})
+            }).then(function(r){return r.json();})
+            .then(function(d2){
+              if(d2.ok) this.textContent = '✅ Entered!';
+              else vfToast(d2.error||'Failed');
+            }.bind(this));
+          });
+          list.appendChild(card);
+        });
+        if(!d.challenges.length) list.innerHTML = '<div class="vjListItem" style="opacity:.5;">No active challenges — check back later or create one!</div>';
+      });
+  }
+
+  // ── Mood tag suggestions ──
+  document.querySelectorAll('.vjMoodChip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      var input = document.getElementById('vjMoodInput');
+      if(input) input.value = chip.getAttribute('data-mood');
+    });
+  });
+
+  var setMoodBtn = document.getElementById('vjSetMood');
+  if(setMoodBtn) setMoodBtn.addEventListener('click', function(){
+    var storyId = getStoryId();
+    var input = document.getElementById('vjMoodInput');
+    if(!storyId||!input||!input.value.trim()) return;
+    fetch('/api/story/'+storyId+'/mood',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mood:input.value.trim()})
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){ input.value=''; vfToast('🌎 Vibe tagged!'); }
+      else vfToast(d.error||'Failed');
+    });
+  });
+
+})();
+</script>
+
+<script src="{{ url_for('static', filename='js/story-save-api.js') }}"></script>
+
+<!-- ===== STICKER ENGINE ===== -->
+<script>
+(function(){
+  /* ── STICKER DATA ─────────────────────────────────────────── */
+  const STICKERS = [
+    // ─── STREET (50+ stickers) ───
+    {cat:'street', emoji:'🔫', label:'SLIDE'},
+    {cat:'street', emoji:'🏚️', label:'TRAP HOUSE', badge:'VYBE'},
+    {cat:'street', emoji:'🚔', label:'12 ALERT', badge:'VYBE'},
+    {cat:'street', emoji:'🗡️', label:'SHANK SZN'},
+    {cat:'street', emoji:'🏴', label:'NO SNITCHIN', badge:'VYBE'},
+    {cat:'street', emoji:'🐍', label:'SNAKE WATCH'},
+    {cat:'street', emoji:'💀', label:'DEAD OPP'},
+    {cat:'street', emoji:'🥷', label:'STEALTH MODE', badge:'VYBE'},
+    {cat:'street', emoji:'🚨', label:'HOT BLOCK'},
+    {cat:'street', emoji:'⚰️', label:'REST UP', badge:'VYBE'},
+    {cat:'street', emoji:'🔒', label:'LOCKED IN'},
+    {cat:'street', emoji:'🎯', label:'ON TARGET'},
+    {cat:'street', emoji:'🩸', label:'BLOOD IN'},
+    {cat:'street', emoji:'⛓️', label:'CHAINED UP', badge:'VYBE'},
+    {cat:'street', emoji:'🐺', label:'LONE WOLF'},
+    {cat:'street', emoji:'🦅', label:'FREE BIRD'},
+    {cat:'street', emoji:'🔪', label:'CUTTHROAT'},
+    {cat:'street', emoji:'🧨', label:'BLOW UP', badge:'VYBE'},
+    {cat:'street', emoji:'💣', label:'BOMB THREAT'},
+    {cat:'street', emoji:'🏴‍☠️', label:'PIRATE GANG', badge:'VYBE'},
+    {cat:'street', emoji:'⚔️', label:'WARFARE'},
+    {cat:'street', emoji:'🦇', label:'DARK KNIGHT'},
+    {cat:'street', emoji:'🐊', label:'GATOR BOYZ'},
+    {cat:'street', emoji:'🐻', label:'GRIZZLY MODE', badge:'VYBE'},
+    {cat:'street', emoji:'🦁', label:'LION HEART'},
+    {cat:'street', emoji:'🐆', label:'PANTHER SZN'},
+    {cat:'street', emoji:'🦍', label:'GORILLA GRIP', badge:'VYBE'},
+    {cat:'street', emoji:'🏍️', label:'BIKE LIFE'},
+    {cat:'street', emoji:'🚗', label:'GETAWAY CAR'},
+    {cat:'street', emoji:'🛻', label:'TRUCK MEET'},
+    {cat:'street', emoji:'🔓', label:'FREE MY DAWG', badge:'VYBE'},
+    {cat:'street', emoji:'⚠️', label:'DANGER ZONE'},
+    {cat:'street', emoji:'☠️', label:'SKULL GANG'},
+    {cat:'street', emoji:'🕳️', label:'DEEP IN IT'},
+    {cat:'street', emoji:'🌑', label:'DARK SIDE'},
+    {cat:'street', emoji:'🔥', label:'SCORCHED'},
+    {cat:'street', emoji:'💨', label:'GHOST MODE', badge:'VYBE'},
+    {cat:'street', emoji:'🧊', label:'COLD CASE'},
+    {cat:'street', emoji:'🚬', label:'SMOKE EM'},
+    {cat:'street', emoji:'💊', label:'PILL SZN'},
+    {cat:'street', emoji:'🤐', label:'ZIP IT'},
+    {cat:'street', emoji:'🪖', label:'WAR READY', badge:'VYBE'},
+    {cat:'street', emoji:'🎱', label:'8 BALL'},
+    {cat:'street', emoji:'🃏', label:'JOKER CARD'},
+    {cat:'street', emoji:'♠️', label:'ACE OF SPADES'},
+    {cat:'street', emoji:'🖤', label:'BLACK HEART', badge:'VYBE'},
+    {cat:'street', emoji:'⚡', label:'LIGHTNING'},
+    {cat:'street', emoji:'🕶️', label:'UNDERCOVER'},
+    {cat:'street', emoji:'🗝️', label:'KEY PLAYER'},
+    {cat:'street', emoji:'🐀', label:'RAT ALERT', badge:'VYBE'},
+    {cat:'street', emoji:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', label:'BLOCK BOY'},
+    {cat:'street', emoji:'🦾', label:'CYBORG MODE'},
+    {cat:'street', emoji:'🫁', label:'BREATHE EASY'},
+    {cat:'street', emoji:'🩻', label:'SEE THRU U', badge:'VYBE'},
+    {cat:'street', emoji:'👊', label:'KNUCKLE UP'},
+    {cat:'street', emoji:'✊', label:'FIST UP'},
+    {cat:'street', emoji:'🤘', label:'ROCK OUT'},
+    {cat:'street', emoji:'🤙', label:'CALL ME'},
+    {cat:'street', emoji:'🔇', label:'SILENCE'},
+    {cat:'street', emoji:'🚫', label:'NO LACKING', badge:'VYBE'},
+
+    // ─── DRIP ───
+    {cat:'drip', emoji:'💎', label:'ICE ICE'},
+    {cat:'drip', emoji:'👑', label:'KING SHIT'},
+    {cat:'drip', emoji:'🧊', label:'COLD AF', badge:'VYBE'},
+    {cat:'drip', emoji:'🥶', label:'FROSTBITE'},
+    {cat:'drip', emoji:'💅', label:'DRIP CHECK'},
+    {cat:'drip', emoji:'🕶️', label:'SHADED'},
+    {cat:'drip', emoji:'⌚', label:'AP ON WRIST', badge:'VYBE'},
+    {cat:'drip', emoji:'🏎️', label:'WHIP GAME'},
+    {cat:'drip', emoji:'👟', label:'KICKS HARD'},
+    {cat:'drip', emoji:'🧥', label:'FIT CHECK', badge:'VYBE'},
+    {cat:'drip', emoji:'💍', label:'ENGAGED W/ LIFE'},
+    {cat:'drip', emoji:'🎩', label:'TOP HAT MAFIA'},
+    {cat:'drip', emoji:'🪙', label:'MINTED'},
+    {cat:'drip', emoji:'✨', label:'GLOW UP'},
+    {cat:'drip', emoji:'🔥', label:'HEAT WAVE'},
+    {cat:'drip', emoji:'👔', label:'SUITED UP', badge:'VYBE'},
+    {cat:'drip', emoji:'🧤', label:'GLOVED UP'},
+    {cat:'drip', emoji:'🪬', label:'EVIL EYE'},
+    {cat:'drip', emoji:'💈', label:'FRESH CUT'},
+
+    // ─── MONEY ───
+    {cat:'money', emoji:'💰', label:'STACKS ON STACKS'},
+    {cat:'money', emoji:'💵', label:'BLUE HUNDREDS'},
+    {cat:'money', emoji:'🏦', label:'BANK RUN'},
+    {cat:'money', emoji:'📈', label:'STONKS UP', badge:'VYBE'},
+    {cat:'money', emoji:'💸', label:'FINESSE GOD', badge:'VYBE'},
+    {cat:'money', emoji:'🤑', label:'MONEY TALKS'},
+    {cat:'money', emoji:'💳', label:'SWIPE HEAVY'},
+    {cat:'money', emoji:'🎰', label:'HIGH ROLLER', badge:'VYBE'},
+    {cat:'money', emoji:'🏧', label:'ATM VIBES'},
+    {cat:'money', emoji:'⚡', label:'FAST MONEY'},
+    {cat:'money', emoji:'🧾', label:'RECEIPTS'},
+    {cat:'money', emoji:'🪤', label:'MONEY TRAP'},
+    {cat:'money', emoji:'🏠', label:'PROPERTY MOGUL', badge:'VYBE'},
+    {cat:'money', emoji:'🚀', label:'TO THE MOON'},
+    {cat:'money', emoji:'🪙', label:'CRYPTO GANG', badge:'VYBE'},
+    {cat:'money', emoji:'🏆', label:'TROPHY LIFE'},
+
+    // ─── MUSIC (new full category) ───
+    {cat:'music', emoji:'🎵', label:'ADD MUSIC', badge:'VYBE', special:'music'},
+    {cat:'music', emoji:'🎤', label:'MIC DROP', badge:'VYBE'},
+    {cat:'music', emoji:'🎧', label:'HEADPHONES'},
+    {cat:'music', emoji:'🎹', label:'KEYS'},
+    {cat:'music', emoji:'🥁', label:'808s & BASS', badge:'VYBE'},
+    {cat:'music', emoji:'🎸', label:'GUITAR RIFF'},
+    {cat:'music', emoji:'🎺', label:'HORN SECTION'},
+    {cat:'music', emoji:'🎷', label:'SAX VIBES'},
+    {cat:'music', emoji:'📻', label:'RADIO PLAY'},
+    {cat:'music', emoji:'🔊', label:'SPEAKER LOUD', badge:'VYBE'},
+    {cat:'music', emoji:'🔉', label:'TURN UP'},
+    {cat:'music', emoji:'🔇', label:'MUTED'},
+    {cat:'music', emoji:'🎼', label:'TRAP BEAT', badge:'VYBE'},
+    {cat:'music', emoji:'💿', label:'ALBUM DROP'},
+    {cat:'music', emoji:'📀', label:'PLATINUM'},
+    {cat:'music', emoji:'🏆', label:'HIT RECORD', badge:'VYBE'},
+    {cat:'music', emoji:'🎙️', label:'PODCAST MODE'},
+    {cat:'music', emoji:'🎚️', label:'MIXER'},
+    {cat:'music', emoji:'🎛️', label:'PRODUCER SZN', badge:'VYBE'},
+    {cat:'music', emoji:'📱', label:'SOUNDCLOUD'},
+    {cat:'music', emoji:'🖥️', label:'FL STUDIO', badge:'VYBE'},
+    {cat:'music', emoji:'⏯️', label:'NOW PLAYING'},
+    {cat:'music', emoji:'⏭️', label:'SKIP'},
+    {cat:'music', emoji:'🔁', label:'ON REPEAT'},
+    {cat:'music', emoji:'🔀', label:'SHUFFLE'},
+    {cat:'music', emoji:'❤️‍🔥', label:'VIBES ON FIRE'},
+    {cat:'music', emoji:'🩵', label:'CHILL BEATS', badge:'VYBE'},
+    {cat:'music', emoji:'🟣', label:'CHOPPED & SCREWED'},
+    {cat:'music', emoji:'⬛', label:'DARK TRAP', badge:'VYBE'},
+    {cat:'music', emoji:'🟡', label:'GOLDEN ERA'},
+
+    // ─── VIBES ───
+    {cat:'vibes', emoji:'🌊', label:'WAVE CHECK'},
+    {cat:'vibes', emoji:'🍃', label:'SMOKING ON'},
+    {cat:'vibes', emoji:'🌙', label:'LATE NIGHT'},
+    {cat:'vibes', emoji:'🎤', label:'MIC CHECK'},
+    {cat:'vibes', emoji:'🎧', label:'PLUGGED IN'},
+    {cat:'vibes', emoji:'🎵', label:'TRAP BEAT'},
+    {cat:'vibes', emoji:'🍾', label:'POP BOTTLES', badge:'VYBE'},
+    {cat:'vibes', emoji:'🪩', label:'CLUB MODE'},
+    {cat:'vibes', emoji:'🌃', label:'CITY LIGHTS'},
+    {cat:'vibes', emoji:'🎲', label:'DICE GAME'},
+    {cat:'vibes', emoji:'🏁', label:'RACE DAY'},
+    {cat:'vibes', emoji:'🍁', label:'AUTUMN OPS'},
+    {cat:'vibes', emoji:'🛸', label:'ALIEN VIBES', badge:'VYBE'},
+    {cat:'vibes', emoji:'🔮', label:'MYSTIC MODE'},
+    {cat:'vibes', emoji:'☄️', label:'COMET SZN'},
+    {cat:'vibes', emoji:'🎆', label:'LIT AF'},
+    {cat:'vibes', emoji:'🌋', label:'ERUPTION'},
+    {cat:'vibes', emoji:'🏖️', label:'BEACH MOB'},
+
+    // ─── REACT ───
+    {cat:'react', emoji:'💯', label:'NO CAP'},
+    {cat:'react', emoji:'🙅', label:'HELL NAH'},
+    {cat:'react', emoji:'🫡', label:'SALUTE'},
+    {cat:'react', emoji:'😈', label:'DEMON TIME', badge:'VYBE'},
+    {cat:'react', emoji:'🫠', label:'MELTING'},
+    {cat:'react', emoji:'🤧', label:'SICK OF IT'},
+    {cat:'react', emoji:'🤫', label:'SHHH'},
+    {cat:'react', emoji:'🫣', label:'CAUGHT YOU'},
+    {cat:'react', emoji:'🤡', label:'CLOWN ALERT'},
+    {cat:'react', emoji:'👀', label:'SUS'},
+    {cat:'react', emoji:'🥱', label:'BORING'},
+    {cat:'react', emoji:'🫶', label:'GANG LOVE', badge:'VYBE'},
+    {cat:'react', emoji:'🤝', label:'ON GOD'},
+    {cat:'react', emoji:'🤯', label:'MIND BLOWN'},
+    {cat:'react', emoji:'💀', label:'IM DEAD'},
+    {cat:'react', emoji:'🗣️', label:'SAY LESS'},
+    {cat:'react', emoji:'🧢', label:'CAP DETECTED'},
+    {cat:'react', emoji:'🚩', label:'RED FLAG'},
+    {cat:'react', emoji:'🪦', label:'RIP BOZO', badge:'VYBE'},
+
+    // ─── TOOLS ───
+    {cat:'tools', emoji:'📍', label:'LOCATION'},
+    {cat:'tools', emoji:'🔗', label:'LINK'},
+    {cat:'tools', emoji:'#️⃣', label:'HASHTAG'},
+    {cat:'tools', emoji:'@', label:'MENTION'},
+    {cat:'tools', emoji:'📊', label:'POLL'},
+    {cat:'tools', emoji:'❓', label:'QUESTIONS'},
+    {cat:'tools', emoji:'⏳', label:'COUNTDOWN'},
+    {cat:'tools', emoji:'🅰️', label:'TEXT'},
+    {cat:'tools', emoji:'🖼️', label:'PHOTO'},
+    {cat:'tools', emoji:'🎞️', label:'GIF'},
+    {cat:'tools', emoji:'🎵', label:'MUSIC'},
+    {cat:'tools', emoji:'🏷️', label:'PRODUCT'},
+    {cat:'tools', emoji:'✂️', label:'CUTOUTS'},
+    {cat:'tools', emoji:'📝', label:'CAPTIONS'},
+    {cat:'tools', emoji:'🔔', label:'NOTIFY'},
+    {cat:'tools', emoji:'🎮', label:'QUIZ'},
+  ];
+
+  /* ── DOM HANDLES ─────────────────────────────────────────── */
+  const panel     = document.getElementById('stickerPanel');
+  const grid      = document.getElementById('stickerGrid');
+  const searchBox = document.getElementById('stickerSearch');
+  const tabs      = document.getElementById('stickerTabs');
+  const openBtn   = document.getElementById('openStickersBtn');
+  const closeBtn  = document.getElementById('closeStickerPanel');
+  const mediaWrap = document.getElementById('mediaWrap');
+
+  let activeCat   = 'all';
+
+  /* ── RENDER ──────────────────────────────────────────────── */
+  function render(filter){
+    filter = (filter || '').toLowerCase();
+    grid.innerHTML = '';
+
+    let items = STICKERS;
+    if(activeCat !== 'all') items = items.filter(s => s.cat === activeCat);
+    if(filter) items = items.filter(s =>
+      s.label.toLowerCase().includes(filter) || s.emoji.includes(filter) || s.cat.includes(filter)
+    );
+
+    // Group by category when showing 'all'
+    if(activeCat === 'all' && !filter){
+      const cats = ['street','drip','money','music','vibes','react','tools'];
+      const catNames = {street:'🔫 STREET',drip:'💎 DRIP',money:'💰 MONEY',music:'🎵 MUSIC',vibes:'🌊 VIBES',react:'🗣 REACT',tools:'🛠 TOOLS'};
+      cats.forEach(c => {
+        const catItems = items.filter(s => s.cat === c);
+        if(!catItems.length) return;
+        const header = document.createElement('div');
+        header.className = 'stickerCatHeader';
+        header.textContent = catNames[c] || c.toUpperCase();
+        grid.appendChild(header);
+        catItems.forEach(s => grid.appendChild(makeCard(s)));
+      });
+    } else {
+      items.forEach(s => grid.appendChild(makeCard(s)));
+    }
+
+    if(!items.length){
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 0;color:rgba(255,255,255,.3);font-weight:800;">No stickers found 🤷</div>';
+    }
+  }
+
+  function makeCard(s){
+    const card = document.createElement('button');
+    card.className = 'stickerCard' + (s.special === 'music' ? ' musicCard' : '');
+    card.type = 'button';
+    card.innerHTML =
+      '<span class="stkEmoji">' + s.emoji + '</span>' +
+      '<span class="stkLabel">' + s.label + '</span>' +
+      (s.badge ? '<span class="stkExclusive">' + s.badge + '</span>' : '');
+    card.addEventListener('click', function(){
+      if(s.special === 'music') placeMusicSticker();
+      else placeSticker(s);
+    });
+    return card;
+  }
+
+  /* ── PLACE STICKER ON STORY ─────────────────────────────── */
+  function placeSticker(s){
+    if(!mediaWrap) return;
+    const el = document.createElement('span');
+    el.className = 'placedSticker';
+    el.textContent = s.emoji;
+    el.title = s.label;
+    el.style.left = (25 + Math.random() * 50) + '%';
+    el.style.top  = (25 + Math.random() * 50) + '%';
+    mediaWrap.appendChild(el);
+    makeDraggable(el);
+    closePanel();
+    haptic();
+  }
+
+  /* ── MUSIC PLAYER STICKER (drag-and-drop) ───────────────── */
+  function placeMusicSticker(){
+    if(!mediaWrap) return;
+    const el = document.createElement('div');
+    el.className = 'placedSticker musicPlayerSticker';
+    el.innerHTML =
+      '<div class="mpsWrap">' +
+        '<div class="mpsArt">🎵</div>' +
+        '<div class="mpsInfo">' +
+          '<div class="mpsTitle">Add Song</div>' +
+          '<div class="mpsArtist">Tap to pick</div>' +
+        '</div>' +
+        '<div class="mpsControls">' +
+          '<button class="mpsBtn mpsPrev" type="button">⏮</button>' +
+          '<button class="mpsBtn mpsPlay" type="button">▶</button>' +
+          '<button class="mpsBtn mpsNext" type="button">⏭</button>' +
+        '</div>' +
+        '<div class="mpsProgress"><div class="mpsBar"></div></div>' +
+      '</div>';
+    el.style.left = '50%';
+    el.style.top = '70%';
+    el.style.transform = 'translate(-50%, -50%)';
+    el.style.fontSize = '14px';
+    mediaWrap.appendChild(el);
+
+    // Play/pause logic
+    let isPlaying = false;
+    const playBtn = el.querySelector('.mpsPlay');
+    const bar = el.querySelector('.mpsBar');
+    let interval;
+    playBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      isPlaying = !isPlaying;
+      playBtn.textContent = isPlaying ? '⏸' : '▶';
+      if(isPlaying){
+        let pct = parseFloat(bar.style.width) || 0;
+        interval = setInterval(function(){
+          pct = Math.min(pct + 0.5, 100);
+          bar.style.width = pct + '%';
+          if(pct >= 100){ clearInterval(interval); isPlaying = false; playBtn.textContent = '▶'; bar.style.width = '0%'; }
+        }, 80);
+      } else {
+        clearInterval(interval);
+      }
+    });
+
+    // Click title area to "pick" a song
+    const infoArea = el.querySelector('.mpsInfo');
+    const songList = [
+      {title:'Money Trees', artist:'Kendrick Lamar'},
+      {title:'Mask Off', artist:'Future'},
+      {title:'Nuketown', artist:'Ski Mask'},
+      {title:'HUMBLE.', artist:'Kendrick Lamar'},
+      {title:'XO Tour Llif3', artist:'Lil Uzi Vert'},
+      {title:'Sicko Mode', artist:'Travis Scott'},
+      {title:'Blinding Lights', artist:'The Weeknd'},
+      {title:'Lucid Dreams', artist:'Juice WRLD'},
+      {title:'Moonwalking in Calabasas', artist:'DDG'},
+      {title:'Bank Account', artist:'21 Savage'},
+      {title:'Bodak Yellow', artist:'Cardi B'},
+      {title:'Rockstar', artist:'Post Malone'},
+    ];
+    let songIdx = 0;
+    infoArea.addEventListener('click', function(e){
+      e.stopPropagation();
+      songIdx = (songIdx + 1) % songList.length;
+      el.querySelector('.mpsTitle').textContent = songList[songIdx].title;
+      el.querySelector('.mpsArtist').textContent = songList[songIdx].artist;
+      haptic();
+    });
+
+    // Prev/Next
+    el.querySelector('.mpsPrev').addEventListener('click', function(e){
+      e.stopPropagation();
+      songIdx = (songIdx - 1 + songList.length) % songList.length;
+      el.querySelector('.mpsTitle').textContent = songList[songIdx].title;
+      el.querySelector('.mpsArtist').textContent = songList[songIdx].artist;
+    });
+    el.querySelector('.mpsNext').addEventListener('click', function(e){
+      e.stopPropagation();
+      songIdx = (songIdx + 1) % songList.length;
+      el.querySelector('.mpsTitle').textContent = songList[songIdx].title;
+      el.querySelector('.mpsArtist').textContent = songList[songIdx].artist;
+    });
+
+    makeDraggable(el);
+    closePanel();
+    haptic();
+  }
+
+  /* ── HAPTIC FEEDBACK (mobile) ───────────────────────────── */
+  function haptic(){
+    if(navigator.vibrate) navigator.vibrate(12);
+  }
+
+  /* ── DRAG ENGINE (touch-first) ──────────────────────────── */
+  function makeDraggable(el){
+    let startX, startY, origX, origY, isDragging = false;
+
+    function onDown(e){
+      // Don't drag from controls inside music sticker
+      if(e.target.closest('.mpsBtn, .mpsInfo')) return;
+      e.preventDefault();
+      const evt = e.touches ? e.touches[0] : e;
+      startX = evt.clientX;
+      startY = evt.clientY;
+      const rect = el.getBoundingClientRect();
+      origX = rect.left;
+      origY = rect.top;
+      isDragging = false;
+      document.addEventListener('mousemove', onMove, {passive:false});
+      document.addEventListener('touchmove', onMove, {passive:false});
+      document.addEventListener('mouseup', onUp);
+      document.addEventListener('touchend', onUp);
+      el.style.transition = 'none';
+      el.style.zIndex = 50;
+    }
+
+    function onMove(e){
+      e.preventDefault();
+      const evt = e.touches ? e.touches[0] : e;
+      const dx = evt.clientX - startX;
+      const dy = evt.clientY - startY;
+      if(Math.abs(dx) > 3 || Math.abs(dy) > 3) isDragging = true;
+      const parent = el.parentElement.getBoundingClientRect();
+      el.style.left = ((origX - parent.left + dx + el.offsetWidth/2) / parent.width * 100) + '%';
+      el.style.top  = ((origY - parent.top  + dy + el.offsetHeight/2) / parent.height * 100) + '%';
+      el.style.transform = 'translate(-50%, -50%) scale(1.08)';
+    }
+
+    function onUp(){
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchend', onUp);
+      el.style.transition = 'transform .12s ease';
+      el.style.transform = 'translate(-50%, -50%) scale(1)';
+      el.style.zIndex = 10;
+    }
+
+    el.addEventListener('mousedown', onDown);
+    el.addEventListener('touchstart', onDown, {passive:false});
+
+    // Double-tap to delete
+    let lastTap = 0;
+    el.addEventListener('dblclick', function(){ el.remove(); });
+    el.addEventListener('touchend', function(e){
+      if(isDragging) return;
+      const now = Date.now();
+      if(now - lastTap < 320){ el.remove(); haptic(); }
+      lastTap = now;
+    });
+  }
+
+  /* ── SWIPE-TO-CLOSE (mobile sheet gesture) ──────────────── */
+  function initSheetSwipe(){
+    const sheet = panel.querySelector('.stickerSheet');
+    if(!sheet) return;
+    let startY = 0, currentY = 0, isDragging = false;
+
+    sheet.addEventListener('touchstart', function(e){
+      // Only from top 50px (handle area) or when scrolled to top
+      const touch = e.touches[0];
+      const rect = sheet.getBoundingClientRect();
+      const offsetY = touch.clientY - rect.top;
+      if(offsetY > 54 && grid.scrollTop > 0) return;
+      startY = touch.clientY;
+      currentY = startY;
+      isDragging = true;
+      sheet.style.transition = 'none';
+    }, {passive:true});
+
+    sheet.addEventListener('touchmove', function(e){
+      if(!isDragging) return;
+      currentY = e.touches[0].clientY;
+      const diff = currentY - startY;
+      if(diff > 0){
+        sheet.style.transform = 'translateY(' + diff + 'px)';
+        e.preventDefault();
+      }
+    }, {passive:false});
+
+    sheet.addEventListener('touchend', function(){
+      if(!isDragging) return;
+      isDragging = false;
+      const diff = currentY - startY;
+      sheet.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1)';
+      if(diff > 100){
+        sheet.style.transform = 'translateY(100%)';
+        setTimeout(function(){
+          closePanel();
+          sheet.style.transform = '';
+        }, 280);
+      } else {
+        sheet.style.transform = 'translateY(0)';
+      }
+    });
+  }
+
+  /* ── OPEN / CLOSE ───────────────────────────────────────── */
+  function openPanel(){
+    panel.setAttribute('aria-hidden','false');
+    panel.classList.add('show');
+    searchBox.value = '';
+    activeCat = 'all';
+    updateTabs();
+    render();
+    // On mobile, don't auto-focus (avoids keyboard pop-up)
+    if(window.innerWidth > 768) searchBox.focus();
+    haptic();
+  }
+  function closePanel(){
+    panel.setAttribute('aria-hidden','true');
+    panel.classList.remove('show');
+    const sheet = panel.querySelector('.stickerSheet');
+    if(sheet) sheet.style.transform = '';
+  }
+
+  function updateTabs(){
+    tabs.querySelectorAll('.stickerTab').forEach(t => {
+      t.classList.toggle('active', t.dataset.cat === activeCat);
+    });
+  }
+
+  /* ── EVENTS ─────────────────────────────────────────────── */
+  if(openBtn) openBtn.addEventListener('click', openPanel);
+  if(closeBtn) closeBtn.addEventListener('click', closePanel);
+
+  if(panel){
+    panel.addEventListener('click', function(e){
+      if(e.target === panel) closePanel();
+    });
+    initSheetSwipe();
+  }
+
+  if(searchBox){
+    searchBox.addEventListener('input', function(){
+      render(this.value);
+    });
+  }
+
+  if(tabs){
+    tabs.addEventListener('click', function(e){
+      const tab = e.target.closest('.stickerTab');
+      if(!tab) return;
+      activeCat = tab.dataset.cat;
+      updateTabs();
+      render(searchBox.value);
+      haptic();
+    });
+  }
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && panel && panel.classList.contains('show')){
+      closePanel();
+    }
+  });
+})();
+</script>
+
+<script>
+/* ═══ Initialize animated 3D emojis in story reactions ═══ */
+(function() {
+  if (!window.VybeEmoji) return;
+  document.querySelectorAll('.vybe-emoji-slot').forEach(function(slot) {
+    var emoji = slot.getAttribute('data-e');
+    if (VybeEmoji.has(emoji)) {
+      var el = VybeEmoji.create(emoji, 24);
+      slot.innerHTML = '';
+      slot.appendChild(el);
+    } else {
+      slot.textContent = emoji;
+    }
+  });
+})();
+</script>
+
+{% endblock %}

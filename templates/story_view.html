@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section style="max-width:720px;margin:24px auto;padding:16px;color:#fff;">
+  <div style="border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;background:rgba(20,20,20,.12);backdrop-filter:blur(24px) saturate(1.2);">
+    <h2 style="margin:0 0 8px;">{{ story.caption or "Story" }}</h2>
+    <div style="opacity:.8;font-size:13px;margin-bottom:12px;">@{{ story.user.username if story.user else "user" }}</div>
+
+    {% if story.media_url %}
+      <img src="{{ story.media_url }}" alt="Story media" style="width:100%;border-radius:12px;display:block;" />
+    {% endif %}
+
+    {% if story.caption %}
+      <p style="margin:12px 0 0;">{{ story.caption }}</p>
+    {% endif %}
+
+    {% if story.music_file_url or story.music_preview_url %}
+      <div style="margin-top:12px;">
+        <div style="font-weight:900;color:rgba(255,255,255,.85);">
+          ♫ {{ story.music_track or "Music" }}
+        </div>
+        <audio controls preload="metadata" style="width:100%;margin-top:8px;">
+          <source src="{{ story.music_file_url or story.music_preview_url }}">
+        </audio>
+      </div>
+    {% endif %}
+
+    <div style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.7);">
+      Important: On mobile browsers, audio usually won't auto-play. This is normal. Users press play.
+    </div>
+
+    <a href="{{ url_for('feed.feed_page') }}" style="display:inline-block;margin-top:14px;color:#d8e8ff;">Back to feed</a>
+  </div>
+</section>
+{% endblock %}

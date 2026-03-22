@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block body_class %}create-page{% endblock %}
+{% block content %}
+
+<style>
+  :root{
+    --line: rgba(255,173,117,.28);
+    --glass: rgba(255,255,255,.06);
+    --text: rgba(255,255,255,.92);
+  }
+  body.create-page{
+    background: radial-gradient(900px 520px at 55% 40%, rgba(255,122,34,.18), transparent 65%),
+                linear-gradient(180deg, #09070a, #060406);
+    color: var(--text);
+  }
+  .create-wrap{
+    width: min(1200px, 96vw); margin: 18px auto;
+    border: 1px solid var(--line); border-radius: 18px;
+    background: rgba(0,0,0,.08); backdrop-filter: blur(28px) saturate(1.2);
+    box-shadow: 0 0 24px rgba(255,106,0,.06), 0 8px 24px rgba(0,0,0,.15);
+    overflow: hidden;
+  }
+  .create-top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 14px; border-bottom: 1px solid var(--line);
+  }
+  .ghost-btn{
+    border: 1px solid var(--line); background: var(--glass); color: var(--text);
+    border-radius: 12px; height: 38px; padding: 0 12px; cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 0 22px rgba(255,106,0,.18);
+  }
+  .ghost-btn:hover{ background: rgba(255,255,255,.10); }
+  .create-body{
+    display:grid; grid-template-columns: 1fr 1fr; min-height: 520px;
+  }
+  .preview-side{
+    border-right: 1px solid var(--line); padding: 14px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .preview-box{
+    flex:1; border-radius:16px; border:1px solid var(--line);
+    background: rgba(255,255,255,.04);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 0 30px rgba(255,106,0,.14);
+    display:grid; place-items:center; color: rgba(255,255,255,.70); overflow:hidden;
+  }
+  .preview-box img, .preview-box video{
+    width:100%; height:100%; object-fit:cover; border-radius:16px;
+  }
+  .form-side{ padding: 14px; display:flex; flex-direction:column; gap:12px; }
+  .form-side label{ font-size:13px; font-weight:700; color:rgba(255,255,255,.7); margin-bottom:2px; }
+  .field-input{
+    width:100%; border:1px solid var(--line); background: var(--glass);
+    color:#fff; border-radius:12px; padding:10px 12px; font-size:14px;
+    box-sizing:border-box; outline:none; resize:vertical;
+  }
+  .field-input:focus{ border-color: rgba(255,170,112,.55); }
+  .field-input::placeholder{ color:rgba(255,255,255,.35); }
+  .bg-styles{ display:flex; gap:8px; flex-wrap:wrap; }
+  .bg-swatch{
+    width:40px; height:40px; border-radius:10px; border:2px solid transparent;
+    cursor:pointer; transition: border-color .15s;
+  }
+  .bg-swatch.active{ border-color: #ff9a3d; }
+  .vis-select{
+    width:100%; border:1px solid var(--line); background:rgba(0,0,0,.3);
+    color:#fff; border-radius:12px; padding:10px 12px; font-size:14px;
+    appearance:auto; outline:none;
+  }
+  .bottom-tabs{
+    display:grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; padding: 12px 14px;
+    border-top: 1px solid var(--line); background: rgba(0,0,0,.25);
+  }
+  .tab{
+    height: 44px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--glass); color: rgba(255,255,255,.85);
+    font-weight: 900; letter-spacing: .12em; text-transform: uppercase; cursor:pointer;
+  }
+  .tab.active{
+    background: linear-gradient(180deg, rgba(255,154,61,.24), rgba(255,106,0,.10));
+    box-shadow: 0 0 0 1px rgba(255,173,117,.30), 0 0 28px rgba(255,106,0,.28);
+  }
+  @media(max-width:700px){
+    .create-body{ grid-template-columns:1fr; }
+    .preview-side{ border-right:none; border-bottom:1px solid var(--line); min-height:280px; }
+  }
+</style>
+
+<div class="create-wrap">
+  <div class="create-top">
+    <button class="ghost-btn" type="button" onclick="window.location.href='{{ url_for('feed.feed_page') }}'">✕</button>
+    <div style="font-weight:900;">New Post</div>
+    <button class="ghost-btn" type="button" onclick="window.location.href='/settings'">⚙</button>
+  </div>
+
+  <div class="create-body">
+    <!-- Preview -->
+    <div class="preview-side">
+      <div class="preview-box" id="post-preview">
+        <span>Upload a photo or video</span>
+      </div>
+      <button class="ghost-btn" id="upload-btn" style="width:100%;">📷 Upload Media</button>
+      <input id="post-file" type="file" accept="image/*,video/*,.mp4,.mov,.webm,.jpg,.jpeg,.png,.gif,.webp" hidden />
+    </div>
+
+    <!-- Form -->
+    <div class="form-side">
+      <div>
+        <label>Caption</label>
+        <textarea id="post-caption" class="field-input" rows="4" placeholder="What's on your mind?"></textarea>
+      </div>
+
+      <div>
+        <label>Background Style</label>
+        <div class="bg-styles" id="bg-styles">
+          <div class="bg-swatch active" data-bg="default" style="background:linear-gradient(135deg,#1a0a2e,#0d0818);" title="Default"></div>
+          <div class="bg-swatch" data-bg="sunset" style="background:linear-gradient(135deg,#ff6b35,#f7931e,#ffda44);" title="Sunset"></div>
+          <div class="bg-swatch" data-bg="neon" style="background:linear-gradient(135deg,#00f0ff,#8b5cf6,#ff006e);" title="Neon"></div>
+          <div class="bg-swatch" data-bg="glass" style="background:linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.05));" title="Glass"></div>
+          <div class="bg-swatch" data-bg="midnight" style="background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);" title="Midnight"></div>
+          <div class="bg-swatch" data-bg="fire" style="background:linear-gradient(135deg,#f12711,#f5af19);" title="Fire"></div>
+        </div>
+      </div>
+
+      <div>
+        <label>Visibility</label>
+        <select id="post-visibility" class="vis-select">
+          <option value="Public">Public</option>
+          <option value="Followers">Followers Only</option>
+          <option value="Close Friends">Close Friends</option>
+          <option value="Only Me">Only Me</option>
+        </select>
+      </div>
+
+      <div>
+        <label>GIF URL (optional)</label>
+        <input id="post-gif" class="field-input" type="url" placeholder="Paste a GIF link..." />
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:auto;">
+        <button class="ghost-btn" id="post-draft" style="flex:1;background:rgba(255,255,255,.08);">Save Draft</button>
+        <button class="ghost-btn" id="post-publish" style="flex:1;background:linear-gradient(180deg,rgba(255,154,61,.28),rgba(255,106,0,.14));font-weight:900;">Publish Post</button>
+      </div>
+      <div id="post-feedback" style="font-size:13px;margin-top:4px;"></div>
+    </div>
+  </div>
+
+  <div class="bottom-tabs">
+    <button class="tab active" type="button">Post</button>
+    <button class="tab" type="button" onclick="window.location.href='{{ url_for('create_story') }}'">Story</button>
+    <button class="tab" type="button" onclick="window.location.href='{{ url_for('create_reel') }}'">Vibe Snap</button>
+    <button class="tab" type="button" onclick="window.location.href='{{ url_for('create_live') }}'">Live</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var fileInput = document.getElementById('post-file');
+  var uploadBtn = document.getElementById('upload-btn');
+  var preview = document.getElementById('post-preview');
+  var caption = document.getElementById('post-caption');
+  var visibility = document.getElementById('post-visibility');
+  var gifInput = document.getElementById('post-gif');
+  var publishBtn = document.getElementById('post-publish');
+  var draftBtn = document.getElementById('post-draft');
+  var feedback = document.getElementById('post-feedback');
+  var selectedBg = 'default';
+
+  /* Upload trigger */
+  uploadBtn.addEventListener('click', function(){ fileInput.click(); });
+
+  /* Preview media */
+  fileInput.addEventListener('change', function(){
+    var f = fileInput.files && fileInput.files[0];
+    if(!f) return;
+    var url = URL.createObjectURL(f);
+    if(f.type.startsWith('video')){
+      preview.innerHTML = '<video src="'+url+'" controls autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:16px;"></video>';
+    } else {
+      preview.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:16px;" />';
+    }
+    feedback.textContent = 'Loaded: ' + f.name;
+    feedback.style.color = 'rgba(120,255,160,.8)';
+  });
+
+  /* BG style swatches */
+  document.getElementById('bg-styles').addEventListener('click', function(e){
+    var sw = e.target.closest('.bg-swatch');
+    if(!sw) return;
+    document.querySelectorAll('.bg-swatch').forEach(function(el){ el.classList.remove('active'); });
+    sw.classList.add('active');
+    selectedBg = sw.getAttribute('data-bg');
+  });
+
+  /* Publish / Draft */
+  function submitPost(vis){
+    var form = new FormData();
+    if(fileInput.files && fileInput.files[0]){
+      form.append('media', fileInput.files[0]);
+    }
+    form.append('caption', (caption.value || '').trim());
+    form.append('visibility', vis === 'draft' ? 'Only Me' : visibility.value);
+    form.append('bg_style', selectedBg);
+    var gif = (gifInput.value || '').trim();
+    if(gif) form.append('gif_url', gif);
+
+    publishBtn.disabled = true;
+    draftBtn.disabled = true;
+    feedback.textContent = vis === 'draft' ? 'Saving draft…' : 'Publishing…';
+    feedback.style.color = 'rgba(255,200,120,.9)';
+
+    fetch('/api/posts/create', { method:'POST', body: form })
+      .then(function(r){ return r.json().then(function(d){ return {ok:r.ok, data:d}; }); })
+      .then(function(resp){
+        if(!resp.ok){
+          feedback.textContent = resp.data.error || 'Post failed.';
+          feedback.style.color = 'rgba(255,120,120,.95)';
+          return;
+        }
+        feedback.textContent = vis === 'draft' ? 'Draft saved!' : 'Post published!';
+        feedback.style.color = 'rgba(120,255,160,.9)';
+        setTimeout(function(){ window.location.href = '{{ url_for("feed.feed_page") }}'; }, 600);
+      })
+      .catch(function(){
+        feedback.textContent = 'Network error — try again.';
+        feedback.style.color = 'rgba(255,120,120,.95)';
+      })
+      .finally(function(){
+        publishBtn.disabled = false;
+        draftBtn.disabled = false;
+      });
+  }
+
+  publishBtn.addEventListener('click', function(){ submitPost('publish'); });
+  draftBtn.addEventListener('click', function(){ submitPost('draft'); });
+})();
+</script>
+{% endblock %}

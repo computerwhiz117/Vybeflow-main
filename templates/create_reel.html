@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% block body_class %}create-page{% endblock %}
+{% block content %}
+
+<style>
+  :root{
+    --line: rgba(255,173,117,.28);
+    --glass: rgba(255,255,255,.06);
+    --text: rgba(255,255,255,.92);
+  }
+
+  body.create-page{
+    background: radial-gradient(900px 520px at 55% 40%, rgba(255,122,34,.18), transparent 65%),
+                linear-gradient(180deg, #09070a, #060406);
+    color: var(--text);
+  }
+
+  .create-wrap{
+    width: min(1200px, 96vw);
+    margin: 18px auto;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(0,0,0,.08);
+    backdrop-filter: blur(28px) saturate(1.2);
+    box-shadow: 0 0 24px rgba(255,106,0,.06), 0 8px 24px rgba(0,0,0,.15);
+    overflow: hidden;
+  }
+
+  .create-top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .ghost-btn{
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    border-radius: 12px;
+    height: 38px;
+    padding: 0 12px;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 0 22px rgba(255,106,0,.18);
+  }
+  .ghost-btn:hover{ background: rgba(255,255,255,.10); }
+
+  .create-toolbar{
+    display:flex; gap:10px; padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .create-body{
+    display:grid;
+    grid-template-columns: 360px 1fr;
+    min-height: 520px;
+  }
+
+  .recents{
+    border-right: 1px solid var(--line);
+    padding: 14px;
+  }
+
+  .recents-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom: 10px;
+    color: rgba(255,255,255,.80);
+    font-weight: 800;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .thumb{
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.05);
+    overflow:hidden;
+  }
+
+  .preview{
+    padding: 14px;
+    display:flex;
+    flex-direction:column;
+    gap: 12px;
+  }
+
+  .preview-box{
+    flex: 1;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.04);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 0 30px rgba(255,106,0,.14);
+    display:grid;
+    place-items:center;
+    color: rgba(255,255,255,.70);
+  }
+
+  .bottom-tabs{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+    background: rgba(0,0,0,.25);
+  }
+
+  .tab{
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.85);
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    cursor:pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 0 22px rgba(255,106,0,.12);
+  }
+  .tab.active{
+    background: linear-gradient(180deg, rgba(255,154,61,.24), rgba(255,106,0,.10));
+    box-shadow: 0 0 0 1px rgba(255,173,117,.30), 0 0 28px rgba(255,106,0,.28);
+  }
+</style>
+
+<div class="create-wrap">
+  <div class="create-top">
+    <button class="ghost-btn" type="button" data-href="{{ url_for('feed.feed_page') }}">✕</button>
+    <div style="font-weight:900;">New Vibe Snap</div>
+    <button class="ghost-btn" type="button" title="Settings" onclick="window.location.href='/settings'">⚙</button>
+  </div>
+
+  <div class="create-toolbar">
+    <button class="ghost-btn">Drafts</button>
+    <button class="ghost-btn">Templates</button>
+    <div style="margin-left:auto; color: rgba(255,255,255,.70); font-weight:800;">Select</div>
+  </div>
+
+  <div class="create-body">
+    <aside class="recents">
+      <div class="recents-head">
+        <div>Recents</div>
+        <button class="ghost-btn" style="height:32px;">Select</button>
+      </div>
+      <div class="grid" id="recent-grid">
+        <!-- empty until user uploads/selects -->
+      </div>
+      <div style="margin-top:10px; color: rgba(255,255,255,.60); font-size: 13px;">
+        No recents yet. Upload something and it’ll show here.
+      </div>
+    </aside>
+
+    <main class="preview">
+      <div class="preview-box" id="reel-preview">Pick a video to start your Vibe Snap</div>
+      <button class="ghost-btn" id="upload-btn">Upload video</button>
+      <input id="reel-file" type="file" accept="video/*,video/mp4,video/webm,video/quicktime,.mp4,.mov,.webm,.avi" hidden />
+
+      <input id="reel-caption" class="ghost-btn" type="text" placeholder="Write a caption..." style="text-align:left;padding:0 12px;height:44px;" />
+
+      <!-- Music search for reels -->
+      <div id="reel-music-wrap" style="margin-top:4px;">
+        <div style="display:flex;gap:8px;">
+          <input id="reel-music-search" class="ghost-btn" type="search" placeholder="Search music..." style="flex:1;text-align:left;padding:0 12px;height:38px;" />
+          <button type="button" id="reel-music-search-btn" class="ghost-btn" style="padding:0 14px;">Search</button>
+        </div>
+        <div id="reel-music-grid" style="max-height:150px;overflow-y:auto;display:grid;gap:6px;margin-top:8px;"></div>
+        <div id="reel-music-selected" style="display:none;margin-top:6px;padding:6px 10px;border-radius:8px;background:rgba(255,149,0,.12);color:#ffc27a;font-size:12px;font-weight:700;align-items:center;gap:8px;">
+          <span>♫</span><span id="reel-music-label"></span>
+          <button type="button" id="reel-music-clear" class="ghost-btn" style="margin-left:auto;height:28px;font-size:11px;">✕</button>
+        </div>
+        <audio id="reel-music-audio" preload="none" style="width:100%;margin-top:6px;" controls></audio>
+        <input type="hidden" id="reel-music-track" />
+        <input type="hidden" id="reel-music-url" />
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="ghost-btn" id="reel-save-draft" style="flex:1;background:rgba(255,255,255,.08);">Save as Draft</button>
+        <button class="ghost-btn" id="reel-publish" style="flex:1;background:linear-gradient(180deg,rgba(255,154,61,.28),rgba(255,106,0,.14));font-weight:900;">Publish Vibe Snap</button>
+      </div>
+      <div id="reel-feedback" style="font-size:13px;color:var(--muted);margin-top:4px;"></div>
+    </main>
+  </div>
+
+  <div class="bottom-tabs">
+    <button class="tab" type="button" data-href="{{ url_for('create_post') }}">Post</button>
+    <button class="tab" type="button" data-href="{{ url_for('create_story') }}">Story</button>
+    <button class="tab active" type="button">Vibe Snap</button>
+    <button class="tab" type="button" data-href="{{ url_for('create_live') }}">Live</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const uploadBtn = document.getElementById('upload-btn');
+  const fileInput = document.getElementById('reel-file');
+  const preview = document.getElementById('reel-preview');
+  const navButtons = document.querySelectorAll('[data-href]');
+  const captionInput = document.getElementById('reel-caption');
+  const feedback = document.getElementById('reel-feedback');
+
+  // Music search elements
+  const mSearch = document.getElementById('reel-music-search');
+  const mSearchBtn = document.getElementById('reel-music-search-btn');
+  const mGrid = document.getElementById('reel-music-grid');
+  const mAudio = document.getElementById('reel-music-audio');
+  const mSelected = document.getElementById('reel-music-selected');
+  const mLabel = document.getElementById('reel-music-label');
+  const mClear = document.getElementById('reel-music-clear');
+  const mTrack = document.getElementById('reel-music-track');
+  const mUrl = document.getElementById('reel-music-url');
+
+  const saveDraftBtn = document.getElementById('reel-save-draft');
+  const publishBtn = document.getElementById('reel-publish');
+
+  navButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const href = button.getAttribute('data-href');
+      if (href) window.location.href = href;
+    });
+  });
+
+  if (uploadBtn && fileInput) {
+    uploadBtn.addEventListener('click', () => fileInput.click());
+  }
+
+  if (fileInput && preview) {
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files && fileInput.files[0];
+      if (!f) return;
+      const url = URL.createObjectURL(f);
+      preview.innerHTML = '<video src="' + url + '" controls autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:16px;"></video>';
+      if (feedback) { feedback.textContent = 'Video loaded: ' + f.name; feedback.style.color = 'rgba(120,255,160,.8)'; }
+    });
+  }
+
+  // --- Music search ---
+  function renderMusicResults(results) {
+    if (!mGrid) return;
+    mGrid.innerHTML = '';
+    if (!results || !results.length) {
+      mGrid.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:13px;padding:8px;">No results.</div>';
+      return;
+    }
+    results.forEach(function (song) {
+      var item = document.createElement('button');
+      item.type = 'button';
+      item.style.cssText = 'border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(255,255,255,.06);color:#fff;padding:8px 10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;';
+      var art = song.artwork_url ? '<img src="' + song.artwork_url + '" style="width:36px;height:36px;border-radius:6px;object-fit:cover;" alt="">' : '';
+      item.innerHTML = art + '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (song.title || 'Unknown') + '</div><div style="font-size:12px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (song.artist || '') + '</div></div>';
+      item.addEventListener('click', function () {
+        if (mTrack) mTrack.value = (song.title || '') + ' – ' + (song.artist || '');
+        if (mUrl) mUrl.value = song.preview_url || '';
+        if (mAudio) { mAudio.src = song.preview_url || ''; mAudio.load(); }
+        if (mLabel) mLabel.textContent = (song.title || '') + ' – ' + (song.artist || '');
+        if (mSelected) mSelected.style.display = 'flex';
+        mGrid.querySelectorAll('button').forEach(function (el) { el.style.borderColor = 'rgba(255,255,255,.16)'; el.style.background = 'rgba(255,255,255,.06)'; });
+        item.style.borderColor = 'rgba(255,149,0,.72)';
+        item.style.background = 'rgba(255,149,0,.14)';
+      });
+      mGrid.appendChild(item);
+    });
+  }
+
+  function doSearch() {
+    var term = (mSearch && mSearch.value || '').trim();
+    if (term.length < 2) return;
+    mGrid && (mGrid.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:13px;padding:8px;">Searching…</div>');
+    fetch('/api/music/search?q=' + encodeURIComponent(term) + '&limit=20')
+      .then(function (r) { return r.ok ? r.json() : { results: [] }; })
+      .then(function (data) { renderMusicResults(data.results || []); })
+      .catch(function () { renderMusicResults([]); });
+  }
+
+  if (mSearchBtn) mSearchBtn.addEventListener('click', doSearch);
+  if (mSearch) mSearch.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+  if (mClear) mClear.addEventListener('click', function () {
+    if (mTrack) mTrack.value = '';
+    if (mUrl) mUrl.value = '';
+    if (mAudio) { mAudio.pause(); mAudio.src = ''; }
+    if (mSelected) mSelected.style.display = 'none';
+  });
+
+  // --- Save / Publish ---
+  function uploadReel(visibility) {
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+      if (feedback) { feedback.textContent = 'Please upload a video first.'; feedback.style.color = 'rgba(255,120,120,.95)'; }
+      // Try to open the file picker as a fallback
+      if (fileInput) fileInput.click();
+      return;
+    }
+    var form = new FormData();
+    form.append('video', fileInput.files[0]);
+    form.append('caption', (captionInput && captionInput.value || '').trim());
+    form.append('visibility', visibility);
+    if (mTrack && mTrack.value) form.append('music_track', mTrack.value);
+    if (mUrl && mUrl.value) form.append('music_preview_url', mUrl.value);
+
+    if (publishBtn) publishBtn.disabled = true;
+    if (saveDraftBtn) saveDraftBtn.disabled = true;
+    if (feedback) { feedback.textContent = visibility === 'private' ? 'Saving draft…' : 'Uploading & publishing reel…'; feedback.style.color = 'rgba(255,200,120,.9)'; }
+
+    fetch('/api/reels/create', { method: 'POST', body: form })
+      .then(function (r) {
+        return r.text().then(function (txt) {
+          var data;
+          try { data = JSON.parse(txt); } catch (_) { data = { error: 'Server returned status ' + r.status }; }
+          return { ok: r.ok, status: r.status, data: data };
+        });
+      })
+      .then(function (resp) {
+        if (!resp.ok) {
+          if (feedback) { feedback.textContent = (resp.data && resp.data.error) || ('Upload failed (status ' + resp.status + ')'); feedback.style.color = 'rgba(255,120,120,.95)'; }
+          return;
+        }
+        if (feedback) { feedback.textContent = visibility === 'private' ? 'Draft saved!' : 'Reel published!'; feedback.style.color = 'rgba(120,255,160,.9)'; }
+        // Navigate to feed immediately
+        window.location.href = '{{ url_for("feed.feed_page") }}';
+      })
+      .catch(function (err) {
+        console.error('Reel upload error:', err);
+        if (feedback) { feedback.textContent = 'Upload failed — check your connection and try again.'; feedback.style.color = 'rgba(255,120,120,.95)'; }
+      })
+      .finally(function () {
+        if (publishBtn) publishBtn.disabled = false;
+        if (saveDraftBtn) saveDraftBtn.disabled = false;
+      });
+  }
+
+  if (publishBtn) publishBtn.addEventListener('click', function () { uploadReel('public'); });
+  if (saveDraftBtn) saveDraftBtn.addEventListener('click', function () { uploadReel('private'); });
+})();
+</script>
+
+{% endblock %}

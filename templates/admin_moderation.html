@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  .mod-shell{min-height:100vh;padding:20px;}
+  .mod-container{max-width:1100px;margin:0 auto;}
+  .mod-header{text-align:center;margin-bottom:20px;}
+  .mod-header h1{font-size:28px;background:linear-gradient(135deg,#ff9a3d,#ff4d00);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+  .mod-header p{color:rgba(255,255,255,.5);font-size:13px;}
+
+  /* Stats bar */
+  .mod-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px;}
+  .mod-stat{border:1px solid rgba(255,173,117,.10);border-radius:14px;background:rgba(0,0,0,.08);backdrop-filter:blur(24px) saturate(1.2);padding:16px;text-align:center;}
+  .mod-stat .num{font-size:28px;font-weight:900;color:#ffb562;}
+  .mod-stat .lbl{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px;}
+
+  /* Tabs */
+  .mod-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+  .mod-tab{padding:8px 18px;border-radius:999px;border:1px solid rgba(255,173,117,.2);background:rgba(255,255,255,.06);cursor:pointer;font-size:13px;font-weight:700;color:rgba(255,255,255,.8);text-decoration:none;transition:.15s;}
+  .mod-tab:hover,.mod-tab.active{background:rgba(255,149,0,.15);border-color:rgba(255,149,0,.5);color:#ffb562;}
+
+  /* Table */
+  .mod-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .mod-table th{text-align:left;padding:10px 8px;color:rgba(255,255,255,.5);border-bottom:1px solid rgba(255,255,255,.1);font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+  .mod-table td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;}
+  .mod-table tr:hover td{background:rgba(255,149,0,.04);}
+  .mod-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;}
+  .mod-badge.pending{background:rgba(255,180,0,.15);color:#ffb400;}
+  .mod-badge.actioned{background:rgba(0,200,120,.15);color:#00c878;}
+  .mod-badge.dismissed{background:rgba(150,150,150,.15);color:#aaa;}
+  .mod-badge.approved{background:rgba(0,200,120,.15);color:#00c878;}
+  .mod-badge.denied{background:rgba(255,70,70,.15);color:#ff4646;}
+  .mod-badge.flag{background:rgba(255,180,0,.15);color:#ffb400;}
+  .mod-badge.remove{background:rgba(255,70,70,.15);color:#ff4646;}
+  .mod-badge.warn{background:rgba(255,200,0,.15);color:#ffc800;}
+  .mod-badge.restore{background:rgba(80,200,120,.15);color:#50c878;}
+  .mod-badge.overridden{background:rgba(100,140,255,.15);color:#648cff;}
+
+  .mod-btn{padding:5px 12px;border:1px solid rgba(255,173,117,.3);border-radius:8px;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;font-size:11px;font-weight:700;transition:.15s;margin-right:4px;}
+  .mod-btn:hover{background:rgba(255,149,0,.15);border-color:rgba(255,149,0,.5);}
+  .mod-btn.danger{border-color:rgba(255,70,70,.4);color:#ff6b6b;}
+  .mod-btn.danger:hover{background:rgba(255,70,70,.15);}
+  .mod-btn.success{border-color:rgba(0,200,120,.4);color:#00c878;}
+  .mod-btn.success:hover{background:rgba(0,200,120,.15);}
+
+  .mod-panel{display:none;border:1px solid rgba(255,173,117,.08);border-radius:14px;background:rgba(0,0,0,.06);backdrop-filter:blur(20px);padding:18px;margin-bottom:20px;}
+  .mod-panel.active{display:block;}
+  .mod-panel h2{font-size:16px;color:#ffb562;margin-bottom:12px;}
+  .mod-empty{text-align:center;padding:30px;color:rgba(255,255,255,.35);font-size:14px;}
+
+  /* AI scan box */
+  .ai-scan-box{border:1px solid rgba(100,200,255,.2);border-radius:14px;background:rgba(100,200,255,.06);padding:18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .ai-scan-box .ai-icon{font-size:32px;}
+  .ai-scan-box .ai-info{flex:1;}
+  .ai-scan-box .ai-info h3{font-size:14px;color:#64b5f6;margin-bottom:2px;}
+  .ai-scan-box .ai-info p{font-size:12px;color:rgba(255,255,255,.5);}
+  .ai-scan-btn{padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#fff;font-weight:800;font-size:13px;cursor:pointer;transition:.15s;}
+  .ai-scan-btn:hover{filter:brightness(1.15);}
+
+  .confidence-bar{width:60px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);display:inline-block;vertical-align:middle;margin-left:4px;}
+  .confidence-bar .fill{height:100%;border-radius:3px;}
+  .confidence-bar .fill.high{background:#ff4646;}
+  .confidence-bar .fill.med{background:#ffb400;}
+  .confidence-bar .fill.low{background:#50c878;}
+
+  .back-link{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:12px;border:1px solid rgba(255,173,117,.3);background:rgba(255,255,255,.06);color:#ffb562;font-weight:700;margin-bottom:14px;font-size:13px;text-decoration:none;transition:.15s;}
+  .back-link:hover{background:rgba(255,149,0,.12);}
+
+  .note-input{width:100%;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.2);color:#fff;font-size:12px;margin-top:4px;}
+
+  @media(max-width:700px){
+    .mod-table{font-size:11px;}
+    .mod-table th,.mod-table td{padding:6px 4px;}
+  }
+</style>
+
+<section class="mod-shell">
+<div class="mod-container">
+  <a class="back-link" href="/feed">&#8592; Back to Feed</a>
+
+  <div class="mod-header">
+    <h1>&#128737;&#65039; Admin Moderation Center</h1>
+    <p>Review reports, takedowns, and AI moderation decisions</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="mod-stats">
+    <div class="mod-stat">
+      <div class="num">{{ stats.pending_reports }}</div>
+      <div class="lbl">Pending Reports</div>
+    </div>
+    <div class="mod-stat">
+      <div class="num">{{ stats.pending_takedowns }}</div>
+      <div class="lbl">Pending Takedowns</div>
+    </div>
+    <div class="mod-stat">
+      <div class="num">{{ stats.ai_flags_today }}</div>
+      <div class="lbl">AI Flags Today</div>
+    </div>
+    <div class="mod-stat">
+      <div class="num">{{ stats.total_removed }}</div>
+      <div class="lbl">Total Removed</div>
+    </div>
+  </div>
+
+  <!-- Tab navigation -->
+  <div class="mod-tabs">
+    <a class="mod-tab {% if tab == 'reports' %}active{% endif %}" href="?tab=reports">&#128680; Reports ({{ stats.pending_reports }})</a>
+    <a class="mod-tab {% if tab == 'takedowns' %}active{% endif %}" href="?tab=takedowns">&#128220; Takedowns ({{ stats.pending_takedowns }})</a>
+    <a class="mod-tab {% if tab == 'ai' %}active{% endif %}" href="?tab=ai">&#129302; AI Moderation</a>
+    <a class="mod-tab {% if tab == 'flagged' %}active{% endif %}" href="?tab=flagged">&#128681; Flagged Posts</a>
+  </div>
+
+  <!-- ═══ REPORTS PANEL ═══ -->
+  <div class="mod-panel {% if tab == 'reports' %}active{% endif %}">
+    <h2>&#128680; Content Reports</h2>
+    {% if reports %}
+    <table class="mod-table">
+      <thead>
+        <tr><th>#</th><th>Post</th><th>Reason</th><th>Details</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for r in reports %}
+        <tr>
+          <td>{{ r.id }}</td>
+          <td>{% if r.post_id %}#{{ r.post_id }}{% else %}—{% endif %}</td>
+          <td><span class="mod-badge pending">{{ r.reason }}</span></td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ r.details or '' }}">{{ (r.details or '—')[:80] }}</td>
+          <td><span class="mod-badge {{ r.status }}">{{ r.status }}</span></td>
+          <td style="white-space:nowrap;">{{ r.created_at.strftime('%b %d %H:%M') }}</td>
+          <td style="white-space:nowrap;">
+            {% if r.status == 'pending' %}
+            <form method="post" action="{{ url_for('moderation.resolve_report', report_id=r.id) }}" style="display:inline;">
+              <button name="action" value="remove" class="mod-btn danger" title="Remove post">Remove</button>
+              <button name="action" value="warn" class="mod-btn" title="Warn poster">Warn</button>
+              <button name="action" value="dismiss" class="mod-btn" title="Dismiss report">Dismiss</button>
+            </form>
+            {% else %}
+              <span style="color:rgba(255,255,255,.4);font-size:11px;">{{ r.action_taken or 'reviewed' }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="mod-empty">&#10004;&#65039; No reports to review.</div>
+    {% endif %}
+  </div>
+
+  <!-- ═══ TAKEDOWNS PANEL ═══ -->
+  <div class="mod-panel {% if tab == 'takedowns' %}active{% endif %}">
+    <h2>&#128220; Takedown Requests</h2>
+    {% if takedowns %}
+    <table class="mod-table">
+      <thead>
+        <tr><th>#</th><th>Type</th><th>Post</th><th>Requester</th><th>Description</th><th>Sworn</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for t in takedowns %}
+        <tr>
+          <td>{{ t.id }}</td>
+          <td><span class="mod-badge pending">{{ t.request_type | replace('_',' ') }}</span></td>
+          <td>{% if t.post_id %}#{{ t.post_id }}{% else %}—{% endif %}</td>
+          <td>{{ t.full_name[:25] }}<br><small style="color:rgba(255,255,255,.4);">{{ t.email[:30] }}</small></td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ t.description }}">{{ t.description[:80] }}</td>
+          <td>{% if t.sworn_statement %}&#9989;{% else %}—{% endif %}</td>
+          <td><span class="mod-badge {{ t.status }}">{{ t.status }}</span></td>
+          <td style="white-space:nowrap;">{{ t.created_at.strftime('%b %d %H:%M') }}</td>
+          <td style="white-space:nowrap;">
+            {% if t.status == 'pending' %}
+            <form method="post" action="{{ url_for('moderation.resolve_takedown', td_id=t.id) }}" style="display:inline;">
+              <input class="note-input" name="resolution_note" placeholder="Resolution note…" />
+              <div style="margin-top:4px;">
+                <button name="action" value="approve" class="mod-btn success" title="Approve & remove content">Approve</button>
+                <button name="action" value="deny" class="mod-btn danger" title="Deny request">Deny</button>
+              </div>
+            </form>
+            {% else %}
+              <span style="color:rgba(255,255,255,.4);font-size:11px;">{{ t.status }}{% if t.resolution_note %}: {{ t.resolution_note[:40] }}{% endif %}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="mod-empty">&#10004;&#65039; No takedown requests to review.</div>
+    {% endif %}
+  </div>
+
+  <!-- ═══ AI MODERATION PANEL ═══ -->
+  <div class="mod-panel {% if tab == 'ai' %}active{% endif %}">
+    <h2>&#129302; AI Moderation</h2>
+
+    <!-- AI Scan trigger -->
+    <div class="ai-scan-box">
+      <div class="ai-icon">&#129302;</div>
+      <div class="ai-info">
+        <h3>Run AI Content Scan</h3>
+        <p>Scan recent posts for hate speech, harassment, violence, spam, and other violations using our AI moderation engine.</p>
+      </div>
+      <form method="post" action="{{ url_for('moderation.ai_bulk_scan') }}">
+        <label style="font-size:11px;color:rgba(255,255,255,.5);display:block;margin-bottom:4px;">Posts to scan</label>
+        <select name="limit" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(100,200,255,.3);background:rgba(0,0,0,.3);color:#fff;font-size:12px;margin-bottom:6px;display:block;">
+          <option value="50">Last 50</option>
+          <option value="100" selected>Last 100</option>
+          <option value="250">Last 250</option>
+          <option value="500">Last 500</option>
+        </select>
+        <button type="submit" class="ai-scan-btn">&#9889; Run Scan</button>
+      </form>
+    </div>
+
+    <h3 style="font-size:14px;color:rgba(255,255,255,.7);margin-bottom:10px;">Recent AI Actions</h3>
+    {% if ai_logs %}
+    <table class="mod-table">
+      <thead>
+        <tr><th>#</th><th>Post</th><th>Action</th><th>Reason</th><th>Confidence</th><th>Auto</th><th>Overridden</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+        {% for l in ai_logs %}
+        <tr>
+          <td>{{ l.id }}</td>
+          <td>{% if l.post_id %}#{{ l.post_id }}{% else %}—{% endif %}</td>
+          <td><span class="mod-badge {{ l.action }}">{{ l.action }}</span></td>
+          <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ l.reason }}">{{ l.reason[:80] }}</td>
+          <td>
+            {% if l.ai_confidence is not none %}
+              {% set conf_pct = (l.ai_confidence * 100)|int %}
+              {% if l.ai_confidence >= 0.9 %}{% set conf_cls = 'high' %}{% elif l.ai_confidence >= 0.7 %}{% set conf_cls = 'med' %}{% else %}{% set conf_cls = 'low' %}{% endif %}
+              {{ conf_pct }}%
+              <span class="confidence-bar">
+                <span class="fill {{ conf_cls }}" data-w="{{ conf_pct }}"></span>
+              </span>
+            {% else %}&mdash;{% endif %}
+          </td>
+          <td>{% if l.auto %}&#129302; AI{% else %}&#128100; Human{% endif %}</td>
+          <td>
+            {% if l.overridden %}<span class="mod-badge overridden">overridden</span>{% else %}—{% endif %}
+          </td>
+          <td style="white-space:nowrap;">{{ l.created_at.strftime('%b %d %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="mod-empty">No AI moderation logs yet. Run a scan to get started.</div>
+    {% endif %}
+  </div>
+
+  <!-- ═══ FLAGGED POSTS PANEL ═══ -->
+  <div class="mod-panel {% if tab == 'flagged' %}active{% endif %}">
+    <h2>&#128681; Flagged / Removed Posts</h2>
+    {% if flagged_posts %}
+    <table class="mod-table">
+      <thead>
+        <tr><th>#</th><th>Author</th><th>Caption</th><th>Visibility</th><th>Adult</th><th>Needs Review</th><th>Created</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for p in flagged_posts %}
+        <tr>
+          <td>{{ p.id }}</td>
+          <td>{{ p.author_id }}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ p.caption or '' }}">{{ (p.caption or '—')[:60] }}</td>
+          <td><span class="mod-badge {{ 'remove' if p.visibility == 'removed' else 'pending' }}">{{ p.visibility }}</span></td>
+          <td>{% if p.is_adult %}&#128286;{% else %}—{% endif %}</td>
+          <td>{% if p.needs_review %}&#9888;&#65039;{% else %}&#10004;&#65039;{% endif %}</td>
+          <td style="white-space:nowrap;">{{ p.created_at.strftime('%b %d %H:%M') }}</td>
+          <td style="white-space:nowrap;">
+            <form method="post" action="{{ url_for('moderation.override_ai', post_id=p.id) }}" style="display:inline;">
+              {% if p.visibility == 'removed' %}
+                <button name="action" value="restore" class="mod-btn success">Restore</button>
+              {% else %}
+                <button name="action" value="remove" class="mod-btn danger">Remove</button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="mod-empty">&#10004;&#65039; No flagged or removed posts.</div>
+    {% endif %}
+  </div>
+
+</div>
+</section>
+<script>
+document.querySelectorAll('.confidence-bar .fill[data-w]').forEach(function(el){
+  el.style.width = el.getAttribute('data-w') + '%';
+});
+</script>
+{% endblock %}

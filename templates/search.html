@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  .aux-shell { min-height: 100vh; display: flex; justify-content: center; padding: 32px 10px; }
+  .aux-card {
+    width: min(96%, 620px);
+    border-radius: 18px;
+    border: 1px solid rgba(255,153,90,.28);
+    background: rgba(255,255,255,.03);
+    backdrop-filter: blur(28px) saturate(1.2);
+    box-shadow: 0 0 24px rgba(255,106,0,.08), 0 8px 24px rgba(0,0,0,.12);
+    padding: 22px;
+    color: #fff;
+  }
+  .aux-input {
+    width: 100%; padding: 14px 16px; border-radius: 14px;
+    border: 1px solid rgba(255,170,112,.32); background: rgba(255,255,255,.06);
+    color: #fff; box-sizing: border-box; font-size: 16px; outline: none;
+    transition: border-color .2s;
+  }
+  .aux-input:focus { border-color: rgba(255,170,112,.6); }
+  .aux-input::placeholder { color: rgba(255,255,255,.35); }
+  .aux-btn {
+    width: 100%; margin-top: 12px; border: none; border-radius: 999px;
+    padding: 12px; font-weight: 700; color: #fff;
+    background: linear-gradient(180deg, #ff9a3d, #ff5a00); cursor: pointer;
+  }
+  /* Live results */
+  #live-results { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .live-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 14px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,170,112,.16);
+    text-decoration: none; color: #fff; transition: background .2s, border-color .2s;
+  }
+  .live-card:hover { background: rgba(255,170,112,.13); border-color: rgba(255,170,112,.36); }
+  .live-avatar {
+    width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+    border: 2px solid rgba(255,170,112,.3); flex-shrink: 0;
+  }
+  .live-info { flex: 1; min-width: 0; }
+  .live-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .live-name .pro { display: inline-block; background: linear-gradient(135deg,#ff9a3d,#ff4800); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 5px; vertical-align: middle; margin-left: 4px; }
+  .live-handle { font-size: 13px; color: rgba(255,255,255,.5); }
+  .live-bio { font-size: 12px; color: rgba(255,255,255,.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .live-hint { color: rgba(255,255,255,.35); font-size: 13px; text-align: center; padding: 12px 0; }
+</style>
+
+<section class="aux-shell">
+  <div class="aux-card">
+    <h1 style="margin:0 0 14px;">Search</h1>
+    <form method="post" action="{{ url_for('search') }}" id="search-form">
+      <input class="aux-input" type="text" name="query" id="search-input"
+             placeholder="Search people, vybes, posts..." autocomplete="off" />
+      <button class="aux-btn" type="submit">Search All</button>
+    </form>
+    <div id="live-results"></div>
+  </div>
+</section>
+
+<script>
+(function() {
+  const input = document.getElementById('search-input');
+  const box   = document.getElementById('live-results');
+  const fallbackAvatar = "{{ url_for('static', filename='VFlogo_clean.png') }}";
+  let debounceTimer = null;
+
+  input.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    const q = this.value.trim();
+    if (!q) { box.innerHTML = ''; return; }
+    debounceTimer = setTimeout(() => fetchUsers(q), 200);
+  });
+
+  function fetchUsers(q) {
+    fetch('/api/search/users?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(users => {
+        if (!users.length) {
+          box.innerHTML = '<div class="live-hint">No people found — press Search All for posts & stories</div>';
+          return;
+        }
+        box.innerHTML = users.map(u => {
+          const avatar = u.avatar_url || fallbackAvatar;
+          const proTag = u.pro ? ' <span class="pro">PRO</span>' : '';
+          const bio = u.bio ? '<div class="live-bio">' + escHtml(u.bio) + '</div>' : '';
+          return '<a class="live-card" href="/profile/' + encodeURIComponent(u.username) + '">' +
+            '<img class="live-avatar" src="' + escHtml(avatar) + '" onerror="this.src=\'' + fallbackAvatar + '\'" />' +
+            '<div class="live-info">' +
+              '<div class="live-name">' + escHtml(u.display_name) + proTag + '</div>' +
+              '<div class="live-handle">@' + escHtml(u.username) + '</div>' +
+              bio +
+            '</div></a>';
+        }).join('');
+      })
+      .catch(() => { box.innerHTML = ''; });
+  }
+
+  function escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+})();
+</script>
+{% endblock %}

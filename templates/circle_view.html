@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block body_class %}circle-view-page{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --bg: #2a1204;
+    --card: rgba(255,255,255,.04);
+    --card2: rgba(255,255,255,.06);
+    --text: rgba(255,255,255,.94);
+    --muted: rgba(255,255,255,.60);
+    --brand1:#ffb562; --brand2:#ff8226; --brand3:#ff4d00;
+    --radius: 16px;
+  }
+  .circle-wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
+  .back-link { display: inline-block; margin-bottom: 16px; color: var(--brand2); font-size: 14px; text-decoration: none; }
+
+  .circle-banner {
+    background: var(--card); border: 1px solid rgba(255,160,90,.18);
+    border-radius: var(--radius); padding: 28px; margin-bottom: 24px;
+    backdrop-filter: blur(12px);
+  }
+  .circle-banner h1 {
+    font-size: 26px; font-weight: 800; color: var(--text); margin: 0 0 6px;
+  }
+  .circle-banner .vibe-tag {
+    display: inline-block; padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; background: rgba(255,130,38,.18);
+    color: var(--brand2); margin-bottom: 10px;
+  }
+  .circle-banner .desc { font-size: 14px; color: var(--muted); margin-bottom: 14px; }
+  .circle-banner .meta { font-size: 13px; color: var(--muted); display: flex; gap: 16px; }
+
+  .circle-actions-bar {
+    display: flex; gap: 10px; margin-bottom: 24px;
+  }
+  .btn-sm {
+    padding: 9px 18px; border-radius: 10px; border: none; font-size: 13px;
+    font-weight: 600; cursor: pointer; transition: .15s; text-decoration: none; display: inline-flex; align-items: center;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--brand2), var(--brand3)); color: #fff; }
+  .btn-danger { background: rgba(220,38,38,.2); color: #ef4444; border: 1px solid rgba(220,38,38,.3); }
+  .btn-sm:hover { transform: scale(1.04); }
+
+  /* Post composer */
+  .post-composer {
+    background: var(--card); border: 1px solid rgba(255,160,90,.18);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 20px;
+    backdrop-filter: blur(12px);
+  }
+  .post-composer textarea {
+    width: 100%; min-height: 60px; padding: 12px; border-radius: 10px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,160,90,.15);
+    color: var(--text); font-size: 14px; resize: vertical; outline: none;
+  }
+  .post-composer textarea:focus { border-color: var(--brand2); }
+  .post-composer .composer-actions {
+    display: flex; justify-content: flex-end; margin-top: 10px;
+  }
+
+  /* Posts feed */
+  .circle-post {
+    background: var(--card); border: 1px solid rgba(255,160,90,.12);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
+    backdrop-filter: blur(12px);
+  }
+  .circle-post .post-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .circle-post .post-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 2px solid var(--brand2); object-fit: cover;
+  }
+  .circle-post .post-author { font-weight: 700; font-size: 14px; color: var(--text); }
+  .circle-post .post-time { font-size: 11px; color: var(--muted); }
+  .circle-post .post-content { font-size: 14px; color: var(--text); line-height: 1.5; }
+
+  .invite-section {
+    background: var(--card); border: 1px solid rgba(255,160,90,.18);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 20px;
+    backdrop-filter: blur(12px);
+  }
+  .invite-section h3 {
+    font-size: 15px; font-weight: 700; color: var(--brand1); margin-bottom: 10px;
+  }
+  .invite-form { display: flex; gap: 8px; }
+  .invite-form input {
+    flex: 1; padding: 10px 14px; border-radius: 10px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,160,90,.15);
+    color: var(--text); font-size: 13px; outline: none;
+  }
+
+  /* Members sidebar */
+  .members-list { margin-top: 20px; }
+  .members-list h3 {
+    font-size: 15px; font-weight: 700; color: var(--brand1); margin-bottom: 10px;
+  }
+  .member-item {
+    display: flex; align-items: center; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .member-item img {
+    width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+  }
+  .member-item .member-name { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .locked-message {
+    text-align: center; padding: 48px 20px; color: var(--muted);
+  }
+  .locked-message .lock-icon { font-size: 48px; margin-bottom: 12px; }
+</style>
+
+<div class="circle-wrap">
+  <a href="{{ url_for('circles.circles_home') }}" class="back-link">← Back to Circles</a>
+
+  <div class="circle-banner">
+    <h1>{{ circle.name }}</h1>
+    {% if circle.vibe %}
+      <span class="vibe-tag">{{ circle.vibe }}</span>
+    {% endif %}
+    <div class="desc">{{ circle.description or "No description." }}</div>
+    <div class="meta">
+      <span>👥 {{ circle.members | length }} members</span>
+      <span>🔒 {{ circle.privacy }}</span>
+      <span>Max {{ circle.max_members }}</span>
+    </div>
+  </div>
+
+  {% if is_member %}
+    <div class="circle-actions-bar">
+      <form method="POST" action="{{ url_for('circles.leave_circle', circle_id=circle.id) }}">
+        <button type="submit" class="btn-sm btn-danger">Leave Crew</button>
+      </form>
+    </div>
+
+    <!-- Invite Members -->
+    <div class="invite-section">
+      <h3>📩 Invite Someone</h3>
+      <form method="POST" action="{{ url_for('circles.invite_member', circle_id=circle.id) }}" class="invite-form">
+        <input type="text" name="username" placeholder="Enter username..." required>
+        <button type="submit" class="btn-sm btn-primary">Invite</button>
+      </form>
+    </div>
+
+    <!-- Post Composer -->
+    <div class="post-composer">
+      <form method="POST" action="{{ url_for('circles.circle_post', circle_id=circle.id) }}">
+        <textarea name="content" placeholder="Share something with the crew..."></textarea>
+        <div class="composer-actions">
+          <button type="submit" class="btn-sm btn-primary">Post</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Posts Feed -->
+    {% for p in posts %}
+    <div class="circle-post">
+      <div class="post-header">
+        <img src="{{ url_for('static', filename='VFlogo_clean.png') }}" class="post-avatar" alt="">
+        <div>
+          <div class="post-author">{{ p.author.username if p.author else 'Unknown' }}</div>
+          <div class="post-time">{{ p.created_at.strftime('%b %d, %Y %I:%M %p') if p.created_at else '' }}</div>
+        </div>
+      </div>
+      <div class="post-content">{{ p.content }}</div>
+      {% if p.media_url %}
+        <div style="margin-top:10px;"><img src="{{ p.media_url }}" style="max-width:100%;border-radius:12px;"></div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:30px; color:var(--muted);">
+      <p>No posts yet. Be the first to share something! 🔥</p>
+    </div>
+    {% endfor %}
+
+    <!-- Members List -->
+    <div class="members-list">
+      <h3>👥 Members</h3>
+      {% for m in circle.members %}
+      <div class="member-item">
+        <img src="{{ m.avatar_url or url_for('static', filename='VFlogo_clean.png') }}" alt="">
+        <span class="member-name">{{ m.username }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="locked-message">
+      <div class="lock-icon">🔒</div>
+      <p>This is a private crew. You need an invite to see content.</p>
+      {% if circle.privacy == 'public' %}
+      <form method="POST" action="{{ url_for('circles.join_circle', circle_id=circle.id) }}">
+        <button type="submit" class="btn-sm btn-primary" style="margin-top:16px;">Join This Crew</button>
+      </form>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

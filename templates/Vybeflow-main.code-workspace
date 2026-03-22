@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		}
+	],
+	"settings": {
+		"chat.tools.terminal.autoApprove": {
+			"/^python app\\.py$/": {
+				"approve": true,
+				"matchCommandLine": true
+			},
+			"/^Set-Location Vybeflow-main; python -m pip install -r requirements\\.txt$/": {
+				"approve": true,
+				"matchCommandLine": true
+			}
+		}
+	}
+}

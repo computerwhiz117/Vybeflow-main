@@ -1,0 +1,754 @@
+{% extends "base.html" %}
+{% block body_class %}live-room-page{% endblock %}
+{% block content %}
+<style>
+  /* ═══════════════════════════════════════════
+     VybeFlow Live Room — Google Meet / Zoom style
+     ═══════════════════════════════════════════ */
+  body.live-room-page { background: #0a0810 !important; overflow: hidden; }
+
+  .room-wrap {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    background: radial-gradient(ellipse at 50% 30%, rgba(255,106,0,.06), transparent 70%), #0a0810;
+    color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* ── Top bar ── */
+  .room-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; background: rgba(0,0,0,.5); backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,.06); z-index: 10; flex-shrink: 0;
+  }
+  .room-title { font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .room-badge { background: #e02020; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 4px; animation: livePulse 1.6s ease-in-out infinite; }
+  @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+  .room-timer { font-size: 13px; color: rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
+  .room-participants { font-size: 13px; color: rgba(255,255,255,.5); display: flex; align-items: center; gap: 4px; }
+
+  /* ── Video grid (Google Meet style) ── */
+  .video-grid {
+    flex: 1; display: grid; gap: 8px; padding: 8px;
+    grid-template-columns: 1fr; grid-template-rows: 1fr;
+    transition: grid-template-columns .3s, grid-template-rows .3s;
+  }
+  .video-grid.two-up { grid-template-columns: 1fr 1fr; }
+  .video-grid.gallery { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+  .video-tile {
+    position: relative; border-radius: 14px; overflow: hidden;
+    background: radial-gradient(ellipse at 50% 45%, rgba(255,154,61,.08), transparent 60%), #111;
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .video-tile video, .video-tile canvas {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .video-tile .tile-label {
+    position: absolute; bottom: 10px; left: 10px; padding: 4px 12px;
+    background: rgba(0,0,0,.55); backdrop-filter: blur(6px);
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tile-label .mic-icon { font-size: 14px; }
+  .video-tile .tile-pin {
+    position: absolute; top: 8px; right: 8px; width: 30px; height: 30px;
+    border-radius: 8px; border: none; background: rgba(0,0,0,.4);
+    color: #fff; font-size: 14px; cursor: pointer; display: grid; place-items: center;
+    backdrop-filter: blur(6px); opacity: 0; transition: opacity .2s;
+  }
+  .video-tile:hover .tile-pin { opacity: 1; }
+
+  /* Self-view pip (picture in picture) */
+  .self-pip {
+    position: absolute; bottom: 90px; right: 18px; width: 200px;
+    aspect-ratio: 16/9; border-radius: 12px; overflow: hidden;
+    border: 2px solid rgba(255,154,61,.3); box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    z-index: 8; cursor: grab; background: #111;
+  }
+  .self-pip video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .self-pip .pip-label {
+    position: absolute; bottom: 4px; left: 6px; font-size: 11px; font-weight: 600;
+    padding: 2px 8px; background: rgba(0,0,0,.5); border-radius: 4px;
+  }
+
+  /* ── Floating hearts ── */
+  .hearts-container {
+    position: fixed; bottom: 100px; right: 28px; width: 50px; height: 260px;
+    pointer-events: none; overflow: hidden; z-index: 20;
+  }
+  .float-heart {
+    position: absolute; bottom: 0; font-size: 22px;
+    animation: floatUp 3s ease-out forwards; opacity: 0; pointer-events: none;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) scale(1); opacity: 1; }
+    50%  { opacity: .7; }
+    100% { transform: translateY(-240px) scale(.2); opacity: 0; }
+  }
+
+  /* ── Bottom control bar (Zoom/Meet style) ── */
+  .room-controls {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 16px; background: rgba(0,0,0,.65); backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255,255,255,.06); flex-shrink: 0; z-index: 10;
+  }
+  .ctrl-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    border: none; background: rgba(255,255,255,.08); color: #fff;
+    border-radius: 14px; width: 64px; height: 56px; cursor: pointer;
+    font-size: 20px; transition: background .15s, transform .1s;
+    justify-content: center;
+  }
+  .ctrl-btn:hover { background: rgba(255,255,255,.14); transform: scale(1.05); }
+  .ctrl-btn .ctrl-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,.7); }
+  .ctrl-btn.active { background: rgba(255,154,61,.2); }
+  .ctrl-btn.muted-btn { background: rgba(255,60,60,.2); }
+  .ctrl-btn.muted-btn:hover { background: rgba(255,60,60,.3); }
+  .end-call-btn {
+    border: none; background: #e02020; color: #fff; border-radius: 999px;
+    padding: 0 28px; height: 48px; font-weight: 800; font-size: 14px;
+    cursor: pointer; letter-spacing: .04em; transition: background .15s, transform .1s;
+  }
+  .end-call-btn:hover { background: #c01818; transform: scale(1.04); }
+
+  /* ── Side panel (chat / participants / fun) ── */
+  .side-panel {
+    position: fixed; top: 0; right: -380px; width: 360px; height: 100%;
+    background: rgba(12,8,18,.96); backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(255,255,255,.08);
+    z-index: 15; transition: right .3s ease; display: flex; flex-direction: column;
+  }
+  .side-panel.open { right: 0; }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .panel-header h3 { margin: 0; font-size: 16px; font-weight: 800; }
+  .panel-close { border: none; background: none; color: rgba(255,255,255,.6); font-size: 20px; cursor: pointer; }
+  .panel-tabs {
+    display: flex; border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .panel-tab {
+    flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 700;
+    color: rgba(255,255,255,.5); cursor: pointer; background: none; border: none;
+    border-bottom: 2px solid transparent; transition: .15s;
+  }
+  .panel-tab.active { color: #ff9a3d; border-bottom-color: #ff9a3d; }
+  .panel-body { flex: 1; overflow-y: auto; padding: 12px; }
+
+  /* Chat inside panel */
+  .chat-msg {
+    display: flex; gap: 8px; font-size: 13px; padding: 6px 8px;
+    border-radius: 10px; background: rgba(255,255,255,.04); margin-bottom: 4px;
+  }
+  .chat-msg .chat-author { font-weight: 700; color: #ffb562; white-space: nowrap; }
+  .chat-msg .chat-text { color: rgba(255,255,255,.85); word-break: break-word; }
+  .chat-msg.system-msg { color: rgba(255,255,255,.4); font-style: italic; background: none; padding: 2px 8px; }
+  .chat-input-row { display: flex; gap: 6px; padding: 12px; border-top: 1px solid rgba(255,255,255,.08); }
+  .chat-input {
+    flex: 1; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06);
+    color: #fff; border-radius: 10px; padding: 10px 12px; font-size: 13px; outline: none;
+  }
+  .chat-input:focus { border-color: rgba(255,154,61,.4); }
+  .chat-send-btn {
+    border: none; background: linear-gradient(135deg,#ff9a3d,#ff4d00); color: #fff;
+    border-radius: 10px; padding: 0 16px; font-weight: 700; cursor: pointer;
+  }
+
+  /* Reactions tray */
+  .reactions-tray {
+    display: flex; gap: 6px; padding: 8px 12px;
+    border-top: 1px solid rgba(255,255,255,.08);
+  }
+  .react-btn {
+    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; border: 1px solid rgba(255,255,255,.1); border-radius: 50%;
+    background: rgba(255,255,255,.04); cursor: pointer; transition: .15s;
+  }
+  .react-btn:hover { background: rgba(255,154,61,.2); transform: scale(1.15); }
+
+  /* Fun activities */
+  .fun-card {
+    border: 1px solid rgba(255,255,255,.1); border-radius: 12px;
+    background: rgba(255,255,255,.04); padding: 12px; margin-bottom: 8px;
+  }
+  .fun-card h4 { margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+  .fun-btn {
+    width: 100%; padding: 10px; border: 1px solid rgba(255,154,61,.25);
+    background: rgba(255,154,61,.08); color: #ffb562; border-radius: 10px;
+    font-weight: 700; font-size: 13px; cursor: pointer; margin-bottom: 6px;
+    transition: background .15s;
+  }
+  .fun-btn:hover { background: rgba(255,154,61,.18); }
+
+  /* Poll inside room */
+  .poll-bar {
+    height: 34px; border-radius: 8px; background: rgba(255,154,61,.12);
+    display: flex; align-items: center; padding: 0 12px; font-size: 13px;
+    font-weight: 600; cursor: pointer; margin-bottom: 4px; transition: width .5s, background .15s;
+    min-width: 50px;
+  }
+  .poll-bar:hover { background: rgba(255,154,61,.25); }
+  .poll-bar.voted { border: 1px solid rgba(255,154,61,.5); }
+  .poll-input {
+    width: 100%; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06);
+    color: #fff; border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none;
+    margin-bottom: 4px; box-sizing: border-box;
+  }
+
+  /* Whiteboard */
+  .whiteboard-wrap {
+    border: 1px solid rgba(255,255,255,.12); border-radius: 10px;
+    background: #fff; overflow: hidden;
+  }
+  .whiteboard-wrap canvas { display: block; cursor: crosshair; }
+  .wb-tools { display: flex; gap: 4px; padding: 6px; background: rgba(0,0,0,.06); }
+  .wb-tool {
+    padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,.15);
+    background: #fff; font-size: 12px; cursor: pointer;
+  }
+  .wb-tool.active { background: #ff9a3d; color: #fff; border-color: #ff9a3d; }
+
+  @media (max-width: 700px) {
+    .self-pip { width: 120px; bottom: 80px; right: 10px; }
+    .ctrl-btn { width: 50px; height: 48px; font-size: 18px; }
+    .side-panel { width: 100%; right: -100%; }
+  }
+</style>
+
+<div class="room-wrap" id="room-wrap">
+  <!-- Top bar -->
+  <div class="room-topbar">
+    <div class="room-title">
+      <span class="room-badge" id="live-badge">● LIVE</span>
+      <span id="room-title-text">{{ (room.title if room else 'VybeFlow Room') }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <span class="room-timer" id="room-timer">0:00</span>
+      <span class="room-participants" id="room-participants">👤 1</span>
+    </div>
+  </div>
+
+  <!-- Main video area -->
+  <div class="video-grid" id="video-grid">
+    <div class="video-tile" id="main-tile">
+      <video id="main-video" autoplay playsinline muted></video>
+      <div class="tile-label">
+        <span class="mic-icon" id="main-mic-icon">🎤</span>
+        <span id="main-tile-name">{{ username }}</span>
+      </div>
+      <button class="tile-pin" title="Pin">📌</button>
+    </div>
+  </div>
+
+  <!-- Self-view PIP -->
+  <div class="self-pip" id="self-pip" style="display:none;">
+    <video id="self-video" autoplay playsinline muted></video>
+    <div class="pip-label">You</div>
+  </div>
+
+  <!-- Floating hearts -->
+  <div class="hearts-container" id="hearts-container"></div>
+
+  <!-- Bottom controls -->
+  <div class="room-controls">
+    <button class="ctrl-btn" id="btn-mic" title="Microphone">
+      <span id="mic-icon">🎤</span>
+      <span class="ctrl-label">Mic</span>
+    </button>
+    <button class="ctrl-btn" id="btn-camera" title="Camera">
+      <span id="cam-icon">📷</span>
+      <span class="ctrl-label">Camera</span>
+    </button>
+    <button class="ctrl-btn" id="btn-screen" title="Share Screen">
+      <span>🖥️</span>
+      <span class="ctrl-label">Share</span>
+    </button>
+    <button class="ctrl-btn" id="btn-flip" title="Flip Camera">
+      <span>🔄</span>
+      <span class="ctrl-label">Flip</span>
+    </button>
+    <button class="ctrl-btn" id="btn-filter" title="Filters">
+      <span>✨</span>
+      <span class="ctrl-label">Filter</span>
+    </button>
+    <button class="ctrl-btn" id="btn-chat" title="Chat">
+      <span>💬</span>
+      <span class="ctrl-label">Chat</span>
+    </button>
+    <button class="ctrl-btn" id="btn-fun" title="Activities">
+      <span>🎮</span>
+      <span class="ctrl-label">Fun</span>
+    </button>
+    <button class="ctrl-btn" id="btn-react" title="React">
+      <span>❤️</span>
+      <span class="ctrl-label">React</span>
+    </button>
+    <button class="end-call-btn" id="btn-end">Leave</button>
+  </div>
+
+  <!-- Side panel -->
+  <div class="side-panel" id="side-panel">
+    <div class="panel-header">
+      <h3 id="panel-title">Chat</h3>
+      <button class="panel-close" id="panel-close">✕</button>
+    </div>
+    <div class="panel-tabs">
+      <button class="panel-tab active" data-tab="chat">💬 Chat</button>
+      <button class="panel-tab" data-tab="fun">🎮 Fun</button>
+      <button class="panel-tab" data-tab="people">👥 People</button>
+    </div>
+
+    <!-- Chat tab -->
+    <div class="panel-body" id="tab-chat">
+      <div id="chat-messages">
+        <div class="chat-msg system-msg">Welcome to the room!</div>
+      </div>
+    </div>
+
+    <!-- Fun tab -->
+    <div class="panel-body" id="tab-fun" style="display:none;">
+      <!-- Polls -->
+      <div class="fun-card">
+        <h4>📊 Quick Poll</h4>
+        <div id="poll-setup">
+          <input class="poll-input" id="poll-q" placeholder="Ask a question..." />
+          <input class="poll-input" id="poll-a" placeholder="Option A" />
+          <input class="poll-input" id="poll-b" placeholder="Option B" />
+          <input class="poll-input" id="poll-c" placeholder="Option C (optional)" />
+          <button class="fun-btn" id="poll-launch">🚀 Launch Poll</button>
+        </div>
+        <div id="poll-active" style="display:none;">
+          <div id="poll-q-label" style="font-weight:700;margin-bottom:8px;"></div>
+          <div id="poll-bars"></div>
+          <div id="poll-total" style="font-size:11px;color:rgba(255,255,255,.4);margin-top:6px;"></div>
+          <button class="fun-btn" id="poll-close" style="margin-top:6px;">Close Poll</button>
+        </div>
+      </div>
+
+      <!-- Whiteboard -->
+      <div class="fun-card">
+        <h4>🎨 Whiteboard</h4>
+        <div class="whiteboard-wrap">
+          <canvas id="whiteboard" width="320" height="200"></canvas>
+          <div class="wb-tools">
+            <button class="wb-tool active" data-color="#000">⚫</button>
+            <button class="wb-tool" data-color="#e02020">🔴</button>
+            <button class="wb-tool" data-color="#ff9a3d">🟠</button>
+            <button class="wb-tool" data-color="#20c020">🟢</button>
+            <button class="wb-tool" data-color="#2060ff">🔵</button>
+            <button class="wb-tool" data-color="#fff" id="wb-eraser">Eraser</button>
+            <button class="wb-tool" id="wb-clear">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fun sounds -->
+      <div class="fun-card">
+        <h4>🔊 Sound Effects</h4>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+          <button class="fun-btn" data-sfx="airhorn">📣 Airhorn</button>
+          <button class="fun-btn" data-sfx="laugh">😂 Laugh</button>
+          <button class="fun-btn" data-sfx="clap">👏 Clap</button>
+          <button class="fun-btn" data-sfx="woah">😮 Woah</button>
+          <button class="fun-btn" data-sfx="hype">🔥 Hype</button>
+          <button class="fun-btn" data-sfx="chill">🎵 Chill</button>
+        </div>
+      </div>
+
+      <!-- Q&A -->
+      <div class="fun-card">
+        <h4>❓ Q&A</h4>
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <input class="poll-input" id="qa-input" placeholder="Ask a question..." style="margin:0;" />
+          <button class="fun-btn" id="qa-send" style="width:auto;margin:0;padding:8px 14px;">Ask</button>
+        </div>
+        <div id="qa-list">
+          <div style="font-size:12px;color:rgba(255,255,255,.35);font-style:italic;">No questions yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- People tab -->
+    <div class="panel-body" id="tab-people" style="display:none;">
+      <div id="people-list"></div>
+    </div>
+
+    <!-- Reactions (always visible at bottom) -->
+    <div class="reactions-tray">
+      <button class="react-btn" data-emoji="❤️">❤️</button>
+      <button class="react-btn" data-emoji="🔥">🔥</button>
+      <button class="react-btn" data-emoji="😂">😂</button>
+      <button class="react-btn" data-emoji="😍">😍</button>
+      <button class="react-btn" data-emoji="👏">👏</button>
+      <button class="react-btn" data-emoji="💯">💯</button>
+    </div>
+
+    <!-- Chat input -->
+    <div class="chat-input-row" id="chat-input-row">
+      <input class="chat-input" id="chat-input" type="text" placeholder="Say something..." maxlength="280" />
+      <button class="chat-send-btn" id="chat-send">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Filter overlay -->
+<div id="filter-overlay" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:8px;z-index:12;display:none;">
+  <div style="display:flex;gap:4px;flex-wrap:wrap;" id="filter-chips">
+    <button class="react-btn" style="font-size:12px;width:auto;height:auto;padding:6px 12px;border-radius:8px;" data-filter="none">None</button>
+    <button class="react-btn" style="font-size:12px;width:auto;height:auto;padding:6px 12px;border-radius:8px;" data-filter="grayscale(1)">B&W</button>
+    <button class="react-btn" style="font-size:12px;width:auto;height:auto;padding:6px 12px;border-radius:8px;" data-filter="sepia(.7)">Sepia</button>
+    <button class="react-btn" style="font-size:12px;width:auto;height:auto;padding:6px 12px;border-radius:8px;" data-filter="saturate(1.8)">Vivid</button>
+    <button class="react-btn" style="font-size:12px;width:auto;height:auto;padding:6px 12px;border-radius:8px;" data-filter="contrast(1.3)">Contrast</button>
+    <button class="react-btn" style="font-size:12px;width:auto;height:auto;padding:6px 12px;border-radius:8px;" data-filter="brightness(1.2)">Bright</button>
+    <button class="react-btn" style="font-size:12px;width:auto;height:auto;padding:6px 12px;border-radius:8px;" data-filter="hue-rotate(90deg)">Shift</button>
+    <button class="react-btn" style="font-size:12px;width:auto;height:auto;padding:6px 12px;border-radius:8px;" data-filter="contrast(1.4) saturate(1.6)">Cinema</button>
+  </div>
+</div>
+
+<script id="room-data" type="application/json">{{ {"room_id": room_id, "username": username} | tojson }}</script>
+<script>
+(function(){
+  'use strict';
+  var _d = JSON.parse(document.getElementById('room-data').textContent);
+  var roomId = _d.room_id;
+  var username = _d.username;
+
+  /* ═══ State ═══ */
+  var currentStream = null, screenStream = null;
+  var micOn = true, camOn = true, facingMode = 'user';
+  var isLive = false, startTime = null, timerIv = null;
+  var chatCount = 0, reactionCount = 0;
+
+  /* ═══ DOM ═══ */
+  var mainVideo   = document.getElementById('main-video');
+  var selfVideo   = document.getElementById('self-video');
+  var selfPip     = document.getElementById('self-pip');
+  var timerEl     = document.getElementById('room-timer');
+  var heartsBox   = document.getElementById('hearts-container');
+  var sidePanel   = document.getElementById('side-panel');
+  var filterOverlay = document.getElementById('filter-overlay');
+  var chatMessages = document.getElementById('chat-messages');
+  var chatInput   = document.getElementById('chat-input');
+  var peopleList  = document.getElementById('people-list');
+
+  /* ═══ Audio synth (for sound effects) ═══ */
+  var audioCtx = window.AudioContext ? new AudioContext() : null;
+  function playSynth(freq, dur, type) {
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    var now = audioCtx.currentTime;
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.06, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + dur);
+  }
+
+  function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  /* ═══ Timer ═══ */
+  function startTimer() {
+    startTime = Date.now();
+    timerIv = setInterval(function() {
+      var e = Math.floor((Date.now() - startTime) / 1000);
+      var m = Math.floor(e / 60), s = e % 60;
+      timerEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    }, 1000);
+  }
+
+  /* ═══ Camera ═══ */
+  async function startCamera() {
+    try {
+      if (currentStream) { currentStream.getTracks().forEach(function(t){t.stop();}); }
+      var stream = await navigator.mediaDevices.getUserMedia({
+        video: camOn ? { facingMode: facingMode, width:{ideal:1280}, height:{ideal:720} } : false,
+        audio: true
+      });
+      currentStream = stream;
+      mainVideo.srcObject = stream;
+      if (!camOn) mainVideo.style.background = 'radial-gradient(circle at 50% 45%, rgba(255,154,61,.12), transparent 60%), #111';
+    } catch(err) {
+      addChat(null, 'Camera error: ' + err.message, true);
+    }
+  }
+
+  async function startScreen() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      addChat(null, 'Screen sharing not supported.', true); return;
+    }
+    try {
+      var stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor:'always' }, audio: true });
+      screenStream = stream;
+      mainVideo.srcObject = stream;
+      selfPip.style.display = '';
+      selfVideo.srcObject = currentStream;
+      stream.getVideoTracks()[0].addEventListener('ended', function() {
+        mainVideo.srcObject = currentStream;
+        selfPip.style.display = 'none';
+        screenStream = null;
+        addChat(null, 'Screen share ended.', true);
+      });
+      addChat(null, 'Screen sharing started.', true);
+    } catch(err) {
+      addChat(null, 'Screen share cancelled.', true);
+    }
+  }
+
+  /* ═══ Auto-start camera + go live ═══ */
+  startCamera().then(function() {
+    isLive = true;
+    startTimer();
+    addChat(null, 'You joined the room.', true);
+    updatePeople();
+  });
+
+  /* ═══ Controls ═══ */
+  document.getElementById('btn-mic').addEventListener('click', function() {
+    micOn = !micOn;
+    if (currentStream) {
+      currentStream.getAudioTracks().forEach(function(t){ t.enabled = micOn; });
+    }
+    this.classList.toggle('muted-btn', !micOn);
+    document.getElementById('mic-icon').textContent = micOn ? '🎤' : '🔇';
+    document.getElementById('main-mic-icon').textContent = micOn ? '🎤' : '🔇';
+  });
+
+  document.getElementById('btn-camera').addEventListener('click', function() {
+    camOn = !camOn;
+    if (currentStream) {
+      currentStream.getVideoTracks().forEach(function(t){ t.enabled = camOn; });
+    }
+    this.classList.toggle('muted-btn', !camOn);
+    document.getElementById('cam-icon').textContent = camOn ? '📷' : '📷‍🚫';
+    mainVideo.style.background = camOn ? '' : 'radial-gradient(circle at 50% 45%, rgba(255,154,61,.12), transparent 60%), #111';
+  });
+
+  document.getElementById('btn-screen').addEventListener('click', startScreen);
+
+  document.getElementById('btn-flip').addEventListener('click', function() {
+    facingMode = facingMode === 'user' ? 'environment' : 'user';
+    if (currentStream && camOn) startCamera();
+  });
+
+  document.getElementById('btn-filter').addEventListener('click', function() {
+    filterOverlay.style.display = filterOverlay.style.display === 'none' ? 'block' : 'none';
+  });
+
+  document.getElementById('filter-chips').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-filter]');
+    if (!btn) return;
+    var f = btn.dataset.filter;
+    mainVideo.style.filter = f === 'none' ? '' : f;
+    filterOverlay.style.display = 'none';
+  });
+
+  document.getElementById('btn-end').addEventListener('click', function() {
+    if (currentStream) currentStream.getTracks().forEach(function(t){t.stop();});
+    if (screenStream) screenStream.getTracks().forEach(function(t){t.stop();});
+    if (timerIv) clearInterval(timerIv);
+    window.location.href = '{{ url_for("feed.feed_page") }}';
+  });
+
+  /* ═══ Side panel ═══ */
+  function openPanel(tab) {
+    sidePanel.classList.add('open');
+    document.querySelectorAll('.panel-tab').forEach(function(t){ t.classList.toggle('active', t.dataset.tab === tab); });
+    document.getElementById('tab-chat').style.display = tab === 'chat' ? '' : 'none';
+    document.getElementById('tab-fun').style.display = tab === 'fun' ? '' : 'none';
+    document.getElementById('tab-people').style.display = tab === 'people' ? '' : 'none';
+    document.getElementById('chat-input-row').style.display = tab === 'chat' ? '' : 'none';
+    document.getElementById('panel-title').textContent = tab === 'chat' ? 'Chat' : tab === 'fun' ? 'Activities' : 'People';
+  }
+
+  document.getElementById('btn-chat').addEventListener('click', function(){ openPanel('chat'); });
+  document.getElementById('btn-fun').addEventListener('click', function(){ openPanel('fun'); });
+  document.getElementById('panel-close').addEventListener('click', function(){ sidePanel.classList.remove('open'); });
+  document.querySelectorAll('.panel-tab').forEach(function(t) {
+    t.addEventListener('click', function(){ openPanel(t.dataset.tab); });
+  });
+
+  document.getElementById('btn-react').addEventListener('click', function() {
+    openPanel('chat');
+  });
+
+  /* ═══ Chat ═══ */
+  function addChat(author, text, isSystem) {
+    var el = document.createElement('div');
+    el.className = 'chat-msg' + (isSystem ? ' system-msg' : '');
+    if (isSystem) { el.textContent = text; }
+    else {
+      el.innerHTML = '<span class="chat-author">' + escHtml(author) + '</span> <span class="chat-text">' + escHtml(text) + '</span>';
+      chatCount++;
+    }
+    chatMessages.appendChild(el);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  document.getElementById('chat-send').addEventListener('click', sendChat);
+  chatInput.addEventListener('keydown', function(e){ if(e.key==='Enter') sendChat(); });
+  function sendChat() {
+    var text = chatInput.value.trim();
+    if (!text) return;
+    addChat(username, text);
+    chatInput.value = '';
+    playSynth(480, 0.06);
+  }
+
+  /* ═══ Reactions / Hearts ═══ */
+  document.querySelectorAll('.react-btn[data-emoji]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var emoji = btn.dataset.emoji;
+      var el = document.createElement('span');
+      el.className = 'float-heart';
+      el.textContent = emoji;
+      el.style.left = Math.floor(Math.random() * 35) + 'px';
+      el.style.animationDuration = (2.5 + Math.random() * 1.5) + 's';
+      heartsBox.appendChild(el);
+      setTimeout(function(){ el.remove(); }, 4000);
+      reactionCount++;
+      playSynth(550, 0.08);
+    });
+  });
+
+  /* ═══ Sound effects ═══ */
+  var sfxMap = {
+    airhorn: [600, 0.4, 'sawtooth'],
+    laugh:   [440, 0.25, 'sine'],
+    clap:    [800, 0.08, 'square'],
+    woah:    [300, 0.35, 'sine'],
+    hype:    [500, 0.3, 'sawtooth'],
+    chill:   [260, 0.5, 'triangle']
+  };
+  document.querySelectorAll('[data-sfx]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var s = sfxMap[btn.dataset.sfx];
+      if (s) { playSynth(s[0], s[1], s[2]); playSynth(s[0]*1.5, s[1]*0.7, s[2]); }
+      addChat(null, username + ' played ' + btn.textContent.trim(), true);
+    });
+  });
+
+  /* ═══ Poll ═══ */
+  var pollVotes = {a:0, b:0, c:0}, pollOpts = [], myVote = null;
+  document.getElementById('poll-launch').addEventListener('click', function() {
+    var q = document.getElementById('poll-q').value.trim();
+    if (!q) return;
+    pollOpts = [
+      document.getElementById('poll-a').value.trim(),
+      document.getElementById('poll-b').value.trim(),
+      document.getElementById('poll-c').value.trim()
+    ].filter(Boolean);
+    if (pollOpts.length < 2) return;
+    pollVotes = {a:0,b:0,c:0}; myVote = null;
+    document.getElementById('poll-q-label').textContent = q;
+    renderPoll();
+    document.getElementById('poll-setup').style.display = 'none';
+    document.getElementById('poll-active').style.display = '';
+    addChat(null, 'Poll: "' + q + '"', true);
+  });
+  document.getElementById('poll-close').addEventListener('click', function() {
+    document.getElementById('poll-setup').style.display = '';
+    document.getElementById('poll-active').style.display = 'none';
+    addChat(null, 'Poll closed.', true);
+  });
+  function renderPoll() {
+    var keys = ['a','b','c'], bars = document.getElementById('poll-bars');
+    bars.innerHTML = '';
+    var total = 0;
+    pollOpts.forEach(function(_,i){ total += pollVotes[keys[i]]; });
+    pollOpts.forEach(function(opt,i) {
+      var bar = document.createElement('div');
+      bar.className = 'poll-bar' + (myVote===keys[i] ? ' voted' : '');
+      var pct = total > 0 ? Math.round(pollVotes[keys[i]]/total*100) : 0;
+      bar.style.width = Math.max(80, pct*2.2) + 'px';
+      bar.textContent = opt + (total > 0 ? ' · ' + pct + '%' : '');
+      bar.addEventListener('click', function() {
+        if (myVote) return;
+        myVote = keys[i]; pollVotes[keys[i]]++; renderPoll();
+      });
+      bars.appendChild(bar);
+    });
+    document.getElementById('poll-total').textContent = total > 0 ? total + ' vote' + (total!==1?'s':'') : 'No votes yet';
+  }
+
+  /* ═══ Q&A ═══ */
+  document.getElementById('qa-send').addEventListener('click', function() {
+    var q = document.getElementById('qa-input').value.trim();
+    if (!q) return;
+    var list = document.getElementById('qa-list');
+    if (list.querySelector('div[style]')) list.innerHTML = '';
+    var item = document.createElement('div');
+    item.style.cssText = 'background:rgba(255,255,255,.04);border-radius:8px;padding:8px;margin-bottom:6px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px;';
+    item.innerHTML = '<span>' + escHtml(q) + '</span>';
+    var feat = document.createElement('button');
+    feat.className = 'fun-btn';
+    feat.style.cssText = 'width:auto;margin:0;padding:4px 10px;font-size:11px;';
+    feat.textContent = '⭐ Feature';
+    feat.addEventListener('click', function() {
+      var on = item.style.borderColor === 'rgba(255, 154, 61, 0.5)';
+      item.style.border = on ? '' : '1px solid rgba(255,154,61,.5)';
+      feat.textContent = on ? '⭐ Feature' : '✓ Featured';
+    });
+    item.appendChild(feat);
+    list.prepend(item);
+    document.getElementById('qa-input').value = '';
+    addChat(null, 'Q: "' + q + '"', true);
+  });
+
+  /* ═══ Whiteboard ═══ */
+  var wb = document.getElementById('whiteboard');
+  var wbCtx = wb.getContext('2d');
+  var wbDrawing = false, wbColor = '#000';
+  wbCtx.fillStyle = '#fff';
+  wbCtx.fillRect(0, 0, wb.width, wb.height);
+  wbCtx.lineWidth = 3;
+  wbCtx.lineCap = 'round';
+
+  wb.addEventListener('pointerdown', function(e) {
+    wbDrawing = true;
+    wbCtx.beginPath();
+    var r = wb.getBoundingClientRect();
+    wbCtx.moveTo(e.clientX - r.left, e.clientY - r.top);
+  });
+  wb.addEventListener('pointermove', function(e) {
+    if (!wbDrawing) return;
+    var r = wb.getBoundingClientRect();
+    wbCtx.strokeStyle = wbColor;
+    wbCtx.lineTo(e.clientX - r.left, e.clientY - r.top);
+    wbCtx.stroke();
+  });
+  wb.addEventListener('pointerup', function() { wbDrawing = false; });
+  wb.addEventListener('pointerleave', function() { wbDrawing = false; });
+
+  document.querySelectorAll('.wb-tool[data-color]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.wb-tool').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      wbColor = btn.dataset.color;
+      wbCtx.lineWidth = wbColor === '#fff' ? 20 : 3;
+    });
+  });
+  document.getElementById('wb-clear').addEventListener('click', function() {
+    wbCtx.fillStyle = '#fff';
+    wbCtx.fillRect(0, 0, wb.width, wb.height);
+  });
+
+  /* ═══ People list ═══ */
+  function updatePeople() {
+    peopleList.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;background:rgba(255,255,255,.04);margin-bottom:6px;">' +
+      '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ff9a3d,#ff4d00);display:grid;place-items:center;font-size:16px;">👤</div>' +
+      '<div><div style="font-weight:700;font-size:14px;">' + escHtml(username) + '</div><div style="font-size:11px;color:rgba(255,255,255,.4);">Host</div></div>' +
+    '</div>';
+  }
+
+  /* ═══ Cleanup ═══ */
+  window.addEventListener('beforeunload', function() {
+    if (currentStream) currentStream.getTracks().forEach(function(t){t.stop();});
+    if (screenStream) screenStream.getTracks().forEach(function(t){t.stop();});
+  });
+})();
+</script>
+{% endblock %}

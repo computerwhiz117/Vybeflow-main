@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vybeflow Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="messages" id="messages">
+            <!-- Messages will be dynamically loaded here -->
+        </div>
+        <form id="message-form">
+            <input type="text" id="message-input" placeholder="Type your message..." required>
+            <button type="submit">Send</button>
+        </form>
+
+        <div class="emoji-suggest-wrap">
+            <div class="emoji-suggest-head">
+                <button type="button" id="emoji-sound-enable" class="emoji-sound-btn">🔇 Enable emoji sound</button>
+            </div>
+            <div id="emoji-suggest" class="emoji-suggest"></div>
+        </div>
+    </div>
+
+        <script>
+        (function(){
+            const input = document.getElementById('message-input') || document.getElementById('caption');
+            const box = document.getElementById('emoji-suggest');
+            const soundBtn = document.getElementById('emoji-sound-enable');
+
+            if (!input || !box) return;
+
+            let soundEnabled = false;
+            let hoverAudio = null;
+
+            if (soundBtn){
+                soundBtn.addEventListener('click', () => {
+                    soundEnabled = !soundEnabled;
+                    soundBtn.textContent = soundEnabled ? '🔊 Emoji sound ON' : '🔇 Enable emoji sound';
+                    if (soundEnabled && !hoverAudio) hoverAudio = new Audio();
+                });
+            }
+
+            function setChipWobble(el){
+                let raf = null;
+                el.addEventListener('mouseenter', () => {
+                    const dx = (Math.random() * 6 - 3).toFixed(2);
+                    const dy = (Math.random() * 6 - 3).toFixed(2);
+                    const r  = (Math.random() * 2 - 1).toFixed(2);
+                    el.style.transform = `translate(${dx}px, ${dy}px) rotate(${r}deg)`;
+                });
+                el.addEventListener('mouseleave', () => {
+                    el.style.transform = '';
+                    if (raf) cancelAnimationFrame(raf);
+                });
+
+                el.addEventListener('mousemove', (e) => {
+                    if (raf) return;
+                    raf = requestAnimationFrame(() => {
+                        raf = null;
+                        const rect = el.getBoundingClientRect();
+                        const cx = rect.left + rect.width/2;
+                        const cy = rect.top + rect.height/2;
+                        const px = (e.clientX - cx) / rect.width;
+                        const py = (e.clientY - cy) / rect.height;
+                        el.style.transform = `translate(${(px*6).toFixed(2)}px, ${(py*6).toFixed(2)}px) rotate(${(px*2).toFixed(2)}deg)`;
+                    });
+                });
+            }
+
+            async function fetchSuggest(q){
+                const res = await fetch(`/api/emoji/suggest?q=${encodeURIComponent(q)}&limit=18`);
+                const data = await res.json();
+                return data.items || [];
+            }
+
+            function insertAtCursor(text){
+                const start = input.selectionStart || 0;
+                const end = input.selectionEnd || 0;
+                const before = input.value.slice(0, start);
+                const after = input.value.slice(end);
+                input.value = before + text + after;
+                const pos = start + text.length;
+                input.setSelectionRange(pos, pos);
+                input.dispatchEvent(new Event('input'));
+                input.focus();
+            }
+
+            function playHoverSound(url){
+                if (!soundEnabled || !url) return;
+                try{
+                    if (!hoverAudio) hoverAudio = new Audio();
+                    hoverAudio.src = url;
+                    hoverAudio.currentTime = 0;
+                    hoverAudio.volume = 0.55;
+                    hoverAudio.play().catch(()=>{});
+                } catch(e){}
+            }
+
+            function render(items){
+                box.innerHTML = '';
+                items.forEach(item => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'emoji-chip';
+
+                    if (item.type === 'custom'){
+                        btn.innerHTML = `
+                            <img src="${item.image_url}" alt="emoji"/>
+                            <span class="emoji-label">${item.label}</span>
+                        `;
+                    } else {
+                        btn.innerHTML = `<span class="emoji-label" style="font-size:18px;">${item.label}</span>`;
+                    }
+
+                    setChipWobble(btn);
+
+                    btn.addEventListener('mouseenter', () => playHoverSound(item.sound_url));
+                    btn.addEventListener('click', () => {
+                        insertAtCursor(item.label + ' ');
+                    });
+
+                    box.appendChild(btn);
+                });
+            }
+
+            let t = null;
+            input.addEventListener('input', () => {
+                clearTimeout(t);
+                t = setTimeout(async () => {
+                    const q = input.value.slice(-24).trim();
+                    const items = await fetchSuggest(q);
+                    render(items);
+                }, 120);
+            });
+
+            fetchSuggest('').then(render).catch(()=>{});
+        })();
+        </script>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

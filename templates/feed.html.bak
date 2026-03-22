@@ -1,0 +1,4546 @@
+<style>
+/* --- Facebook-like post card --- */
+.feed-wrap{
+  max-width: 720px;
+  margin: 18px auto;
+  padding: 0 12px 40px;
+}
+.post-card{
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  overflow: hidden;
+  margin: 14px 0;
+}
+.post-head{
+  display:flex;
+  gap: 12px;
+  padding: 14px 14px 10px;
+  align-items: center;
+}
+.post-avatar{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255,154,61,.7), rgba(255,72,0,.45));
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+}
+.post-meta{
+  display:flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.post-name{
+  font-weight: 900;
+  font-size: 15px;
+  line-height: 1.1;
+}
+.post-time{
+  font-size: 12px;
+  color: rgba(255,255,255,.65);
+}
+.post-body{
+  padding: 0 14px 14px;
+}
+.post-caption{
+  font-size: 18px;           /* BIG like Facebook */
+  line-height: 1.45;
+  color: rgba(255,255,255,.95);
+  white-space: normal;
+}
+.post-media img, .post-media video{
+  width: 100%;
+  display:block;
+  max-height: 520px;
+  object-fit: cover;
+}
+.post-footer{
+  padding: 10px 14px 14px;
+  border-top: 1px solid rgba(255,255,255,.10);
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  gap: 10px;
+}
+.reaction-row{
+  display:flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.react-btn{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color:#fff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 800;
+  cursor:pointer;
+}
+.react-btn:hover{ transform: translateY(-1px); }
+
+/* --- Emoji animations for posted captions --- */
+.cap-emoji{
+  display:inline-block;
+  font-size: 1.25em; /* bigger than text */
+  line-height: 1;
+  vertical-align: -0.15em;
+  margin: 0 .03em;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,.26));
+  text-shadow: 0 0 12px color-mix(in srgb, var(--brand2, #ff7a1f) 60%, transparent);
+  will-change: transform, filter;
+}
+.cap-glow{ animation: emojiGlow 2.8s ease-in-out infinite; }
+.cap-cry{ animation: emojiGlow 2.8s ease-in-out infinite, emojiCrying 3.2s ease-in-out infinite; }
+.cap-laugh{ animation: emojiGlow 2.8s ease-in-out infinite, emojiLaughing 2.8s ease-in-out infinite; }
+.cap-fire{ animation: emojiGlow 2.8s ease-in-out infinite, emojiSpinning 2.4s linear infinite; }
+.cap-shock{ animation: emojiGlow 2.8s ease-in-out infinite, emojiShocked .5s ease-in-out infinite; }
+
+/* --- Sticker stage on posted content --- */
+.post-stage{
+  position: relative;
+  width: 100%;
+  height: 220px;
+  margin-top: 10px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255,255,255,.22);
+  background: rgba(255,255,255,.04);
+  overflow: hidden;
+}
+.post-sticker{
+  position:absolute;
+  font-size: 54px;
+  line-height: 1;
+  user-select:none;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,.35));
+  animation: stickerPulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  transform-origin: center;
+}
+@keyframes stickerPulse{
+  0%,100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.08) rotate(2deg); }
+}
+
+/* --- Your existing keyframes --- */
+@keyframes emojiGlow{
+  0% { filter: drop-shadow(0 5px 10px rgba(0,0,0,.26)) saturate(1); }
+  50% { filter: drop-shadow(0 10px 18px rgba(0,0,0,.22)) saturate(1.25); }
+  100% { filter: drop-shadow(0 5px 10px rgba(0,0,0,.26)) saturate(1); }
+}
+@keyframes emojiCrying{
+  0%,100% { transform: translateX(0) translateY(0) scale(1); }
+  25% { transform: translateX(-3px) translateY(2px) scale(1.02); }
+  75% { transform: translateX(3px) translateY(2px) scale(1.02); }
+}
+@keyframes emojiLaughing{
+  0%,100% { transform: translateY(0) rotateZ(0deg) scale(1); }
+  25% { transform: translateY(-6px) rotateZ(-12deg) scale(1.1); }
+  50% { transform: translateY(2px) rotateZ(0deg) scale(0.95); }
+  75% { transform: translateY(-4px) rotateZ(12deg) scale(1.08); }
+}
+@keyframes emojiSpinning{
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.06); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes emojiShocked{
+  0%,100% { transform: translateX(0) translateY(0) scaleX(1); }
+  10% { transform: translateX(-8px) translateY(-4px) scaleX(0.98); }
+  20% { transform: translateX(8px) translateY(4px) scaleX(1.02); }
+  30% { transform: translateX(-6px) translateY(-3px) scaleX(0.99); }
+  40% { transform: translateX(6px) translateY(3px) scaleX(1.01); }
+  50% { transform: translateX(-4px) translateY(-2px) scaleX(0.99); }
+}
+</style>
+{% extends "base.html" %}
+
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  :root{
+    --bg: #2a1204;
+    --card: rgba(255,255,255,.12);
+    --card2: rgba(255,255,255,.18);
+    --text: rgba(255,255,255,.94);
+    --muted: rgba(255,255,255,.70);
+    --line: rgba(255,173,117,.34);
+    --brand1:#ffb562;
+    --brand2:#ff8226;
+    --brand3:#ff4d00;
+    --shadow: 0 18px 40px rgba(0,0,0,.45);
+    --radius: 16px;
+  }
+
+  .vf-logo-probe {
+    background-image: url("{{ url_for('VFlogo_clean.png') }}");
+  }
+
+  @keyframes logoGlowDrift {
+    0% { opacity: 0.9; }
+    50% { opacity: 1; }
+    100% { opacity: 0.9; }
+  }
+
+  body.feed-page main{
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  body.feed-page .auth-wrap{
+    width: 100%;
+    max-width: none;
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--brand1, #ff9a3d) 16%, rgba(255,255,255,.08)),
+      color-mix(in srgb, var(--bg, #0a0810) 82%, rgba(0,0,0,.45))
+    );
+    padding: 0 8px;
+  }
+
+  /* ===== VybeFlow Background (single logo + warm glass) ===== */
+  body.feed-page{
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
+
+    background:
+      radial-gradient(1200px 680px at 50% 16%, rgba(255,150,60,.36), transparent 60%),
+      radial-gradient(900px 620px at 12% 36%, rgba(255,96,0,.24), transparent 60%),
+      radial-gradient(860px 640px at 88% 52%, rgba(255,180,90,.20), transparent 62%),
+      linear-gradient(180deg, #2a1204 0%, #1a0b02 58%, #120601 100%);
+    color: rgba(255,255,255,.92);
+  }
+
+
+  .feed-app{
+    width: min(98vw, 1320px);
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 12px 12px 36px;
+    position: relative;
+    z-index: 1;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .feed-topbar{
+    position: sticky; top: 0; z-index: 50;
+    display:flex; align-items:center; gap:14px;
+    padding: 10px 12px;
+    background: rgba(28,12,4,.45);
+    border: 1px solid rgba(255,160,90,.30);
+    backdrop-filter: blur(18px) saturate(1.1);
+    border-radius: var(--radius);
+    box-shadow:
+      0 10px 30px rgba(0,0,0,.35),
+      0 0 30px rgba(255,106,0,.22);
+  }
+
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    font-weight: 800; letter-spacing: .2px;
+    text-transform: lowercase;
+  }
+
+  .brand-badge{
+    width: 36px; height: 36px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2), var(--brand3));
+    box-shadow: 0 10px 25px rgba(124,58,237,.28);
+  }
+
+  .brand span{
+    font-size: 18px;
+    background: linear-gradient(90deg, #fff, rgba(255,255,255,.72));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .vf-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .vf-brand{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text);
+    font-weight: 800;
+    letter-spacing: .2px;
+  }
+
+  .vf-logo-img{
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 16px 32px rgba(255,122,24,.22);
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+  }
+
+  .vf-search {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .vf-ico {
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .vf-search input {
+    width: 100%;
+  }
+
+  .feed-search{
+    flex: 1;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.09);
+    color: var(--text);
+    padding: 0 14px;
+    outline: none;
+    transition: .2s ease;
+  }
+  .feed-search::placeholder{ color: rgba(255,255,255,.55); }
+  .feed-search:focus{
+    border-color: rgba(255,106,0,.72);
+    box-shadow: 0 0 0 4px rgba(255,106,0,.20), 0 0 18px rgba(255,106,0,.24);
+  }
+
+  .topbar-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .retro-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .retro-switch input {
+    width: 40px;
+    height: 22px;
+    appearance: none;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.12);
+    position: relative;
+    cursor: pointer;
+    transition: .2s ease;
+  }
+
+  .retro-switch input::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: .2s ease;
+  }
+
+  .retro-switch input:checked {
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+  }
+
+  .retro-switch input:checked::before {
+    transform: translateX(18px);
+  }
+
+  .feed-icons{ display:flex; align-items:center; gap:8px; }
+  .icon-btn{
+    width: 40px; height: 40px;
+    display:grid; place-items:center;
+    border-radius: 12px;
+    border: 1px solid rgba(255,160,90,.24);
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+    backdrop-filter: blur(10px);
+    color: var(--text);
+    text-decoration:none;
+    transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+    position: relative;
+  }
+  .icon-btn:hover{
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 1px rgba(255,170,112,.35),
+      0 0 26px rgba(255,106,0,.40),
+      0 12px 26px rgba(0,0,0,.25);
+  }
+  .icon-badge{
+    position:absolute; top:-6px; right:-6px;
+    min-width: 18px; height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    border: 1px solid rgba(255,255,255,.18);
+    color: white;
+    font-size: 11px;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .feed-grid{
+    display:grid;
+    grid-template-columns: 260px minmax(0, 1fr) 260px;
+    gap: 14px;
+    margin-top: 12px;
+    align-items: start;
+    width: 100%;
+  }
+  @media (max-width: 1024px){
+    .feed-grid{ grid-template-columns: 280px 1fr; }
+    .right-panel{ display:none; }
+  }
+  @media (max-width: 780px){
+    .feed-grid{ grid-template-columns: 1fr; }
+    .left-panel{ display:none; }
+  }
+
+  .panel{
+    border: 1px solid rgba(255,160,90,.30);
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(0,0,0,.10));
+    border-radius: var(--radius);
+    box-shadow:
+      0 16px 40px rgba(0,0,0,.35),
+      0 0 38px rgba(255,106,0,.25);
+    backdrop-filter: blur(18px) saturate(1.1);
+  }
+
+  .left-panel, .right-panel{
+    position: sticky; top: 76px;
+    padding: 12px;
+  }
+
+  .menu-item{
+    display:flex; align-items:center; gap:10px;
+    padding: 10px 10px;
+    border-radius: 14px;
+    text-decoration:none;
+    color: var(--text);
+    transition: .15s ease;
+    border: 1px solid transparent;
+  }
+  .menu-item:hover{
+    background: rgba(255,255,255,.11);
+    border-color: rgba(255,153,61,.30);
+    transform: translateY(-1px);
+  }
+  .menu-item img{
+    width: 34px; height: 34px; border-radius: 12px;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,.18);
+  }
+
+  .section-title{
+    font-size: 13px;
+    letter-spacing:.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 10px 8px 8px;
+  }
+
+  .center-panel{ display:flex; flex-direction:column; gap:14px; }
+
+  .feed-composer{ padding: 12px; }
+  .composer-top{ display:flex; gap:10px; align-items:center; }
+  .avatar{
+    width: 44px; height: 44px; border-radius: 16px;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,.18);
+  }
+  .composer-box{
+    flex:1;
+    display:flex; align-items:center;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.07);
+    color: rgba(255,255,255,.78);
+    text-decoration:none;
+    transition: .15s ease;
+  }
+  .composer-box:hover{
+    background: rgba(255,255,255,.10);
+    color: rgba(255,255,255,.92);
+  }
+  .composer-actions{
+    display:flex; gap:10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .chip{
+    flex:1;
+    display:flex; align-items:center; justify-content:center;
+    gap:8px;
+    height: 38px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,160,90,.24);
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+    backdrop-filter: blur(10px);
+    color: var(--text);
+    text-decoration:none;
+    transition: .15s ease;
+    font-size: 14px;
+  }
+  .chip:hover{
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 1px rgba(255,170,112,.35),
+      0 0 26px rgba(255,106,0,.40),
+      0 12px 26px rgba(0,0,0,.25);
+  }
+
+  .story-row{ padding: 12px; display:flex; gap:10px; overflow:auto; }
+  .story-card{
+    min-width: 88px;
+    width: 88px;
+    height: auto;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    text-decoration:none;
+    color: var(--text);
+    position: static;
+    overflow:hidden;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+  }
+  .story-card:hover{
+    transform: translateY(-2px);
+    box-shadow: none;
+  }
+  .story-media{
+    width: 84px;
+    height: 84px;
+    border-radius: 999px;
+    border: 2px solid rgba(255,255,255,.22);
+    background:
+      linear-gradient(135deg, rgba(255,154,61,.55), rgba(255,106,0,.40), rgba(255,72,0,.28)),
+      radial-gradient(900px 300px at 0% 0%, rgba(255,255,255,.20), transparent 60%);
+    filter: saturate(1.1);
+    box-shadow: 0 0 18px rgba(255,106,0,.42);
+  }
+  .story-card p{
+    position: static;
+    margin:0;
+    font-weight: 600;
+    font-size: 12px;
+    text-align: center;
+    text-shadow: none;
+  }
+  .story-create .story-media{
+    display:grid; place-items:center;
+    font-size: 28px; font-weight: 900;
+    background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.06));
+  }
+
+  .story-open {
+    border: none;
+    padding: 0;
+    background: transparent;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .story-inline-music {
+    width: 88px;
+    margin-top: 6px;
+  }
+
+  .story-inline-title {
+    font-size: 10px;
+    font-weight: 900;
+    color: rgba(255,255,255,.85);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .story-inline-audio {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .story-modal-wrap {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    display: grid;
+    place-items: center;
+    z-index: 90;
+  }
+
+  .story-modal-wrap[hidden] {
+    display: none;
+  }
+
+  .story-modal {
+    width: min(94vw, 380px);
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255,153,90,.32);
+    background: linear-gradient(180deg, rgba(18,12,22,.95), rgba(8,8,12,.95));
+    box-shadow: 0 16px 48px rgba(0,0,0,.55), 0 0 24px rgba(255,106,0,.30);
+  }
+
+  .story-progress {
+    height: 4px;
+    background: rgba(255,255,255,.2);
+  }
+
+  .story-progress span {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    transition: width 4s linear;
+  }
+
+  .story-modal-media {
+    height: 460px;
+    background:
+      linear-gradient(135deg, rgba(255,154,61,.62), rgba(255,106,0,.40), rgba(255,72,0,.30)),
+      radial-gradient(900px 300px at 0% 0%, rgba(255,255,255,.22), transparent 60%);
+  }
+
+  .story-modal-media img,
+  .story-modal-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .story-modal-meta {
+    padding: 12px;
+    color: #fff;
+  }
+
+  .story-modal-meta h4 {
+    margin: 0 0 4px;
+  }
+
+  .story-modal-meta p {
+    margin: 0;
+    color: rgba(255,255,255,.85);
+  }
+
+  .story-modal-audio-wrap {
+    margin-top: 10px;
+  }
+
+  .story-modal-audio {
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .story-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    font-size: 22px;
+    color: #fff;
+    background: rgba(0,0,0,.4);
+    cursor: pointer;
+    z-index: 91;
+  }
+
+  body.feed-page.retro-2011 {
+    background: #e9ebee;
+    color: #1d2129;
+  }
+
+  body.feed-page.retro-2011 .feed-app {
+    max-width: 980px;
+    padding-top: 0;
+  }
+
+  body.feed-page.retro-2011::before,
+  body.feed-page.retro-2011::after {
+    opacity: .28;
+    pointer-events: none;
+  }
+
+  body.feed-page.retro-2011 .feed-topbar,
+  body.feed-page.retro-2011 .panel {
+    background: #fff;
+    border-color: #d3d7df;
+    box-shadow: 0 1px 2px rgba(0,0,0,.12);
+    backdrop-filter: none;
+  }
+
+  body.feed-page.retro-2011 .feed-topbar {
+    background: #3b5998;
+    border-color: #2f477a;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  body.feed-page.retro-2011 .vf-brand span,
+  body.feed-page.retro-2011 .vf-ico,
+  body.feed-page.retro-2011 .retro-switch {
+    color: #fff;
+    background: none;
+    -webkit-text-fill-color: #fff;
+  }
+
+  body.feed-page.retro-2011 .feed-grid {
+    grid-template-columns: 210px 1fr;
+    gap: 10px;
+  }
+
+  body.feed-page.retro-2011 .right-panel {
+    display: block;
+  }
+
+  body.feed-page.retro-2011 .left-panel,
+  body.feed-page.retro-2011 .feed-composer,
+  body.feed-page.retro-2011 .post-card {
+    border-radius: 2px;
+  }
+
+  body.feed-page.retro-2011 .story-card {
+    min-width: 95px;
+    height: 135px;
+    border-radius: 8px;
+  }
+
+  body.feed-page.retro-2011 .post-card {
+    border-radius: 4px;
+  }
+
+  body.feed-page.retro-2011 .brand span,
+  body.feed-page.retro-2011 .menu-item,
+  body.feed-page.retro-2011 .chip,
+  body.feed-page.retro-2011 .action-btn,
+  body.feed-page.retro-2011 .trend-chip,
+  body.feed-page.retro-2011 .post-body,
+  body.feed-page.retro-2011 .section-title,
+  body.feed-page.retro-2011 .feed-search,
+  body.feed-page.retro-2011 .icon-btn {
+    color: #1d2129;
+  }
+
+  body.feed-page.retro-2011 .feed-search,
+  body.feed-page.retro-2011 .chip,
+  body.feed-page.retro-2011 .action-btn,
+  body.feed-page.retro-2011 .trend-chip,
+  body.feed-page.retro-2011 .icon-btn {
+    background: #f5f6f7;
+    border-color: #d3d7df;
+  }
+
+  .post-card{ padding: 12px; }
+  .post-head{ display:flex; gap:10px; align-items:center; }
+  .post-head h3{ margin:0; font-size: 15px; }
+  .post-head small{ color: var(--muted); }
+  .post-body{ margin: 10px 0 12px; color: rgba(255,255,255,.86); line-height: 1.35; }
+
+  .vf-react{
+    margin-top: 10px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    position: relative;
+  }
+  .vf-react-btn,
+  .vf-re{
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.07);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .vf-react-btn{
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-weight: 800;
+  }
+  .vf-react-pop{
+    position: absolute;
+    left: 0;
+    top: -44px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding: 6px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(32,14,8,.88);
+    backdrop-filter: blur(12px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
+    transition: .16s ease;
+    z-index: 4;
+  }
+  .vf-react:hover .vf-react-pop,
+  .vf-react:focus-within .vf-react-pop{
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .vf-re{
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    font-size: 17px;
+    display:grid;
+    place-items:center;
+    line-height: 1;
+  }
+  .vf-re:hover{ transform: translateY(-1px) scale(1.05); }
+  .vf-react-count{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.07);
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .vf-react-emoji{ font-size: 15px; }
+
+  .post-meta{
+    display:flex; justify-content:space-between; align-items:center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 8px 2px 10px;
+    border-top: 1px solid transparent;
+  }
+  .reactions{
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+  }
+  .reaction-pill{
+    display:flex; gap:6px; align-items:center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.07);
+  }
+
+  .post-actions{
+    display:flex; gap:10px;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .action-btn{
+    flex:1;
+    height: 38px;
+    border-radius: 14px;
+    display:flex; align-items:center; justify-content:center;
+    gap:8px;
+    border: 1px solid rgba(255,160,90,.24);
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+    backdrop-filter: blur(10px);
+    color: var(--text);
+    text-decoration:none;
+    transition: .15s ease;
+    font-weight: 650;
+  }
+  .action-btn:hover{
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 1px rgba(255,170,112,.35),
+      0 0 26px rgba(255,106,0,.40),
+      0 12px 26px rgba(0,0,0,.25);
+  }
+
+  .trend-chip{
+    display:inline-flex; align-items:center; gap:8px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.07);
+    color: var(--text);
+    text-decoration:none;
+    margin: 6px 6px 0 0;
+    transition: .15s ease;
+    font-size: 13px;
+  }
+  .trend-chip:hover{
+    background: rgba(255,255,255,.10);
+    border-color: rgba(255,106,0,.38);
+    transform: translateY(-1px);
+  }
+
+  .mini-card{
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.06);
+    border-radius: 16px;
+    padding: 10px;
+    margin-top: 10px;
+  }
+
+  .creator-lab { padding: 12px; }
+  .lab-input, .lab-textarea {
+    width: 100%;
+    margin-top: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.07);
+    color: var(--text);
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  .lab-textarea { min-height: 92px; resize: vertical; }
+  .emoji-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
+  .emoji-row button {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    display: inline-block;
+  }
+  .emoji-btn {
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.08);
+    border-radius: 10px;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    user-select: none;
+  }
+  .emoji-toolbar { display: flex; gap: 8px; margin-bottom: 8px; }
+  .mvp-pill-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .mvp-pill {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 0 18px rgba(255,106,0,.18);
+  }
+  .mvp-pill:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(255,173,117,.30), 0 0 24px rgba(255,106,0,.35); }
+  .emoji-tab {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 10px;
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .emoji-tab.active { border-color: rgba(255,154,61,.9); box-shadow: 0 0 0 2px rgba(255,154,61,.22); }
+  .emoji-panel {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px dashed var(--line);
+    background: rgba(0,0,0,.18);
+  }
+  .sticker-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .sticker-item {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255,255,255,.08);
+    cursor: pointer;
+    min-height: 38px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .sticker-item:hover { transform: translateY(-2px) scale(1.08); box-shadow: 0 0 16px rgba(255,106,0,.22); }
+  .emoji-btn.emoji-rich {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    display: inline-block;
+    cursor: pointer;
+    font-size: 48px;
+    line-height: 1;
+    position: relative;
+    animation: emojiGlow 2.8s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,.26));
+    text-shadow: 0 0 12px color-mix(in srgb, var(--brand2, #ff7a1f) 60%, transparent);
+    transition: transform .18s ease, filter .18s ease;
+    user-select: none;
+    -webkit-appearance: none;
+    appearance: none;
+    box-shadow: none;
+  }
+  .emoji-btn.emoji-rich[data-emotion="crying"],
+  .emoji-btn.emoji-rich[data-emotion="sad"]{
+    animation: emojiGlow 2.8s ease-in-out infinite, emojiCrying 3.2s ease-in-out infinite;
+  }
+  .emoji-btn.emoji-rich[data-emotion="laughing"],
+  .emoji-btn.emoji-rich[data-emotion="joy"]{
+    animation: emojiGlow 2.8s ease-in-out infinite, emojiLaughing 2.8s ease-in-out infinite;
+  }
+  .emoji-btn.emoji-rich[data-emotion="fire"]{
+    animation: emojiGlow 2.8s ease-in-out infinite, emojiSpinning 2.4s linear infinite;
+  }
+  .emoji-btn.emoji-rich[data-emotion="shocked"]{
+    animation: emojiGlow 2.8s ease-in-out infinite, emojiShocked 0.5s ease-in-out infinite;
+  }
+  .emoji-btn.emoji-rich:nth-child(3n):not([data-emotion]){
+    animation: emojiGlow 2.8s ease-in-out infinite, emojiWobble 2.4s ease-in-out infinite;
+  }
+  .emoji-btn.emoji-rich:nth-child(4n):not([data-emotion]){
+    animation: emojiGlow 2.8s ease-in-out infinite, emojiBounce 2.8s ease-in-out infinite;
+  }
+  .emoji-btn.emoji-rich:hover {
+    transform: scale(1.15);
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,.34));
+  }
+  .emoji-stage {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    margin-top: 10px;
+    border-radius: 12px;
+    border: 1px dashed var(--line);
+    background: rgba(255,255,255,.04);
+    overflow: hidden;
+  }
+  .emoji-stage-note { margin-top: 6px; color: var(--muted); font-size: 12px; }
+  .emoji-sticker {
+    position: absolute;
+    font-size: 48px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    animation: stickerPulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,.34));
+  }
+  @keyframes stickerPulse{
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.08) rotate(2deg); }
+  }
+  .emoji-3d {
+    display: inline-block;
+    transform-style: preserve-3d;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,.32));
+    animation: emoji3dGlow 3.4s ease-in-out infinite;
+    text-shadow: 0 0 12px color-mix(in srgb, var(--brand1, #ff9a3d) 55%, transparent);
+  }
+  .emoji-3d:hover {
+    animation: emojiFloat3d 1.2s ease-in-out;
+  }
+  .emoji-sticker:active { cursor: grabbing; }
+  .emoji-sticker.active{ animation: stickerSelected 0.3s ease; }
+  @keyframes stickerSelected{
+    0% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.2) rotate(-8deg); }
+    100% { transform: scale(1.08) rotate(0deg); }
+  }
+  @keyframes emojiPulse {
+    0% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-2px) scale(1.06); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  @keyframes emojiFloat {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+    100% { transform: translateY(0); }
+  }
+  @keyframes emojiFloat3d {
+    0% { transform: perspective(700px) translateY(0) rotateX(0deg) rotateY(0deg); }
+    50% { transform: perspective(700px) translateY(-4px) rotateX(10deg) rotateY(-8deg); }
+    100% { transform: perspective(700px) translateY(0) rotateX(0deg) rotateY(0deg); }
+  }
+  @keyframes emojiGlow {
+    0% {
+      filter: drop-shadow(0 5px 10px rgba(0,0,0,.26)) saturate(1);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.20), 0 8px 16px rgba(0,0,0,.22), 0 0 18px color-mix(in srgb, var(--brand2, #ff7a1f) 40%, transparent);
+    }
+    50% {
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.22)) saturate(1.25);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 10px 20px rgba(0,0,0,.24), 0 0 calc(24px + (var(--vf-glow-alpha, 0.18) * 40px)) color-mix(in srgb, var(--brand2, #ff7a1f) 70%, transparent);
+    }
+    100% {
+      filter: drop-shadow(0 5px 10px rgba(0,0,0,.26)) saturate(1);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.20), 0 8px 16px rgba(0,0,0,.22), 0 0 18px color-mix(in srgb, var(--brand2, #ff7a1f) 40%, transparent);
+    }
+  }
+  @keyframes emoji3dGlow {
+    0% { filter: drop-shadow(0 4px 10px rgba(0,0,0,.32)) saturate(1); }
+    50% { filter: drop-shadow(0 10px 20px color-mix(in srgb, var(--brand1, #ff9a3d) 55%, transparent)) saturate(1.3); }
+    100% { filter: drop-shadow(0 4px 10px rgba(0,0,0,.32)) saturate(1); }
+  }
+  @keyframes emojiWobble{
+    0% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-2px) rotate(-6deg); }
+    50% { transform: translateY(0) rotate(6deg); }
+    75% { transform: translateY(-1px) rotate(-4deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+  }
+  @keyframes emojiBounce{
+    0% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-4px) scale(1.06); }
+    50% { transform: translateY(0) scale(1); }
+    70% { transform: translateY(-2px) scale(1.03); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  @keyframes emojiCrying{
+    0%, 100% { transform: translateX(0) translateY(0) scale(1); }
+    25% { transform: translateX(-3px) translateY(2px) scale(1.02); }
+    50% { transform: translateX(0) translateY(0) scale(1); }
+    75% { transform: translateX(3px) translateY(2px) scale(1.02); }
+  }
+  @keyframes emojiLaughing{
+    0%, 100% { transform: translateY(0) rotateZ(0deg) scale(1); }
+    25% { transform: translateY(-6px) rotateZ(-12deg) scale(1.1); }
+    50% { transform: translateY(2px) rotateZ(0deg) scale(0.95); }
+    75% { transform: translateY(-4px) rotateZ(12deg) scale(1.08); }
+  }
+  @keyframes emojiSpinning{
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.06); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+  @keyframes emojiShocked{
+    0%, 100% { transform: translateX(0) translateY(0) scaleX(1); }
+    10% { transform: translateX(-8px) translateY(-4px) scaleX(0.98); }
+    20% { transform: translateX(8px) translateY(4px) scaleX(1.02); }
+    30% { transform: translateX(-6px) translateY(-3px) scaleX(0.99); }
+    40% { transform: translateX(6px) translateY(3px) scaleX(1.01); }
+    50% { transform: translateX(-4px) translateY(-2px) scaleX(0.99); }
+  }
+  .lab-actions { display: flex; gap: 10px; margin-top: 10px; }
+  .lab-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 10px 14px;
+    color: #fff;
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+    border: 1px solid rgba(255,160,90,.24);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    font-weight: 700;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 0 22px rgba(255,106,0,.16);
+  }
+
+  body.feed-page .action-btn,
+  body.feed-page .chip,
+  body.feed-page .menu-item,
+  body.feed-page .trend-chip,
+  body.feed-page .icon-btn,
+  body.feed-page .lab-btn,
+  body.feed-page button {
+    box-shadow: 0 0 0 1px rgba(255,173,117,.26), 0 0 18px rgba(255,106,0,.32);
+  }
+
+  body.feed-page button:hover,
+  body.feed-page .chip:hover,
+  body.feed-page .icon-btn:hover,
+  body.feed-page .menu-item:hover,
+  body.feed-page .action-btn:hover,
+  body.feed-page .trend-chip:hover,
+  body.feed-page .lab-btn:hover,
+  body.feed-page .emoji-btn:hover,
+  body.feed-page .gif-item:hover,
+  body.feed-page .story-card:hover {
+    box-shadow: 0 0 0 1px rgba(255,173,117,.35), 0 0 24px rgba(255,106,0,.52), 0 12px 24px rgba(0,0,0,.24);
+  }
+  .gif-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+  .gif-item {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255,255,255,.06);
+    cursor: pointer;
+  }
+  .gif-item img { width: 100%; height: 96px; object-fit: cover; display: block; }
+  .gif-empty { grid-column: 1 / -1; padding: 10px; text-align: center; color: var(--muted); font-size: 12px; }
+  .feed-live-posts { margin-top: 12px; display: grid; gap: 10px; }
+  .live-post { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: rgba(255,255,255,.06); }
+  .live-post img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; margin-top: 8px; }
+  .live-post video { width: 100%; max-height: 260px; object-fit: cover; border-radius: 10px; margin-top: 8px; background: #000; }
+
+  .game-card { padding: 12px; }
+  .game-hud { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); }
+
+  .ai-card { padding: 12px; }
+  .ai-log { border: 1px solid var(--line); border-radius: 10px; min-height: 80px; padding: 10px; background: rgba(255,255,255,.04); }
+
+  /* ===== Reels Rail ===== */
+  .reels-rail{ padding: 12px; }
+  .reels-head{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .reels-title{ font-weight: 1000; letter-spacing:.2px; font-size: 16px; }
+  .reels-sub{ font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .reels-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .reels-chip{
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    font-weight: 950;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex; align-items:center; justify-content:center;
+    transition: .15s ease;
+  }
+  .reels-chip:hover{
+    transform: translateY(-1px);
+    border-color: rgba(255,106,0,.45);
+    box-shadow: 0 0 0 4px rgba(255,106,0,.12), 0 12px 26px rgba(0,0,0,.25);
+  }
+
+  .reels-chip.active-sort{
+    border-color: rgba(255,122,24,.55);
+    box-shadow: 0 0 0 3px rgba(255,122,24,.16), 0 0 20px rgba(255,122,24,.30);
+  }
+
+  .reels-row{
+    margin-top: 12px;
+    display:flex;
+    gap: 12px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+  }
+  .reels-row::-webkit-scrollbar{ height: 8px; }
+  .reels-row::-webkit-scrollbar-thumb{
+    background: rgba(255,255,255,.14);
+    border-radius: 999px;
+  }
+
+  /* Reel tile */
+  .reel-card{
+    flex: 0 0 160px;
+    height: 260px;
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.05);
+    box-shadow: 0 20px 55px rgba(0,0,0,.55), 0 0 40px rgba(255,106,0,.18);
+    overflow:hidden;
+    position:relative;
+    scroll-snap-align: start;
+    cursor:pointer;
+    padding: 0;
+    transform: translateZ(0);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+
+  .reel-card::before{
+    content:"";
+    position:absolute; inset:-60px;
+    background:
+      radial-gradient(700px 260px at 20% 15%, rgba(255,177,95,.28), transparent 60%),
+      radial-gradient(700px 260px at 90% 80%, rgba(255,79,0,.18), transparent 60%);
+    opacity: .95;
+    pointer-events:none;
+  }
+
+  .reel-card::after{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.75));
+    pointer-events:none;
+  }
+
+  .reel-card:hover{
+    transform: translateY(-4px) rotate(-.35deg);
+    border-color: rgba(255,106,0,.35);
+    box-shadow:
+      0 26px 70px rgba(0,0,0,.65),
+      0 0 55px rgba(255,106,0,.22);
+  }
+
+  /* Media layer (cover image) */
+  .reel-media{
+    position:absolute; inset:0;
+    background-size: cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    filter: saturate(1.15) contrast(1.08);
+  }
+  .reel-media.demo{
+    background:
+      radial-gradient(700px 260px at 20% 20%, rgba(255,122,24,.45), transparent 60%),
+      radial-gradient(700px 260px at 85% 70%, rgba(255,79,0,.20), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.02));
+  }
+
+  /* Glass top/bottom overlays */
+  .reel-glass-top,
+  .reel-glass-bot{
+    position:absolute;
+    left: 10px;
+    right: 10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    z-index: 3;
+    padding: 8px 10px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.28);
+    border: 1px solid rgba(255,255,255,.14);
+    backdrop-filter: blur(14px);
+  }
+
+  .reel-glass-top{ top: 10px; }
+  .reel-glass-bot{ bottom: 10px; }
+
+  .reel-badges{ display:flex; gap:6px; flex-wrap:wrap; }
+  .reel-pill{
+    font-size: 11px;
+    font-weight: 1000;
+    letter-spacing:.08em;
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: rgba(255,255,255,.95);
+    background: linear-gradient(90deg, rgba(255,177,95,.35), rgba(255,79,0,.22));
+    border: 1px solid rgba(255,255,255,.12);
+  }
+  .reel-pill.ghost{
+    background: rgba(255,255,255,.08);
+    color: rgba(255,255,255,.88);
+  }
+
+  .reel-heat{
+    display:none;
+    position:absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 4;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 1000;
+    letter-spacing:.08em;
+    color:#fff;
+    background: linear-gradient(90deg, rgba(255,177,95,.58), rgba(255,79,0,.48));
+    border: 1px solid rgba(255,255,255,.18);
+    box-shadow: 0 10px 18px rgba(0,0,0,.32), 0 0 22px rgba(255,122,24,.25);
+  }
+
+  .reel-card.hot .reel-heat{ display:inline-flex; align-items:center; gap:4px; }
+
+  .reel-hover-overlay{
+    position:absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 56px;
+    display:flex;
+    gap: 8px;
+    z-index: 4;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: .18s ease;
+  }
+
+  .reel-card:hover .reel-hover-overlay,
+  .reel-card:focus-within .reel-hover-overlay{
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .reel-overlay-btn{
+    flex:1;
+    height: 32px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(0,0,0,.32);
+    color:#fff;
+    font-weight: 900;
+    font-size: 12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    cursor:pointer;
+    backdrop-filter: blur(10px);
+  }
+
+  .reel-overlay-btn:hover{
+    border-color: rgba(255,122,24,.58);
+    box-shadow: 0 0 0 3px rgba(255,122,24,.14), 0 0 18px rgba(255,122,24,.26);
+  }
+
+  .reel-play{
+    width: 34px; height: 34px;
+    border-radius: 14px;
+    display:grid; place-items:center;
+    background: linear-gradient(135deg, rgba(255,177,95,.45), rgba(255,79,0,.22));
+    border: 1px solid rgba(255,255,255,.16);
+    font-weight: 1000;
+    box-shadow: 0 12px 26px rgba(0,0,0,.35), 0 0 22px rgba(255,106,0,.25);
+  }
+
+  /* Bottom meta */
+  .reel-avatar{
+    width: 30px; height: 30px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,.18);
+  }
+  .reel-user{
+    flex:1;
+    text-align:left;
+    font-weight: 950;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+  .reel-flex{
+    display:flex; align-items:center; gap:6px;
+    font-weight: 1000;
+    font-size: 12px;
+  }
+  .reel-flame{ filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+  .reel-flex-num{
+    min-width: 18px;
+    text-align:right;
+  }
+
+  /* Flex FX: a neon “edge” that pulses */
+  .reel-card.vybe-hot{
+    animation: vybeEdgePulse 1.8s ease-in-out infinite;
+  }
+  @keyframes vybeEdgePulse{
+    0% { box-shadow: 0 22px 60px rgba(0,0,0,.60), 0 0 40px rgba(255,106,0,.18); }
+    50% { box-shadow: 0 26px 75px rgba(0,0,0,.68), 0 0 70px rgba(255,106,0,.30); }
+    100% { box-shadow: 0 22px 60px rgba(0,0,0,.60), 0 0 40px rgba(255,106,0,.18); }
+  }
+
+  /* ===== Fullscreen Reel Viewer ===== */
+  .reel-viewer{
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    background: rgba(0,0,0,.86);
+    display:grid;
+    place-items:center;
+  }
+  .reel-viewer[hidden]{ display:none; }
+
+  .reel-view-close{
+    position:absolute;
+    top: 16px;
+    left: 16px;
+    width: 42px; height: 42px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.92);
+    font-weight: 1000;
+    cursor:pointer;
+    backdrop-filter: blur(14px);
+  }
+
+  .reel-view-stage{
+    width: min(92vw, 420px);
+    aspect-ratio: 9 / 16;
+    border-radius: 22px;
+    overflow:hidden;
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 22px 80px rgba(0,0,0,.75), 0 0 65px rgba(255,106,0,.22);
+    position: relative;
+    background: #000;
+  }
+
+  .reel-view-video{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display:block;
+  }
+
+  .reel-view-hud{
+    position:absolute;
+    inset: 0;
+    pointer-events:none;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding: 14px;
+    background: linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.55));
+  }
+
+  .reel-view-user{
+    pointer-events:none;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .reel-view-avatar{
+    width: 40px; height: 40px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.16);
+    object-fit: cover;
+  }
+  .reel-view-handle{ font-weight: 1000; }
+  .reel-view-sub{ font-size: 12px; color: rgba(255,255,255,.70); }
+
+  .reel-view-actions{
+    pointer-events:auto;
+    align-self:flex-end;
+    display:flex;
+    flex-direction:column;
+    gap: 10px;
+  }
+  .rv-btn{
+    width: 46px; height: 46px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.95);
+    font-size: 18px;
+    cursor:pointer;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 0 0 1px rgba(255,173,117,.26), 0 0 18px rgba(255,106,0,.32);
+  }
+  .rv-btn:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 1px rgba(255,173,117,.35), 0 0 30px rgba(255,106,0,.55), 0 12px 24px rgba(0,0,0,.24);
+  }
+
+  .reel-view-hint{
+    position:absolute;
+    left:50%;
+    transform: translateX(-50%);
+    bottom: 14px;
+    font-size: 11px;
+    color: rgba(255,255,255,.76);
+    background: rgba(0,0,0,.32);
+    border: 1px solid rgba(255,255,255,.16);
+    padding: 5px 10px;
+    border-radius: 999px;
+    z-index: 5;
+    backdrop-filter: blur(10px);
+    pointer-events:none;
+  }
+
+  /* ===== REELS RAIL ===== */
+
+  .vf-reels-rail{
+    padding:12px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.05);
+    backdrop-filter: blur(20px);
+  }
+
+  .vf-reels-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+
+  .vf-reels-title{
+    font-weight:900;
+    font-size:16px;
+  }
+
+  /* ===== GLASS BUTTONS ===== */
+
+  .vf-glass-btn{
+    padding:8px 14px;
+    border-radius:999px;
+    text-decoration:none;
+    font-weight:700;
+    color:white;
+    border:1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.08);
+    backdrop-filter: blur(14px);
+    transition:.2s ease;
+  }
+
+  .vf-glass-btn:hover{
+    border-color: rgba(255,122,24,.45);
+    box-shadow:
+      0 0 0 3px rgba(255,122,24,.15),
+      0 0 22px rgba(255,122,24,.35);
+    transform: translateY(-1px);
+  }
+
+  /* ===== REELS ROW ===== */
+
+  .vf-reels-row{
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    padding-bottom:4px;
+  }
+
+  .vf-reels-row::-webkit-scrollbar{
+    height:8px;
+  }
+
+  .vf-reels-row::-webkit-scrollbar-thumb{
+    background: rgba(255,255,255,.15);
+    border-radius:999px;
+  }
+
+  /* ===== REEL CARD ===== */
+
+  .vf-reel-card{
+    position:relative;
+    flex:0 0 150px;
+    height:260px;
+    border-radius:18px;
+    overflow:hidden;
+    scroll-snap-align:start;
+    border:1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.04);
+    transition:.2s ease;
+  }
+
+  .vf-reel-card:hover{
+    transform: translateY(-3px);
+    border-color: rgba(255,122,24,.45);
+    box-shadow:
+      0 0 0 3px rgba(255,122,24,.12),
+      0 0 35px rgba(255,122,24,.35);
+  }
+
+  /* ===== MEDIA ===== */
+
+  .vf-reel-media{
+    position:absolute;
+    inset:0;
+    background-size:cover;
+    background-position:center;
+    filter: contrast(1.05) saturate(1.1);
+  }
+
+  /* ===== OVERLAY ===== */
+
+  .vf-reel-overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:10px;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,.65));
+    color:white;
+  }
+
+  .vf-reel-play{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background: rgba(0,0,0,.45);
+    display:grid;
+    place-items:center;
+    font-weight:900;
+    backdrop-filter: blur(10px);
+  }
+
+  .vf-reel-user{
+    font-size:12px;
+    font-weight:800;
+  }
+
+  @media (max-width: 560px){
+    .reel-card{ flex-basis: 148px; height: 244px; }
+  }
+
+  @keyframes floaty {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+    100% { transform: translateY(0); }
+  }
+  .brand-badge{ animation: floaty 2.6s ease-in-out infinite; }
+
+  .vf-create{
+    position: fixed;
+    inset: 0;
+    background: #0b0b0e;
+    color: #fff;
+    z-index: 9999;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .vf-create[hidden]{
+    display: none;
+  }
+
+  .vf-create-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 14px 14px 8px;
+  }
+  .vf-x, .vf-gear{
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    color:#fff;
+    font-size: 18px;
+    cursor:pointer;
+  }
+  .vf-title{ font-weight: 900; letter-spacing:.2px; }
+
+  .vf-create-actions{
+    display:flex; gap:10px;
+    padding: 6px 14px 10px;
+  }
+  .vf-pill{
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color:#fff;
+    font-weight: 900;
+    cursor:pointer;
+  }
+
+  .vf-create-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 6px 14px 10px;
+  }
+  .vf-row-left{ display:flex; align-items:center; gap:8px; color: rgba(255,255,255,.9); }
+  .vf-row-label{ font-weight: 900; }
+  .vf-select{
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color:#fff;
+    font-weight: 900;
+    cursor:pointer;
+  }
+
+  .vf-grid{
+    flex: 1;
+    padding: 0 10px 10px;
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    overflow:auto;
+  }
+
+  .vf-tile{
+    position: relative;
+    border: 0;
+    border-radius: 10px;
+    overflow:hidden;
+    background: rgba(255,255,255,.06);
+    cursor:pointer;
+    aspect-ratio: 1 / 1;
+  }
+  .vf-tile img, .vf-tile video{
+    width:100%; height:100%;
+    object-fit: cover;
+    display:block;
+  }
+  .vf-badge{
+    position:absolute;
+    right: 8px; top: 8px;
+    width: 28px; height: 28px;
+    border-radius: 10px;
+    display:grid; place-items:center;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.14);
+    backdrop-filter: blur(10px);
+  }
+
+  .vf-camera{
+    display:grid;
+    place-items:center;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.10);
+  }
+  .vf-cam-icon{ font-size: 22px; }
+
+  .vf-empty{
+    grid-column: 1 / -1;
+    padding: 14px;
+    color: rgba(255,255,255,.65);
+    border: 1px dashed rgba(255,255,255,.18);
+    border-radius: 12px;
+    background: rgba(255,255,255,.04);
+  }
+
+  .vf-tabs{
+    display:flex;
+    gap: 14px;
+    justify-content:center;
+    padding: 10px 10px 14px;
+    border-top: 1px solid rgba(255,255,255,.10);
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(14px);
+  }
+  .vf-tab{
+    border:0;
+    background: transparent;
+    color: rgba(255,255,255,.55);
+    font-weight: 1000;
+    letter-spacing:.14em;
+    cursor:pointer;
+  }
+  .vf-tab.active{ color:#fff; }
+
+  .post-card{
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .center-panel{ position: relative; }
+  .center-panel::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image: url("{{ url_for('VFlogo_clean.png') }}");
+    background-repeat: no-repeat;
+    background-position: center 140px;
+    background-size: 280px auto;
+    opacity: .06;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .center-panel > *{ position: relative; z-index: 1; }
+
+  .post-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 12px;
+  }
+
+  .post-user{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .post-user .meta{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+  }
+
+  .post-user .name{
+    font-weight: 900;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+
+  .post-user .sub{
+    font-size: 12px;
+    color: rgba(255,255,255,.68);
+    display:flex;
+    gap: 8px;
+    align-items:center;
+  }
+
+  .post-menu{
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.90);
+    cursor:pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 0 20px rgba(255,106,0,.18);
+  }
+
+  .post-body{
+    margin-top: 10px;
+    color: rgba(255,255,255,.88);
+    line-height: 1.45;
+    font-size: 15px;
+  }
+
+  .post-media{
+    margin-top: 10px;
+    border-radius: 16px;
+    overflow:hidden;
+    border: 1px solid var(--line);
+    background: rgba(0,0,0,.25);
+    box-shadow: 0 0 28px rgba(255,106,0,.14);
+  }
+
+  .post-media img,
+  .post-media video{
+    width:100%;
+    max-height: 520px;
+    object-fit: cover;
+    display:block;
+  }
+
+  .post-stats{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top: 10px;
+    color: rgba(255,255,255,.70);
+    font-size: 13px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,173,117,.18);
+  }
+
+  .post-actions{
+    display:flex;
+    gap:10px;
+    margin-top: 10px;
+  }
+
+  .gloss-btn{
+    flex: 1;
+    height: 40px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,173,117,.22);
+    background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+    backdrop-filter: blur(10px);
+    color: rgba(255,255,255,.92);
+    font-weight: 850;
+    cursor:pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 0 22px rgba(255,106,0,.16);
+  }
+
+  .gloss-btn:hover{
+    background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06));
+    box-shadow: 0 0 0 1px rgba(255,173,117,.30), 0 0 30px rgba(255,106,0,.26);
+  }
+
+  .mvp-post-panel { padding: 12px; display: grid; gap: 10px; }
+  .mvp-meta-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+  .mvp-label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .mvp-share-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mvp-share-chip {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 10px;
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .mvp-share-chip input { accent-color: var(--brand2); }
+  .mvp-row { display: grid; grid-template-columns: 1fr 170px 150px 120px auto; gap: 8px; }
+  .mvp-input, .mvp-select, .mvp-btn {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    padding: 10px;
+  }
+  .mvp-btn { cursor: pointer; font-weight: 800; white-space: nowrap; }
+  .mvp-feedback { font-size: 12px; color: var(--muted); min-height: 16px; }
+  .mvp-posts { display: grid; gap: 12px; }
+  .mvp-card { padding: 12px; border-radius: 16px; border: 1px solid var(--line); position: relative; overflow: hidden; }
+  .mvp-card.bg-default { background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.12)); }
+  .mvp-card.bg-sunset { background: linear-gradient(135deg, rgba(255,140,40,.35), rgba(255,90,0,.20), rgba(0,0,0,.25)); }
+  .mvp-card.bg-neon { background: linear-gradient(135deg, rgba(255,90,0,.28), rgba(145,85,255,.22), rgba(0,0,0,.24)); }
+  .mvp-card.bg-glass { background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.05)); }
+  .mvp-card.bg-custom { background: rgba(255,255,255,.08); }
+  .mvp-stickers {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .mvp-sticker {
+    position: absolute;
+    font-size: 26px;
+    transform-style: preserve-3d;
+    animation: emojiFloat3d 2.4s ease-in-out infinite;
+    pointer-events: auto;
+    user-select: none;
+  }
+  .mvp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .mvp-user { display: flex; align-items: center; gap: 10px; }
+  .mvp-avatar { width: 38px; height: 38px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255,255,255,.2); }
+  .mvp-title { font-weight: 900; }
+  .mvp-sub { font-size: 12px; color: var(--muted); }
+  .mvp-caption { margin-top: 8px; white-space: pre-wrap; }
+  .mvp-media { margin-top: 10px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+  .mvp-media img, .mvp-media video { width: 100%; max-height: 420px; object-fit: cover; display: block; }
+  .mvp-actions { margin-top: 10px; display: flex; gap: 8px; }
+  .mvp-chip { border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.08); color: var(--text); padding: 7px 10px; cursor: pointer; font-size: 12px; }
+  .mvp-comments { margin-top: 10px; display: grid; gap: 8px; }
+  .mvp-comment { border: 1px solid rgba(255,173,117,.2); border-radius: 12px; padding: 8px; background: rgba(0,0,0,.16); }
+  .mvp-comment.child { margin-left: 22px; border-style: dashed; }
+  .mvp-comment-meta { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .mvp-comment-text { margin-top: 4px; white-space: pre-wrap; }
+  .mvp-comment-note { margin-top: 6px; padding: 6px 8px; border-radius: 10px; background: rgba(255,255,255,.08); font-size: 12px; }
+  .mvp-note-line { margin-top: 4px; font-size: 12px; color: rgba(255,255,255,.82); }
+  .mvp-reply-chips { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .mvp-mini { border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.06); color: var(--text); padding: 5px 8px; cursor: pointer; font-size: 11px; }
+  .mvp-comment-form { margin-top: 8px; display: grid; grid-template-columns: 1fr auto auto; gap: 6px; }
+  .mvp-comment-input { border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.07); color: var(--text); padding: 8px; }
+  .mvp-voice-row { 
+    display: flex; 
+    align-items: center; 
+    flex-wrap: wrap; 
+    gap: 8px; 
+    margin-top: 8px;
+    padding: 10px;
+    background: rgba(255, 154, 61, 0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 154, 61, 0.2);
+  }
+  .mvp-voice-btn {
+    border: 1px solid var(--brand2, #ff7a1f);
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(255, 154, 61, 0.25), rgba(255, 106, 0, 0.15));
+    color: var(--text);
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 800;
+    transition: all .2s ease;
+    box-shadow: 0 0 15px rgba(255, 106, 0, 0.2);
+  }
+  .mvp-voice-btn:hover {
+    background: linear-gradient(135deg, rgba(255, 154, 61, 0.35), rgba(255, 106, 0, 0.25));
+    box-shadow: 0 0 25px rgba(255, 106, 0, 0.4);
+    transform: scale(1.05);
+  }
+  .mvp-voice-btn.recording {
+    animation: voiceRecordingPulse 1s ease-in-out infinite;
+    background: linear-gradient(135deg, rgba(255, 50, 50, 0.35), rgba(255, 100, 0, 0.25));
+    box-shadow: 0 0 25px rgba(255, 50, 50, 0.6);
+  }
+  @keyframes voiceRecordingPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  .mvp-voice-input { font-size: 11px; color: var(--text); }
+  .mvp-voice-audio { 
+    width: 100%; 
+    margin-top: 8px;
+    border-radius: 10px;
+    background: rgba(255, 154, 61, 0.1);
+    padding: 8px;
+  }
+  .mvp-voice-audio::-webkit-media-controls-panel {
+    background: rgba(255, 154, 61, 0.15);
+  }
+  .mvp-voice-audio::-webkit-media-controls-play-button {
+    filter: brightness(1.2);
+  }
+  .mvp-voice-waveform {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 40px;
+    padding: 8px;
+    background: rgba(255, 154, 61, 0.08);
+    border-radius: 10px;
+    flex: 1;
+  }
+  .mvp-voice-bar {
+    width: 3px;
+    background: linear-gradient(180deg, var(--brand2, #ff7a1f), var(--brand1, #ff9a3d));
+    border-radius: 2px;
+    animation: voiceWaveBar .5s ease-in-out infinite;
+  }
+  @keyframes voiceWaveBar {
+    0%, 100% { height: 4px; opacity: 0.4; }
+    50% { height: 24px; opacity: 1; }
+  }
+  .mvp-undo {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 10px;
+    margin-left: 6px;
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .gif-panel {
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(0,0,0,.18);
+  }
+  @media (max-width: 880px) {
+    .mvp-row { grid-template-columns: 1fr; }
+    .mvp-meta-row { grid-template-columns: 1fr; }
+    .mvp-comment-form { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="feed-app">
+  <header class="feed-topbar vf-topbar" role="navigation" aria-label="VybeFlow">
+    <div class="vf-left">
+      <a class="vf-brand" href="{{ url_for('feed') }}">
+        <img
+          class="vf-logo-img"
+          src="{{ url_for('VFlogo_clean.png') }}"
+          alt="VybeFlow logo"
+        />
+        <span>vybeflow</span>
+      </a>
+
+      <div class="vf-search" role="search">
+        <span class="vf-ico" aria-hidden="true">⌕</span>
+        <input class="feed-search" type="search" placeholder="Search VybeFlow" aria-label="Search VybeFlow" />
+      </div>
+    </div>
+
+    <div class="topbar-tools">
+      <label class="retro-switch" for="retro-toggle">
+        2011 Mode
+        <input id="retro-toggle" type="checkbox" />
+      </label>
+
+      <div class="feed-icons">
+      <a class="icon-btn" href="{{ url_for('feed') }}" title="Home">⌂</a>
+      <a class="icon-btn" href="{{ url_for('search') }}" title="Explore">⌕</a>
+      <a class="icon-btn" href="{{ url_for('create_picker') }}" title="Create">＋</a>
+      <a class="icon-btn" href="{{ url_for('messenger') }}" title="Messenger">💬{% if notification_counts.messages %}<span class="icon-badge">{{ notification_counts.messages }}</span>{% endif %}</a>
+      <a class="icon-btn" href="{{ url_for('live_hub') }}" title="Live">📡{% if notification_counts.live_invites %}<span class="icon-badge">{{ notification_counts.live_invites }}</span>{% endif %}</a>
+      <a class="icon-btn" href="{{ url_for('account') }}" title="Account">◉</a>
+      <a class="icon-btn" href="{{ url_for('settings') }}" title="Settings">⚙</a>
+      <a class="icon-btn" href="{{ url_for('logout') }}" title="Logout">↩</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="feed-grid">
+    <aside class="left-panel panel">
+      <div class="section-title">You</div>
+      <a class="menu-item" href="{{ url_for('account') }}">
+        <img src="{{ current_user.avatar_url }}" alt="avatar" />
+        <div>
+          <div style="font-weight:800; line-height:1.1;">{{ current_user.username }}</div>
+          <div style="color: var(--muted); font-size: 13px;">@{{ current_user.username }}</div>
+        </div>
+      </a>
+
+      <div class="section-title">Shortcuts</div>
+      <a class="menu-item" href="{{ url_for('feed') }}">🏠 Home</a>
+      <a class="menu-item" href="{{ url_for('search') }}">✨ Explore</a>
+      <a class="menu-item" href="{{ url_for('create_picker') }}">🎬 Create</a>
+      <a class="menu-item" href="{{ url_for('logout') }}">🚪 Logout</a>
+
+      <div class="mini-card">
+        <div class="section-title" style="margin:0 0 8px;">Your Vybes</div>
+        <a class="trend-chip" href="{{ url_for('search') }}">🔥 Trap</a>
+        <a class="trend-chip" href="{{ url_for('search') }}">🎧 R&B</a>
+        <a class="trend-chip" href="{{ url_for('search') }}">🏀 Sports</a>
+        <a class="trend-chip" href="{{ url_for('search') }}">💸 Hustle</a>
+      </div>
+    </aside>
+
+    <main class="center-panel">
+      <section class="feed-composer panel">
+        <div class="composer-top">
+          <img class="avatar" src="{{ current_user.avatar_url }}" alt="avatar" />
+          <a class="composer-box" id="open-creator-main" href="{{ url_for('upload') }}?mode=post">
+            What’s the vybe today, {{ current_user.username }}?
+          </a>
+        </div>
+
+        <div class="composer-actions">
+          <a class="chip" href="{{ url_for('upload') }}?mode=post">📝 Post</a>
+          <a class="chip" href="{{ url_for('upload') }}?mode=photo">📸 Photo</a>
+          <a class="chip" href="{{ url_for('upload') }}?mode=reel">🎥 Reel</a>
+          <a class="chip" href="{{ url_for('upload') }}?mode=live">🔴 Live</a>
+        </div>
+      </section>
+
+      <section class="panel game-card">
+        <h3>Feed Game: Guess 1-10</h3>
+        <div class="game-hud"><span id="game-hint">Pick a number</span><span id="game-score">Score: 0</span></div>
+        <div class="lab-actions">
+          <button type="button" class="lab-btn game-guess" data-n="1">1</button>
+          <button type="button" class="lab-btn game-guess" data-n="2">2</button>
+          <button type="button" class="lab-btn game-guess" data-n="3">3</button>
+          <button type="button" class="lab-btn game-guess" data-n="4">4</button>
+          <button type="button" class="lab-btn game-guess" data-n="5">5</button>
+        </div>
+      </section>
+
+      <section class="panel ai-card">
+        <h3>Vybe AI Feed Assistant</h3>
+        <div id="ai-log" class="ai-log">AI ready. Ask for post ideas, hashtags, or challenge captions.</div>
+        <input id="ai-input" class="lab-input" type="text" placeholder="Ask AI anything for your feed..." />
+        <div class="lab-actions">
+          <button type="button" id="ai-send" class="lab-btn">Ask AI</button>
+        </div>
+      </section>
+
+      <!-- ===== Reels Rail (IG-ish, but VybeFlow flex) ===== -->
+      <section class="panel reels-rail" aria-label="Reels">
+        <div class="reels-head">
+          <div>
+            <div class="reels-title">Reels</div>
+            <div class="reels-sub">Tap to flex • Hover to preview • Drop heat 🔥</div>
+          </div>
+
+          <div class="reels-actions">
+            <button type="button" class="reels-chip" id="reels-for-you">✨ For You</button>
+            <button type="button" class="reels-chip" id="reels-chaos">🎲 Chaos</button>
+            <a class="reels-chip" href="{{ url_for('create_reel') }}">＋ Create</a>
+          </div>
+        </div>
+
+        <div class="reels-row" id="reels-row">
+          {# Example: if you have reels list from backend, loop them #}
+          {# Expected fields: r.id, r.cover_url, r.video_url, r.user.avatar_url, r.user.username, r.duration_label #}
+
+          {% if reels %}
+            {% for r in reels %}
+            <button
+              type="button"
+              class="reel-card"
+              data-reel-id="{{ r.id }}"
+              data-video="{{ r.video_url }}"
+              data-cover="{{ r.cover_url }}"
+              data-user="{{ r.user.username }}"
+              data-avatar="{{ r.user.avatar_url }}"
+              data-duration="{{ r.duration_label or '' }}"
+              data-likes="{{ r.like_count or 0 }}"
+              data-comments="{{ r.comment_count or 0 }}"
+              data-views="{{ r.view_count or 0 }}"
+              data-created-at="{{ r.created_at or '' }}"
+            >
+              <div class="reel-heat">🔥 HOT</div>
+              <div class="reel-media" style="background-image:url('{{ r.cover_url }}')"></div>
+
+              <div class="reel-glass-top">
+                <div class="reel-badges">
+                  <span class="reel-pill">REEL</span>
+                  {% if r.duration_label %}<span class="reel-pill ghost">{{ r.duration_label }}</span>{% endif %}
+                </div>
+                <div class="reel-play">▶</div>
+              </div>
+
+              <div class="reel-hover-overlay" aria-label="Reel quick actions">
+                <button type="button" class="reel-overlay-btn reel-like-btn" data-action="like">🔥 <span>{{ r.like_count or 0 }}</span></button>
+                <button type="button" class="reel-overlay-btn reel-comment-btn" data-action="comment">💬 <span>{{ r.comment_count or 0 }}</span></button>
+              </div>
+
+              <div class="reel-glass-bot">
+                <img class="reel-avatar" src="{{ r.user.avatar_url }}" alt="avatar">
+                <div class="reel-user">@{{ r.user.username }}</div>
+                <div class="reel-flex" title="Flex meter">
+                  <span class="reel-flame">🔥</span>
+                  <span class="reel-flex-num">0</span>
+                </div>
+              </div>
+            </button>
+            {% endfor %}
+          {% else %}
+            <div style="padding:10px;color:var(--muted);">No reels yet — be the first to drop one.</div>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- ===== Fullscreen Reel Viewer ===== -->
+      <div class="reel-viewer" id="reel-viewer" hidden>
+        <button type="button" class="reel-view-close" id="reel-view-close" aria-label="Close">✕</button>
+
+        <div class="reel-view-stage">
+          <video id="reel-view-video" class="reel-view-video" playsinline muted loop></video>
+          <div class="reel-view-hint">Swipe or scroll up/down</div>
+
+          <div class="reel-view-hud">
+            <div class="reel-view-user">
+              <img id="reel-view-avatar" class="reel-view-avatar" alt="avatar">
+              <div>
+                <div id="reel-view-handle" class="reel-view-handle">@user</div>
+                <div class="reel-view-sub">VybeFlow Reel</div>
+              </div>
+            </div>
+
+            <div class="reel-view-actions">
+              <button type="button" class="rv-btn" id="rv-like">🔥</button>
+              <button type="button" class="rv-btn" id="rv-share">🚀</button>
+              <button type="button" class="rv-btn" id="rv-sound">🔇</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="story-row panel" aria-label="Stories">
+        <a href="{{ url_for('create_story') }}" class="story-card story-create">
+          <div class="story-media">＋</div><p>Create story</p>
+        </a>
+        {% if stories %}
+          {% for story in stories %}
+          <div class="story-card">
+            <button
+              type="button"
+              class="story-open"
+              data-story-title="{{ story.title }}"
+              data-story-user="@{{ story.username }}"
+              data-story-caption="{{ story.caption }}"
+              data-story-location="{{ story.location }}"
+              data-story-mentions="{{ story.mentions|join(', ') }}"
+              data-story-effects="{{ story.effects|join(', ') }}"
+              data-story-graphics="{{ story.graphics|join(', ') }}"
+              data-story-music="{{ story.music_track }}"
+              data-story-image="{{ story.image }}"
+              data-story-audio="{{ story.music_file_url or story.music_preview_url }}"
+            >
+                <div class="story-media" style="background-image:url('{{ story.image }}'); background-size:cover; background-position:center;"></div>
+              <p>{{ story.title }}</p>
+            </button>
+
+            {% if story.music_file_url or story.music_preview_url %}
+              <div class="story-inline-music">
+                <div class="story-inline-title">♫ {{ story.music_track or "Music" }}</div>
+                <audio class="story-inline-audio" controls preload="metadata">
+                  <source src="{{ story.music_file_url or story.music_preview_url }}">
+                </audio>
+              </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% endif %}
+      </section>
+
+      <section class="panel mvp-post-panel" aria-label="MVP Social Feed">
+        <h3 style="margin:0;">Create Post</h3>
+        <textarea id="mvp-post-caption" class="mvp-input" rows="3" placeholder="Vybe your way..."></textarea>
+        <div class="mvp-pill-row">
+          <button id="toggle-location" class="mvp-pill" type="button">📍 Location</button>
+          <button id="toggle-emojis" class="mvp-pill" type="button">😄 Emoji</button>
+          <button id="toggle-gifs" class="mvp-pill" type="button">GIF</button>
+        </div>
+        <div id="emoji-panel" class="emoji-panel" hidden>
+          <div class="emoji-toolbar">
+            <button id="emoji-tab" class="emoji-tab active" type="button">Emojis</button>
+            <button id="sticker-tab" class="emoji-tab" type="button">Stickers</button>
+          </div>
+          <div id="emoji-row" class="emoji-row"></div>
+          <div id="sticker-grid" class="sticker-grid" hidden></div>
+          <div id="emoji-stage" class="emoji-stage" aria-label="Emoji stage"></div>
+          <div class="emoji-stage-note">Tap an emoji for a pop, or drag onto the stage.</div>
+        </div>
+        <div id="gif-panel" class="gif-panel" hidden>
+          <input id="gif-search" class="mvp-input" type="text" placeholder="Search GIFs..." />
+          <div id="gif-grid" class="gif-grid"></div>
+        </div>
+        <div class="mvp-meta-row">
+          <div>
+            <span class="mvp-label">Who can see this</span>
+            <select id="mvp-post-visibility" class="mvp-select">
+              <option value="Public">Public</option>
+              <option value="Friends">Friends</option>
+              <option value="Private">Only me</option>
+            </select>
+          </div>
+          <div>
+            <span class="mvp-label">Share to</span>
+            <div class="mvp-share-row">
+              <label class="mvp-share-chip"><input id="share-ig" type="checkbox" /> IG</label>
+              <label class="mvp-share-chip"><input id="share-tt" type="checkbox" /> TikTok</label>
+              <label class="mvp-share-chip"><input id="share-x" type="checkbox" /> X</label>
+            </div>
+          </div>
+        </div>
+        <div class="mvp-row">
+          <select id="mvp-post-bg" class="mvp-select">
+            <option value="default">Background: Default</option>
+            <option value="sunset">Background: Sunset</option>
+            <option value="neon">Background: Neon</option>
+            <option value="glass">Background: Glass</option>
+          </select>
+          <input id="mvp-post-bg-custom" class="mvp-input" type="color" value="#ff8a3c" title="Pick any background color" />
+          <input id="mvp-post-media" class="mvp-input" type="file" accept="image/*,video/*" />
+          <button id="mvp-post-create" class="mvp-btn" type="button">Publish</button>
+        </div>
+        <div id="mvp-post-feedback" class="mvp-feedback"></div>
+        <div id="mvp-posts-list" class="mvp-posts"></div>
+        <span class="mvp-feedback" style="display:none;">No comments yet</span>
+      </section>
+
+      {% for post in posts %}
+      {% set post_user = post.user if post.user is defined and post.user else current_user %}
+      <article class="post-card panel">
+        <div class="post-head">
+          <div class="post-user">
+            <img class="avatar" src="{{ post_user.avatar_url }}" alt="avatar" />
+            <div class="meta">
+              <div class="name">{{ post_user.username }}</div>
+              <div class="sub">
+                <span>{{ post.created_at_display or 'Just now' }}</span>
+                <span>•</span>
+                <span>🌐 {{ post.visibility or 'Public' }}</span>
+              </div>
+            </div>
+          </div>
+          <button class="post-menu" type="button" title="More">⋯</button>
+        </div>
+
+        {% if post.caption %}
+          <div class="post-body">{{ post.caption }}</div>
+        {% endif %}
+
+
+        {% if post.media_path %}
+          {% if post.media_type == "video" %}
+            <div class="post-media">
+              <video controls playsinline preload="metadata" style="width:100%;height:auto;border-radius:14px;">
+                <source src="{{ url_for('static', filename=post.media_path) }}" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          {% else %}
+            <div class="post-media">
+              <img src="{{ url_for('static', filename=post.media_path) }}" style="width:100%;height:auto;border-radius:14px;" />
+            </div>
+          {% endif %}
+        {% elif post.gif_url %}
+          <div class="post-media">
+            <img src="{{ post.gif_url }}" style="width:100%;height:auto;border-radius:14px;" />
+          </div>
+        {% endif %}
+
+        <div class="post-stats">
+          <div>🔥 {{ post.like_count or 0 }} likes</div>
+          <div>{{ post.comment_count or 0 }} comments</div>
+        </div>
+
+        <div class="post-actions">
+          <button class="gloss-btn" type="button">🔥 Like</button>
+          <button class="gloss-btn" type="button">💬 Comment</button>
+          <button class="gloss-btn" type="button">↗ Share</button>
+        </div>
+      </article>
+      {% endfor %}
+
+      {% if not posts %}
+      <article class="post-card panel">
+        <div class="post-body">No posts yet. Create one from the composer above.</div>
+      </article>
+      {% endif %}
+    </main>
+
+    <aside class="right-panel panel">
+      <div class="section-title">Quick Actions</div>
+      <a class="menu-item" href="{{ url_for('account') }}">👤 View Account</a>
+      <a class="menu-item" href="{{ url_for('upload') }}">⬆️ Upload Media</a>
+      <a class="menu-item" href="{{ url_for('messenger') }}">💬 Messenger{% if notification_counts.messages %} ({{ notification_counts.messages }}){% endif %}</a>
+      <a class="menu-item" href="{{ url_for('live_hub') }}">📡 Live Hub{% if notification_counts.live_invites %} ({{ notification_counts.live_invites }} invites){% endif %}</a>
+      <a class="menu-item" href="{{ url_for('search') }}">🔎 Search</a>
+      <a class="menu-item" href="{{ url_for('support') }}">🆘 Help &amp; Support</a>
+      <a class="menu-item" href="{{ url_for('settings') }}">⚙ Settings</a>
+      <a class="menu-item" href="{{ url_for('logout') }}">🚪 Sign Out</a>
+
+      <div class="mini-card">
+        <div class="section-title" style="margin:0 0 8px;">Trending on VybeFlow</div>
+        <a class="trend-chip" href="{{ url_for('search') }}">#OpenVerse</a>
+        <a class="trend-chip" href="{{ url_for('search') }}">#RoastMe</a>
+        <a class="trend-chip" href="{{ url_for('search') }}">#BeatTok</a>
+        <a class="trend-chip" href="{{ url_for('search') }}">#MeetCute</a>
+      </div>
+
+      <!-- People to Follow section removed -->
+    </aside>
+  </div>
+</div>
+<div id="vf-create" class="vf-create" hidden>
+  <div class="vf-create-top">
+    <button type="button" class="vf-x" id="vf-create-close" aria-label="Close">×</button>
+    <div class="vf-title" id="vf-create-title">New reel</div>
+    <button type="button" class="vf-gear" title="Settings">⚙</button>
+  </div>
+
+  <div class="vf-create-actions">
+    <button type="button" class="vf-pill">Drafts</button>
+    <button type="button" class="vf-pill">Templates</button>
+  </div>
+
+  <div class="vf-create-row">
+    <div class="vf-row-left">
+      <div class="vf-row-label">Recents</div>
+      <div class="vf-row-caret">▾</div>
+    </div>
+    <button type="button" class="vf-select">Select</button>
+  </div>
+
+  <div class="vf-grid">
+    <button type="button" class="vf-tile vf-camera" id="vf-open-camera">
+      <div class="vf-cam-icon">📷</div>
+    </button>
+
+    {% for m in recent_media %}
+      <button
+        type="button"
+        class="vf-tile"
+        data-url="{{ m.url }}"
+        data-type="{{ m.type }}"
+      >
+        {% if m.type == 'video' %}
+          <video src="{{ m.url }}" muted playsinline preload="metadata"></video>
+          <div class="vf-badge">▶</div>
+        {% else %}
+          <img src="{{ m.url }}" alt="recent media">
+        {% endif %}
+      </button>
+    {% endfor %}
+
+    {% if not recent_media %}
+      <div class="vf-empty">
+        No recents yet. Upload something and it’ll show here.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="vf-tabs">
+    <button type="button" class="vf-tab" data-mode="post">POST</button>
+    <button type="button" class="vf-tab" data-mode="story">STORY</button>
+    <button type="button" class="vf-tab active" data-mode="reel">REEL</button>
+    <button type="button" class="vf-tab" data-mode="live">LIVE</button>
+  </div>
+
+  <input id="vf-file-post" type="file" accept="image/*,video/*" hidden>
+  <input id="vf-file-story" type="file" accept="image/*,video/*" hidden>
+  <input id="vf-file-reel" type="file" accept="video/*" hidden>
+</div>
+<div id="story-modal-wrap" class="story-modal-wrap" hidden>
+  <button type="button" id="story-close" class="story-close" aria-label="Close story">×</button>
+  <div class="story-modal">
+    <div class="story-progress"><span id="story-progress-bar"></span></div>
+    <div id="story-modal-media" class="story-modal-media"></div>
+    <div class="story-modal-meta">
+      <h4 id="story-title"></h4>
+      <p id="story-caption"></p>
+      <div id="story-modal-audio-wrap" class="story-modal-audio-wrap" style="display:none;">
+        <div style="font-weight:900;color:rgba(255,255,255,.85);">♫ Story audio</div>
+        <audio id="story-modal-audio" class="story-modal-audio" controls preload="metadata"></audio>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  (function () {
+    function applyRetroState(enabled) {
+      const isOn = !!enabled;
+      document.body.classList.toggle('retro-2011', isOn);
+      document.body.setAttribute('data-retro', isOn ? '1' : '0');
+      try {
+        window.localStorage.setItem('vybe_feed_retro_2011', isOn ? '1' : '0');
+      } catch (error) {
+      }
+    }
+
+
+    const retroToggle = document.getElementById('retro-toggle');
+    if (retroToggle) {
+      const sharedRetro = window.VybeTheme && typeof window.VybeTheme.loadRetro === 'function'
+        ? window.VybeTheme.loadRetro()
+        : (window.localStorage.getItem('vybe_feed_retro_2011') === '1');
+
+      retroToggle.checked = !!sharedRetro;
+      applyRetroState(retroToggle.checked);
+
+      retroToggle.addEventListener('change', function () {
+        const enabled = retroToggle.checked;
+        if (window.VybeTheme && typeof window.VybeTheme.setRetro === 'function') {
+          window.VybeTheme.setRetro(enabled);
+        }
+        applyRetroState(enabled);
+        // Force UI update for all retro-2011 styles and elements
+        setTimeout(function() {
+          document.body.offsetHeight; // force reflow
+        }, 10);
+      });
+    }
+
+    const modal = document.getElementById('story-modal-wrap');
+    const closeStory = document.getElementById('story-close');
+    const title = document.getElementById('story-title');
+    const caption = document.getElementById('story-caption');
+    const modalMedia = document.getElementById('story-modal-media');
+    const modalAudioWrap = document.getElementById('story-modal-audio-wrap');
+    const modalAudio = document.getElementById('story-modal-audio');
+    const progressBar = document.getElementById('story-progress-bar');
+    let storyTimer = null;
+
+    function closeModal() {
+      if (!modal) return;
+      modal.hidden = true;
+      document.body.style.overflow = '';
+      if (storyTimer) {
+        clearTimeout(storyTimer);
+        storyTimer = null;
+      }
+      if (modalAudio) {
+        modalAudio.pause();
+        modalAudio.removeAttribute('src');
+        modalAudio.load();
+      }
+      if (modalAudioWrap) {
+        modalAudioWrap.style.display = 'none';
+      }
+    }
+
+    document.querySelectorAll('.story-open').forEach(function (card) {
+      card.addEventListener('click', function () {
+        if (!modal) return;
+        title.textContent = card.dataset.storyTitle + ' ' + card.dataset.storyUser;
+        const captionParts = [card.dataset.storyCaption || ''];
+        if (card.dataset.storyLocation) captionParts.push('📍 ' + card.dataset.storyLocation);
+        if (card.dataset.storyMentions) captionParts.push('👥 ' + card.dataset.storyMentions);
+        if (card.dataset.storyEffects) captionParts.push('✨ ' + card.dataset.storyEffects);
+        if (card.dataset.storyGraphics) captionParts.push('🖼 ' + card.dataset.storyGraphics);
+        if (card.dataset.storyMusic) captionParts.push('🎵 ' + card.dataset.storyMusic);
+        caption.textContent = captionParts.filter(Boolean).join(' • ');
+
+        if (modalMedia) {
+          const mediaUrl = card.dataset.storyImage || '';
+          if (mediaUrl) {
+            if (/\.(mp4|mov|webm|m4v)(\?|#|$)/i.test(mediaUrl)) {
+              modalMedia.innerHTML = '<video src="' + mediaUrl + '" controls autoplay muted playsinline></video>';
+            } else {
+              modalMedia.innerHTML = '<img src="' + mediaUrl + '" alt="Story media" />';
+            }
+          } else {
+            modalMedia.innerHTML = '';
+          }
+        }
+
+        const audioUrl = card.dataset.storyAudio || '';
+        if (modalAudioWrap && modalAudio) {
+          if (audioUrl) {
+            modalAudioWrap.style.display = 'block';
+            modalAudio.src = audioUrl;
+            modalAudio.load();
+          } else {
+            modalAudioWrap.style.display = 'none';
+            modalAudio.removeAttribute('src');
+            modalAudio.load();
+          }
+        }
+
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+
+        progressBar.style.transition = 'none';
+        progressBar.style.width = '0';
+        requestAnimationFrame(function () {
+          progressBar.style.transition = 'width 4s linear';
+          progressBar.style.width = '100%';
+        });
+
+        if (storyTimer) clearTimeout(storyTimer);
+        storyTimer = setTimeout(closeModal, 4000);
+      });
+    });
+
+    document.querySelectorAll('.story-inline-audio').forEach(function (audioEl) {
+      ['click', 'pointerdown', 'touchstart'].forEach(function (eventName) {
+        audioEl.addEventListener(eventName, function (event) {
+          event.stopPropagation();
+        });
+      });
+    });
+
+    if (closeStory) closeStory.addEventListener('click', closeModal);
+    if (modal) {
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) closeModal();
+      });
+    }
+
+    async function moderateDraft(text, mediaName) {
+      const response = await fetch("{{ url_for('moderate_content_api') }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text || '', media_name: mediaName || '' })
+      });
+
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch (error) {
+        payload = { ok: false, reason: 'moderation_unavailable' };
+      }
+
+      if (payload.banned) {
+        alert(payload.stamp || 'YOU GOT BANNED');
+        window.location.href = "{{ url_for('banned') }}";
+        return { allowed: false, banned: true, payload: payload };
+      }
+
+      if (!payload.ok || payload.removed) {
+        const warningLine = payload.warnings ? (' Warning ' + payload.warnings + '/3.') : '';
+        alert('Content removed by AI moderation.' + warningLine);
+        return { allowed: false, banned: false, payload: payload };
+      }
+
+      return { allowed: true, banned: false, payload: payload };
+    }
+
+    const buttons = document.querySelectorAll('.feed-action');
+    buttons.forEach(function (button) {
+      button.addEventListener('click', async function () {
+        const action = button.dataset.action;
+        if (action === 'like') {
+          button.textContent = button.textContent.includes('Liked') ? '🔥 Like' : '🔥 Liked';
+          return;
+        }
+        if (action === 'comment') {
+          const rawComment = prompt('Write a comment:');
+          if (!rawComment || !rawComment.trim()) return;
+          const result = await moderateDraft(rawComment.trim(), '');
+          if (!result.allowed) return;
+          alert('Comment posted.');
+          return;
+        }
+        if (action === 'share') {
+          const url = window.location.href;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function () {
+              button.textContent = '✅ Copied';
+              setTimeout(function () { button.textContent = '🚀 Share'; }, 1000);
+            });
+          }
+        }
+      });
+    });
+
+    document.querySelectorAll('.vf-react').forEach(function (wrap) {
+      const btn = wrap.querySelector('.vf-react-btn');
+      const num = wrap.querySelector('.vf-react-num');
+      const icon = wrap.querySelector('.vf-react-emoji');
+      if (!btn || !num || !icon) return;
+
+      wrap.querySelectorAll('.vf-re').forEach(function (reBtn) {
+        reBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          const emoji = reBtn.dataset.re || '🔥';
+
+          btn.textContent = emoji + ' Reacted';
+          icon.textContent = emoji;
+
+          const n = (parseInt(num.textContent || '0', 10) || 0) + 1;
+          num.textContent = String(n);
+
+          icon.animate(
+            [{ transform:'scale(1)' }, { transform:'scale(1.35)' }, { transform:'scale(1)' }],
+            { duration: 220, easing:'ease-out' }
+          );
+
+          // OPTIONAL: send to backend (real persistence)
+          // fetch('/api/react', { method:'POST', headers:{'Content-Type':'application/json'},
+          //   body: JSON.stringify({ post_id: btn.dataset.postId, reaction: emoji })
+          // });
+        });
+      });
+    });
+
+    const GIPHY_API_KEY = '4fMAdqZTnmL9nyGte8cv25QEhSosqcCz';
+    const gifLibrary = [
+      { title: 'Hype Fire', tags: ['hype', 'fire', 'energy'], url: 'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif' },
+      { title: 'Laugh Loop', tags: ['funny', 'laugh', 'lol'], url: 'https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif' },
+      { title: 'Dance Floor', tags: ['dance', 'party', 'music'], url: 'https://media.giphy.com/media/l0HlQ7LRalQqdWfao/giphy.gif' },
+      { title: 'Game Time', tags: ['game', 'win', 'play'], url: 'https://media.giphy.com/media/KEYMsj2LcXzfcTP5ii/giphy.gif' },
+      { title: 'Studio Mood', tags: ['studio', 'beat', 'producer'], url: 'https://media.giphy.com/media/3o7aD4Vr8mU9B7wNhe/giphy.gif' },
+      { title: 'Chill Vibes', tags: ['chill', 'vibe', 'calm'], url: 'https://media.giphy.com/media/3orieUe6ejxSFxYCXe/giphy.gif' },
+      { title: 'Hip Hop Bounce', tags: ['hiphop', 'rap', 'bounce'], url: 'https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif' },
+      { title: 'Mic Drop', tags: ['mic', 'music', 'hiphop'], url: 'https://media.giphy.com/media/l3vR85PnGsBwu1PFK/giphy.gif' },
+      { title: 'DJ Turntable', tags: ['dj', 'turntable', 'club'], url: 'https://media.giphy.com/media/11k3oaUjSlFR4I/giphy.gif' },
+      { title: 'Street Vibes', tags: ['street', 'city', 'vibes'], url: 'https://media.giphy.com/media/xT0xeJpnrWC4XWblEk/giphy.gif' },
+      { title: 'Drake Mood', tags: ['drake', 'reaction', 'hiphop'], url: 'https://media.giphy.com/media/l0HlvtIPzPdt2usKs/giphy.gif' },
+      { title: 'Crowd Jump', tags: ['concert', 'crowd', 'jump'], url: 'https://media.giphy.com/media/l0MYEqEzwMWFCg8rm/giphy.gif' },
+      { title: 'Beat Drop', tags: ['beat', 'drop', 'producer'], url: 'https://media.giphy.com/media/3orieYWe02pGslNpCw/giphy.gif' },
+      { title: 'Money Move', tags: ['money', 'hustle', 'trap'], url: 'https://media.giphy.com/media/3o6Zt6KHxJTbXCnSvu/giphy.gif' },
+      { title: 'Wave Check', tags: ['wave', 'trend', 'style'], url: 'https://media.giphy.com/media/3o72F8t9TDi2xVnxOE/giphy.gif' },
+      { title: 'Late Night', tags: ['night', 'city', 'studio'], url: 'https://media.giphy.com/media/3o7TKsQ8UQ4LzQm8fu/giphy.gif' },
+      { title: 'Throwback', tags: ['throwback', 'classic', 'oldschool'], url: 'https://media.giphy.com/media/26xBI73gWquCBBCDe/giphy.gif' },
+      { title: 'Sports Heat', tags: ['sports', 'win', 'energy'], url: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif' },
+      { title: 'Love Vibe', tags: ['love', 'heart', 'romance'], url: 'https://media.giphy.com/media/26FLdmIp6wJr91JAI/giphy.gif' },
+      { title: 'Glow Up', tags: ['glow', 'shine', 'style'], url: 'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif' }
+    ];
+
+    const postText = document.getElementById('mvp-post-caption');
+    const photoInput = document.getElementById('photo-input');
+    const publishPost = document.getElementById('publish-post');
+    const feedLivePosts = document.getElementById('feed-live-posts');
+    const gifSearch = document.getElementById('gif-search');
+    const gifGrid = document.getElementById('gif-grid');
+    const aiIdea = document.getElementById('ai-idea');
+    const toggleCreator = document.getElementById('toggle-creator');
+    const creatorPanel = document.getElementById('creator-panel');
+    const toggleGifs = document.getElementById('toggle-gifs');
+    const gifPanel = document.getElementById('gif-panel');
+    const openCreatorMain = document.getElementById('open-creator-main');
+    const openCreatorPost = document.getElementById('open-creator-post');
+    const openCreatorPhoto = document.getElementById('open-creator-photo');
+    const openCreatorReel = document.getElementById('open-creator-reel');
+    const toggleLocation = document.getElementById('toggle-location');
+    const toggleEmojis = document.getElementById('toggle-emojis');
+    const toggleStickers = document.getElementById('toggle-stickers');
+    const emojiPanel = document.getElementById('emoji-panel');
+    const emojiTab = document.getElementById('emoji-tab');
+    const stickerTab = document.getElementById('sticker-tab');
+    const emojiRow = document.getElementById('emoji-row');
+    const emojiStage = document.getElementById('emoji-stage');
+    const stickerGrid = document.getElementById('sticker-grid');
+    const aiInput = document.getElementById('ai-input');
+    const aiSend = document.getElementById('ai-send');
+    const aiLog = document.getElementById('ai-log');
+    let creatorMode = 'post';
+    let selectedGif = null;
+
+    const richEmojis = [
+      '😀','😭','😡','😍','🥰','😂','😱','😴','😎','😵‍💫','🙄','😘','🤢','🤮','🥶','🥵'
+    ];
+    const stickerLibrary = [
+      '🔥','💥','⚡','✨','💯','🧊','🧢','😈','😤','🕶️','💎','👑','🏁','🪙','💵','🤑','🚗','🏎️','⛓️','🧱',
+      '🎧','🎤','🎵','🎶','🥁','🎹','🎷','🎸','🎺','📀','🎮','🕹️','🎲','🎯','🏆','🏀','⚽','🏈','⚾','🎾',
+      '🚀','🌟','🌙','🌊','☀️','☁️','🌧️','🍀','💫','🦋','🐱','🐶','🐻','🐼','🐸','🦄','🫶','❤️','💜','💛'
+    ];
+    const audioCtx = window.AudioContext ? new AudioContext() : (window.webkitAudioContext ? new webkitAudioContext() : null);
+    const emojiSoundFiles = {
+      '🔥': 'fire-pop.mp3',
+      '😂': 'laugh-pop.mp3',
+      '💜': 'love-bloop.mp3',
+      '🎵': 'tiny-jingle.mp3',
+      '🚀': 'whoosh-rocket.mp3',
+      '😎': 'cool-snap.mp3',
+      '💥': 'mini-boom.mp3',
+      '✨': 'sparkle-chime.mp3'
+    };
+    const emojiAudioCache = new Map();
+    let emojiAudioUnlocked = false;
+
+    function unlockEmojiAudio() {
+      if (emojiAudioUnlocked || !audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(function () {});
+      }
+      emojiAudioUnlocked = true;
+    }
+
+    document.addEventListener('pointerdown', unlockEmojiAudio, { once: true });
+
+    function playFunnyEmojiSynth(emoji) {
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const key = String(emoji || '✨');
+      const code = key.codePointAt(0) || 10024;
+      const now = audioCtx.currentTime;
+      const base = 240 + (code % 420);
+      const duration = 0.09 + ((code % 5) * 0.018);
+
+      const oscA = audioCtx.createOscillator();
+      const oscB = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      const shapes = ['triangle', 'square', 'sine', 'sawtooth'];
+      const shape = shapes[code % shapes.length];
+
+      oscA.type = shape;
+      oscB.type = code % 2 ? 'triangle' : 'sine';
+      oscA.frequency.setValueAtTime(base, now);
+      oscA.frequency.exponentialRampToValueAtTime(base * (1.25 + ((code % 7) * 0.05)), now + duration * 0.72);
+      oscB.frequency.setValueAtTime(Math.max(80, base / 2), now);
+      oscB.frequency.exponentialRampToValueAtTime(Math.max(120, base * 0.86), now + duration);
+
+      filter.type = code % 3 === 0 ? 'bandpass' : 'lowpass';
+      filter.frequency.setValueAtTime(1200 + (code % 900), now);
+      filter.Q.setValueAtTime(2 + (code % 6), now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.045 + ((code % 4) * 0.012), now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      oscA.connect(filter);
+      oscB.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      oscA.start(now);
+      oscB.start(now);
+      oscA.stop(now + duration);
+      oscB.stop(now + duration + 0.01);
+    }
+
+    function playEmojiSound(emoji) {
+      const key = String(emoji || '✨');
+      const fileName = emojiSoundFiles[key];
+      if (!fileName) {
+        playFunnyEmojiSynth(key);
+        return;
+      }
+
+      let audio = emojiAudioCache.get(fileName);
+      if (!audio) {
+        audio = new Audio('/static/uploads/emoji-sounds/' + fileName);
+        audio.preload = 'auto';
+        emojiAudioCache.set(fileName, audio);
+      }
+
+      try {
+        audio.currentTime = 0;
+      } catch (error) {
+      }
+
+      audio.play().catch(function () {
+        playFunnyEmojiSynth(key);
+      });
+    }
+
+    window.VybeEmojiSound = playEmojiSound;
+
+    function insertAtCursor(textarea, text) {
+      if (!textarea) return;
+      const start = textarea.selectionStart || 0;
+      const end = textarea.selectionEnd || 0;
+      textarea.value = textarea.value.slice(0, start) + text + textarea.value.slice(end);
+      const nextPos = start + text.length;
+      textarea.selectionStart = nextPos;
+      textarea.selectionEnd = nextPos;
+      textarea.focus();
+    }
+
+    function makeDraggableSticker(sticker) {
+      let dragging = false;
+      let dragOffsetX = 0;
+      let dragOffsetY = 0;
+
+      sticker.addEventListener('pointerdown', function (event) {
+        dragging = true;
+        sticker.setPointerCapture(event.pointerId);
+        const rect = sticker.getBoundingClientRect();
+        dragOffsetX = event.clientX - rect.left;
+        dragOffsetY = event.clientY - rect.top;
+      });
+
+      sticker.addEventListener('pointermove', function (event) {
+        if (!dragging || !emojiStage) return;
+        const bounds = emojiStage.getBoundingClientRect();
+        const maxX = bounds.width - sticker.offsetWidth;
+        const maxY = bounds.height - sticker.offsetHeight;
+        const nextX = Math.max(0, Math.min(maxX, event.clientX - bounds.left - dragOffsetX));
+        const nextY = Math.max(0, Math.min(maxY, event.clientY - bounds.top - dragOffsetY));
+        sticker.style.left = nextX + 'px';
+        sticker.style.top = nextY + 'px';
+      });
+
+      function endDrag(event) {
+        if (!dragging) return;
+        dragging = false;
+        if (event && event.pointerId !== undefined) {
+          sticker.releasePointerCapture(event.pointerId);
+        }
+      }
+
+      sticker.addEventListener('pointerup', endDrag);
+      sticker.addEventListener('pointercancel', endDrag);
+    }
+
+    function addEmojiSticker(emoji, x, y) {
+      if (!emojiStage) return;
+      const sticker = document.createElement('span');
+      sticker.className = 'emoji-sticker';
+      sticker.textContent = emoji;
+      sticker.style.left = (x || 10) + 'px';
+      sticker.style.top = (y || 10) + 'px';
+      sticker.addEventListener('mouseenter', function () { playEmojiSound(emoji); });
+      sticker.addEventListener('pointerdown', function () {
+        playEmojiSound(emoji);
+        sticker.animate([
+          { transform: 'translateY(0) scale(1)' },
+          { transform: 'translateY(-4px) scale(1.2)' },
+          { transform: 'translateY(0) scale(1)' }
+        ], { duration: 200, easing: 'ease-out' });
+      });
+      sticker.addEventListener('click', function () { playEmojiSound(emoji); });
+      makeDraggableSticker(sticker);
+      emojiStage.appendChild(sticker);
+      playEmojiSound(emoji);
+    }
+
+    function addStickerFromTray(emoji) {
+      if (!emojiStage) return;
+      const rect = emojiStage.getBoundingClientRect();
+      const x = Math.max(0, (rect.width / 2) - 16);
+      const y = Math.max(0, (rect.height / 2) - 16);
+      addEmojiSticker(emoji, x, y);
+    }
+
+    function buildRichEmojiRow() {
+      if (!emojiRow) return;
+      
+      function getEmotion(emoji) {
+        const cryingEmojis = ['😭', '😢', '🥺', '😿', '😞'];
+        const laughingEmojis = ['😂', '😆', '🤣', '😜', '🤪'];
+        const fireEmojis = ['🔥'];
+        const shockedEmojis = ['😱', '😲', '😯'];
+        
+        if (cryingEmojis.includes(emoji)) return 'crying';
+        if (laughingEmojis.includes(emoji)) return 'laughing';
+        if (fireEmojis.includes(emoji)) return 'fire';
+        if (shockedEmojis.includes(emoji)) return 'shocked';
+        return null;
+      }
+      
+      emojiRow.innerHTML = '';
+      richEmojis.forEach(function (emoji, index) {
+        const emotion = getEmotion(emoji);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'emoji-btn emoji-rich';
+        button.draggable = true;
+        button.style.animationDelay = (index % 8) * 0.08 + 's';
+        button.textContent = emoji;
+        if (emotion) {
+          button.setAttribute('data-emotion', emotion);
+        }
+
+        button.addEventListener('mouseenter', function () {
+          playEmojiSound(emoji);
+        });
+        button.addEventListener('pointerdown', function () {
+          playEmojiSound(emoji);
+          button.animate(
+            [
+              { transform: 'scale(1)' },
+              { transform: 'scale(1.18)' },
+              { transform: 'scale(1)' }
+            ],
+            { duration: 200, easing: 'ease-out' }
+          );
+        });
+
+        button.addEventListener('mousemove', function () {
+          button.style.transform = 'scale(1.15)';
+        });
+
+        button.addEventListener('mouseleave', function () {
+          button.style.transform = '';
+        });
+
+        button.addEventListener('click', function () {
+          insertAtCursor(postText, emoji + ' ');
+          playEmojiSound(emoji);
+        });
+
+        button.addEventListener('dragstart', function (event) {
+          event.dataTransfer.setData('text/plain', emoji);
+        });
+
+        emojiRow.appendChild(button);
+      });
+    }
+
+    function renderStickerGrid() {
+      if (!stickerGrid) return;
+      stickerGrid.innerHTML = '';
+      stickerLibrary.forEach(function (emoji) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'sticker-item';
+        button.textContent = emoji;
+        button.addEventListener('pointerdown', function () {
+          playEmojiSound(emoji);
+          button.animate(
+            [
+              { transform: 'translateY(0) scale(1)' },
+              { transform: 'translateY(-4px) scale(1.18)' },
+              { transform: 'translateY(0) scale(1)' }
+            ],
+            { duration: 200, easing: 'ease-out' }
+          );
+        });
+        button.addEventListener('click', function () {
+          addStickerFromTray(emoji);
+        });
+        stickerGrid.appendChild(button);
+      });
+    }
+
+    if (postText) {
+      postText.addEventListener('dragover', function (event) {
+        event.preventDefault();
+      });
+      postText.addEventListener('drop', function (event) {
+        event.preventDefault();
+        const emoji = event.dataTransfer.getData('text/plain');
+        if (emoji) {
+          insertAtCursor(postText, emoji + ' ');
+          playEmojiSound(emoji);
+        }
+      });
+    }
+
+    if (emojiStage) {
+      emojiStage.addEventListener('dragover', function (event) {
+        event.preventDefault();
+      });
+      emojiStage.addEventListener('drop', function (event) {
+        event.preventDefault();
+        const emoji = event.dataTransfer.getData('text/plain');
+        if (!emoji) return;
+        const rect = emojiStage.getBoundingClientRect();
+        const x = Math.max(0, Math.min(rect.width - 34, event.clientX - rect.left - 17));
+        const y = Math.max(0, Math.min(rect.height - 34, event.clientY - rect.top - 17));
+        addEmojiSticker(emoji, x, y);
+      });
+    }
+
+    // --- MOVE ALL BUTTON INITIALIZATION TO BOTTOM OF BODY ---
+    // This guarantees all elements exist before attaching listeners
+    // and fixes all click issues for emoji, sticker, and GIF buttons.
+
+    window.addEventListener('load', function () {
+      buildRichEmojiRow();
+      renderStickerGrid();
+
+      // Initialize Emoji Button
+      if (toggleEmojis) {
+        toggleEmojis.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            const nextHidden = !emojiPanel.hidden;
+            emojiPanel.hidden = nextHidden;
+            toggleEmojis.textContent = nextHidden ? '😄 Emoji' : '😄 Emoji (close)';
+            if (!nextHidden) {
+              if (emojiTab) emojiTab.classList.add('active');
+              if (stickerTab) stickerTab.classList.remove('active');
+              if (emojiRow) emojiRow.hidden = false;
+              if (stickerGrid) stickerGrid.hidden = true;
+              buildRichEmojiRow();
+            }
+          } catch (err) {
+            console.error('Error toggling emoji panel:', err);
+          }
+        });
+      } else {
+        console.warn('toggle-emojis button not found');
+      }
+
+      // Initialize Location Button
+      if (toggleLocation) {
+        toggleLocation.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            const captionField = document.getElementById('mvp-post-caption');
+            const place = prompt('Add a location');
+            if (!place || !place.trim()) return;
+            insertAtCursor(captionField, '📍 ' + place.trim() + ' ');
+          } catch (err) {
+            console.error('Error with location button:', err);
+          }
+        });
+      }
+
+      // Initialize Emoji Tab
+      if (emojiTab) {
+        emojiTab.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            emojiTab.classList.add('active');
+            if (stickerTab) stickerTab.classList.remove('active');
+            if (emojiRow) emojiRow.hidden = false;
+            if (stickerGrid) stickerGrid.hidden = true;
+            buildRichEmojiRow();
+          } catch (err) {
+            console.error('Error toggling emoji tab:', err);
+          }
+        });
+      }
+
+      // Initialize Sticker Tab
+      if (stickerTab) {
+        stickerTab.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            stickerTab.classList.add('active');
+            if (emojiTab) emojiTab.classList.remove('active');
+            if (emojiRow) emojiRow.hidden = true;
+            if (stickerGrid) stickerGrid.hidden = false;
+            renderStickerGrid();
+          } catch (err) {
+            console.error('Error toggling sticker tab:', err);
+          }
+        });
+      }
+
+      // Initialize GIF Button
+      if (toggleGifs) {
+        toggleGifs.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            gifPanel.hidden = !gifPanel.hidden;
+            toggleGifs.textContent = gifPanel.hidden ? 'GIF' : 'GIF (close)';
+            if (!gifPanel.hidden && gifGrid) {
+              loadGifs('');
+            }
+          } catch (err) {
+            console.error('Error toggling GIF panel:', err);
+          }
+        });
+      } else {
+        console.warn('toggle-gifs button not found');
+      }
+
+      if (toggleCreator && creatorPanel) {
+        toggleCreator.addEventListener('click', function () {
+        creatorPanel.hidden = !creatorPanel.hidden;
+        toggleCreator.textContent = creatorPanel.hidden ? 'Open Creator Studio' : 'Close Creator Studio';
+      });
+    }
+
+    function showCreatorPanel() {
+      if (!creatorPanel) return;
+      creatorPanel.hidden = false;
+      if (toggleCreator) toggleCreator.textContent = 'Close Creator Studio';
+      if (postText) postText.focus();
+    }
+
+    if (openCreatorMain) {
+      openCreatorMain.addEventListener('click', function () {
+        window.location.href = "{{ url_for('upload') }}?mode=post";
+      });
+    }
+
+    (function(){
+      const modal = document.getElementById('vf-create');
+      const closeBtn = document.getElementById('vf-create-close');
+      const title = document.getElementById('vf-create-title');
+
+      const filePost = document.getElementById('vf-file-post');
+      const fileStory = document.getElementById('vf-file-story');
+      const fileReel = document.getElementById('vf-file-reel');
+
+      const openPost = document.getElementById('open-creator-post');
+      const openStory = document.getElementById('open-creator-photo');
+      const openReel = document.getElementById('open-creator-reel');
+
+      let mode = 'reel';
+
+      function openCreate(nextMode){
+        mode = nextMode || 'reel';
+        if (!modal) return;
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        setModeUI();
+      }
+      function closeCreate(){
+        if (!modal) return;
+        modal.hidden = true;
+        document.body.style.overflow = '';
+      }
+
+      function setModeUI(){
+        if (!title) return;
+        title.textContent = mode === 'story' ? 'New story' : mode === 'post' ? 'New post' : mode === 'live' ? 'Go live' : 'New reel';
+        document.querySelectorAll('.vf-tab').forEach(btn=>{
+          btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+      }
+
+      if (closeBtn) closeBtn.addEventListener('click', closeCreate);
+
+      if (openPost) openPost.addEventListener('click', ()=>openCreate('post'));
+      if (openReel) openReel.addEventListener('click', ()=>openCreate('reel'));
+      if (openStory) openStory.addEventListener('click', ()=>openCreate('story'));
+
+      document.querySelectorAll('.vf-tab').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          mode = btn.dataset.mode;
+          setModeUI();
+
+          if (mode === 'live') {
+            window.location.href = '/live_hub';
+          }
+        });
+      });
+
+      const camBtn = document.getElementById('vf-open-camera');
+      if (camBtn) {
+        camBtn.addEventListener('click', ()=>{
+          if (mode === 'reel') fileReel && fileReel.click();
+          else if (mode === 'story') fileStory && fileStory.click();
+          else filePost && filePost.click();
+        });
+      }
+
+      document.querySelectorAll('.vf-tile[data-url]').forEach(tile=>{
+        tile.addEventListener('click', ()=>{
+          const url = tile.dataset.url;
+          const type = tile.dataset.type;
+          window.location.href = '/upload?mode=' + encodeURIComponent(mode) + '&url=' + encodeURIComponent(url) + '&type=' + encodeURIComponent(type);
+        });
+      });
+    })();
+
+    // Initialize GIF Button
+    if (toggleGifs) {
+      toggleGifs.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          gifPanel.hidden = !gifPanel.hidden;
+          toggleGifs.textContent = gifPanel.hidden ? 'GIF' : 'GIF (close)';
+          if (!gifPanel.hidden && gifGrid) {
+            loadGifs('');
+          }
+        } catch (err) {
+          console.error('Error toggling GIF panel:', err);
+        }
+      });
+    } else {
+      console.warn('toggle-gifs button not found');
+    }
+
+    function renderGifGrid(items) {
+      if (!gifGrid) return;
+      gifGrid.innerHTML = '';
+      if (!items.length) {
+        gifGrid.innerHTML = '<div class="gif-empty">No GIFs found. Try a different keyword.</div>';
+        return;
+      }
+      items.forEach(function (gif) {
+        const node = document.createElement('button');
+        node.type = 'button';
+        node.className = 'gif-item';
+        node.innerHTML = '<img src="' + gif.url + '" alt="' + gif.title + '">';
+        node.addEventListener('click', function () {
+          selectedGif = gif.url;
+          if (mediaInput) mediaInput.value = '';
+          gifGrid.querySelectorAll('.gif-item').forEach(function (g) { g.style.outline = 'none'; });
+          node.style.outline = '2px solid rgba(255,154,61,.8)';
+        });
+        gifGrid.appendChild(node);
+      });
+    }
+    function normalizeGiphyResults(data) {
+      if (!data || !Array.isArray(data)) return [];
+      return data.map(function (item) {
+        const images = item.images || {};
+        const url = (images.fixed_height_small && images.fixed_height_small.url) ||
+          (images.fixed_width_small && images.fixed_width_small.url) ||
+          (images.original && images.original.url) || '';
+        return { title: item.title || 'GIF', url: url };
+      }).filter(function (gif) { return gif.url; });
+    }
+
+    function loadGifs(query) {
+      if (!gifGrid) return;
+      const term = (query || '').trim();
+      const endpoint = term
+        ? 'https://api.giphy.com/v1/gifs/search?api_key=' + encodeURIComponent(GIPHY_API_KEY) + '&q=' + encodeURIComponent(term) + '&limit=18&rating=pg-13&lang=en'
+        : 'https://api.giphy.com/v1/gifs/trending?api_key=' + encodeURIComponent(GIPHY_API_KEY) + '&limit=18&rating=pg-13';
+
+      fetch(endpoint)
+        .then(function (res) { return res.json(); })
+        .then(function (payload) {
+          const gifs = normalizeGiphyResults(payload && payload.data);
+          renderGifGrid(gifs.length ? gifs : gifLibrary);
+        })
+        .catch(function () {
+          renderGifGrid(gifLibrary);
+        });
+    }
+
+    if (gifGrid) {
+      loadGifs('');
+    }
+
+    if (gifSearch && gifGrid) {
+      let gifTimer = null;
+      gifSearch.addEventListener('input', function () {
+        const needle = (gifSearch.value || '').trim();
+        if (gifTimer) clearTimeout(gifTimer);
+        gifTimer = setTimeout(function () {
+          loadGifs(needle);
+        }, 250);
+      });
+    }
+
+    function aiReply(prompt) {
+      const text = (prompt || '').toLowerCase();
+      if (text.includes('hashtag')) return 'Try: #VybeFlow #OpenVerse #BeatTok #CreatorMode';
+      if (text.includes('caption')) return 'Caption idea: "Late-night grind, bright-stage mindset. 🔥🎵"';
+      if (text.includes('challenge')) return 'Challenge idea: 15-sec hook flip + duet chain with your followers.';
+      return 'Post idea: Share one real moment today, add 2 emojis, and ask a direct question for engagement.';
+    }
+
+    if (aiIdea && postText) {
+      aiIdea.addEventListener('click', function () {
+        postText.value += '\n' + aiReply('caption');
+      });
+    }
+
+    if (aiSend && aiInput && aiLog) {
+      aiSend.addEventListener('click', function () {
+        const prompt = aiInput.value.trim();
+        if (!prompt) return;
+        aiLog.textContent = 'AI: ' + aiReply(prompt);
+        aiInput.value = '';
+      });
+    }
+
+    if (publishPost && postText && photoInput && feedLivePosts) {
+      publishPost.addEventListener('click', async function () {
+      const text = postText.value.trim();
+      const photoName = (photoInput.files && photoInput.files.length) ? photoInput.files[0].name : '';
+      if (!text && !selectedGif && (!photoInput.files || !photoInput.files.length)) {
+        return;
+      }
+
+      if (creatorMode === 'reel' && (!photoInput.files || !photoInput.files.length || !photoInput.files[0].type.startsWith('video/'))) {
+        alert('Select a video file to publish a reel.');
+        return;
+      }
+
+      const moderation = await moderateDraft(text, photoName);
+      if (!moderation.allowed) return;
+
+      const post = document.createElement('article');
+      post.className = 'live-post';
+
+      const postUser = document.createElement('strong');
+      postUser.textContent = '@{{ current_user.username }}';
+      const postBody = document.createElement('div');
+      postBody.textContent = text || 'New post';
+      post.appendChild(postUser);
+      post.appendChild(postBody);
+
+      if (selectedGif) {
+        const gif = document.createElement('img');
+        gif.src = selectedGif;
+        gif.alt = 'Selected GIF';
+        post.appendChild(gif);
+      }
+
+      if (photoInput.files && photoInput.files.length) {
+        const mediaFile = photoInput.files[0];
+        if ((mediaFile.type || '').startsWith('video/')) {
+          const video = document.createElement('video');
+          video.src = URL.createObjectURL(mediaFile);
+          video.controls = true;
+          video.muted = true;
+          post.appendChild(video);
+        } else {
+          const photo = document.createElement('img');
+          photo.src = URL.createObjectURL(mediaFile);
+          photo.alt = 'Uploaded photo preview';
+          post.appendChild(photo);
+        }
+      }
+
+      feedLivePosts.prepend(post);
+      postText.value = '';
+      photoInput.value = '';
+      selectedGif = null;
+      });
+    }
+
+    // ===== Reels Rail JS =====
+    const reelsRow = document.getElementById('reels-row');
+    const reelsForYou = document.getElementById('reels-for-you');
+    const reelsChaos = document.getElementById('reels-chaos');
+
+    const reelViewer = document.getElementById('reel-viewer');
+    const reelViewClose = document.getElementById('reel-view-close');
+    const reelViewVideo = document.getElementById('reel-view-video');
+    const reelViewAvatar = document.getElementById('reel-view-avatar');
+    const reelViewHandle = document.getElementById('reel-view-handle');
+    const rvLike = document.getElementById('rv-like');
+    const rvShare = document.getElementById('rv-share');
+    const rvSound = document.getElementById('rv-sound');
+
+    let rvSoundOn = false;
+    let activeReelCards = [];
+    let activeReelIndex = -1;
+    let lastWheelAt = 0;
+    let touchStartY = null;
+
+    function toNumber(value) {
+      const num = parseFloat(value);
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function computeReelScore(card, index) {
+      const likes = toNumber(card.dataset.likes);
+      const comments = toNumber(card.dataset.comments);
+      const views = toNumber(card.dataset.views);
+      const createdAtRaw = card.dataset.createdAt || '';
+
+      let recencyBoost = 0;
+      if (createdAtRaw) {
+        const createdAt = new Date(createdAtRaw);
+        if (!Number.isNaN(createdAt.getTime())) {
+          const hoursAgo = (Date.now() - createdAt.getTime()) / 3600000;
+          recencyBoost = Math.max(0, 72 - hoursAgo) * 0.55;
+        }
+      }
+
+      const idSalt = String(card.dataset.reelId || index + 1)
+        .split('')
+        .reduce(function (sum, ch) { return sum + ch.charCodeAt(0); }, 0);
+      const exploreBoost = (idSalt % 9) * 1.4;
+
+      const score = (likes * 3.4) + (comments * 4.1) + (views * 0.25) + recencyBoost + exploreBoost;
+      return Math.round(score * 10) / 10;
+    }
+
+    function applyHeatBadge(card, score) {
+      const heat = card.querySelector('.reel-heat');
+      if (!heat) return;
+      if (score >= 40) {
+        card.classList.add('hot');
+        heat.textContent = score >= 85 ? '🔥 BLAZING' : score >= 60 ? '🔥 HOT' : '🔥 TRENDING';
+      } else {
+        card.classList.remove('hot');
+      }
+    }
+
+    function sortReelsByAlgorithm() {
+      if (!reelsRow) return;
+      const cards = Array.from(reelsRow.querySelectorAll('.reel-card'));
+      cards.forEach(function (card, index) {
+        const score = computeReelScore(card, index);
+        card.dataset.score = String(score);
+        applyHeatBadge(card, score);
+      });
+      cards.sort(function (a, b) {
+        return toNumber(b.dataset.score) - toNumber(a.dataset.score);
+      });
+      cards.forEach(function (card) { reelsRow.appendChild(card); });
+      activeReelCards = cards;
+      if (reelsForYou) reelsForYou.classList.add('active-sort');
+    }
+
+    function syncActiveReels() {
+      if (!reelsRow) {
+        activeReelCards = [];
+        return;
+      }
+      activeReelCards = Array.from(reelsRow.querySelectorAll('.reel-card'));
+    }
+
+    function setViewerReel(card) {
+      if (!card || !reelViewer || !reelViewVideo) return;
+
+      const videoUrl = card.dataset.video || '';
+      const coverUrl = card.dataset.cover || '';
+      const user = card.dataset.user || 'vybeflow';
+      const avatar = card.dataset.avatar || '{{ current_user.avatar_url }}';
+
+      reelViewAvatar.src = avatar;
+      reelViewHandle.textContent = '@' + user.replace(/^@/, '');
+
+      reelViewVideo.pause();
+      reelViewVideo.removeAttribute('src');
+      reelViewVideo.poster = coverUrl || '';
+      reelViewVideo.load();
+
+      if (videoUrl) {
+        reelViewVideo.src = videoUrl;
+        reelViewVideo.muted = !rvSoundOn;
+        reelViewVideo.play().catch(function () {});
+      }
+    }
+
+    function openReelViewer(card) {
+      if (!reelViewer || !reelViewVideo) return;
+      syncActiveReels();
+      activeReelIndex = activeReelCards.indexOf(card);
+      if (activeReelIndex < 0) activeReelIndex = 0;
+
+      reelViewer.hidden = false;
+      document.body.style.overflow = 'hidden';
+      setViewerReel(activeReelCards[activeReelIndex] || card);
+    }
+
+    function stepViewerReel(direction) {
+      if (!activeReelCards.length) return;
+      const nextIndex = activeReelIndex + direction;
+      if (nextIndex < 0 || nextIndex >= activeReelCards.length) return;
+      activeReelIndex = nextIndex;
+      setViewerReel(activeReelCards[activeReelIndex]);
+    }
+
+    function closeReelViewer() {
+      if (!reelViewer || !reelViewVideo) return;
+      reelViewer.hidden = true;
+      document.body.style.overflow = '';
+      reelViewVideo.pause();
+      reelViewVideo.removeAttribute('src');
+      reelViewVideo.load();
+      activeReelIndex = -1;
+    }
+
+    if (reelViewClose) reelViewClose.addEventListener('click', closeReelViewer);
+    if (reelViewer) {
+      reelViewer.addEventListener('click', function (e) {
+        if (e.target === reelViewer) closeReelViewer();
+      });
+
+      reelViewer.addEventListener('wheel', function (event) {
+        if (reelViewer.hidden) return;
+        const now = Date.now();
+        if (now - lastWheelAt < 320) return;
+        if (Math.abs(event.deltaY) < 14) return;
+        lastWheelAt = now;
+        if (event.deltaY > 0) stepViewerReel(1);
+        else stepViewerReel(-1);
+      }, { passive: true });
+
+      reelViewer.addEventListener('touchstart', function (event) {
+        if (!event.touches || !event.touches.length) return;
+        touchStartY = event.touches[0].clientY;
+      }, { passive: true });
+
+      reelViewer.addEventListener('touchend', function (event) {
+        if (touchStartY === null || !event.changedTouches || !event.changedTouches.length) return;
+        const endY = event.changedTouches[0].clientY;
+        const deltaY = endY - touchStartY;
+        touchStartY = null;
+        if (Math.abs(deltaY) < 36) return;
+        if (deltaY < 0) stepViewerReel(1);
+        else stepViewerReel(-1);
+      }, { passive: true });
+    }
+
+    document.addEventListener('keydown', function (event) {
+      if (!reelViewer || reelViewer.hidden) return;
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        stepViewerReel(1);
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        stepViewerReel(-1);
+      }
+    });
+
+    // Sound toggle
+    if (rvSound && reelViewVideo) {
+      rvSound.addEventListener('click', function () {
+        rvSoundOn = !rvSoundOn;
+        reelViewVideo.muted = !rvSoundOn;
+        rvSound.textContent = rvSoundOn ? '🔊' : '🔇';
+        if (rvSoundOn) reelViewVideo.play().catch(function () {});
+      });
+    }
+
+    // Like + Share
+    if (rvLike) {
+      rvLike.addEventListener('click', function () {
+        rvLike.textContent = rvLike.textContent.includes('💥') ? '🔥' : '💥';
+      });
+    }
+    if (rvShare) {
+      rvShare.addEventListener('click', function () {
+        const url = window.location.href;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function () {
+            rvShare.textContent = '✅';
+            setTimeout(function () { rvShare.textContent = '🚀'; }, 900);
+          });
+        }
+      });
+    }
+
+    // Hover preview (desktop) using an injected video element per card
+    function attachHoverPreview(card) {
+      let hoverVid = null;
+      const videoUrl = card.dataset.video || '';
+      if (!videoUrl) return; // skip demo cards
+
+      function ensureVid() {
+        if (hoverVid) return hoverVid;
+        hoverVid = document.createElement('video');
+        hoverVid.src = videoUrl;
+        hoverVid.muted = true;
+        hoverVid.playsInline = true;
+        hoverVid.loop = true;
+        hoverVid.preload = 'metadata';
+        hoverVid.style.position = 'absolute';
+        hoverVid.style.inset = '0';
+        hoverVid.style.width = '100%';
+        hoverVid.style.height = '100%';
+        hoverVid.style.objectFit = 'cover';
+        hoverVid.style.zIndex = '2';
+        hoverVid.style.opacity = '0';
+        hoverVid.style.transition = 'opacity .18s ease';
+        card.appendChild(hoverVid);
+        return hoverVid;
+      }
+
+      // desktop hover
+      card.addEventListener('mouseenter', function () {
+        const v = ensureVid();
+        v.currentTime = 0.01;
+        v.play().catch(function () {});
+        v.style.opacity = '1';
+        bumpFlex(card, 1);
+        card.classList.add('vybe-hot');
+      });
+
+      card.addEventListener('mouseleave', function () {
+        if (!hoverVid) return;
+        hoverVid.pause();
+        hoverVid.style.opacity = '0';
+        card.classList.remove('vybe-hot');
+      });
+
+      // mobile tap opens viewer
+      card.addEventListener('click', function () { openReelViewer(card); });
+
+      card.querySelectorAll('.reel-overlay-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          const countNode = btn.querySelector('span');
+          if (countNode) {
+            const next = (parseInt(countNode.textContent || '0', 10) || 0) + 1;
+            countNode.textContent = String(next);
+          }
+          if (btn.dataset.action === 'like') {
+            const likes = toNumber(card.dataset.likes) + 1;
+            card.dataset.likes = String(likes);
+          }
+          if (btn.dataset.action === 'comment') {
+            const comments = toNumber(card.dataset.comments) + 1;
+            card.dataset.comments = String(comments);
+          }
+          const score = computeReelScore(card, 0);
+          card.dataset.score = String(score);
+          applyHeatBadge(card, score);
+        });
+      });
+    }
+
+    function bumpFlex(card, by) {
+      const num = card.querySelector('.reel-flex-num');
+      if (!num) return;
+      const next = (parseInt(num.textContent || '0', 10) || 0) + (by || 1);
+      num.textContent = String(next);
+
+      // quick pop animation
+      num.animate(
+        [{ transform: 'scale(1)', filter: 'brightness(1)' }, { transform: 'scale(1.25)', filter: 'brightness(1.35)' }, { transform: 'scale(1)', filter: 'brightness(1)' }],
+        { duration: 240, easing: 'ease-out' }
+      );
+    }
+
+    if (reelsRow) {
+      sortReelsByAlgorithm();
+      reelsRow.querySelectorAll('.reel-card').forEach(function (card) {
+        // if demo card, just open viewer (no video)
+        if (card.classList.contains('demo')) {
+          card.addEventListener('click', function () { openReelViewer(card); });
+          return;
+        }
+        attachHoverPreview(card);
+      });
+    }
+
+    if (reelsForYou) {
+      reelsForYou.addEventListener('click', function () {
+        sortReelsByAlgorithm();
+      });
+    }
+
+    if (reelsChaos) {
+      reelsChaos.addEventListener('click', function () {
+        if (!reelsRow) return;
+        reelsRow.querySelectorAll('.reel-card').forEach(function (card, i) {
+          const rot = ((Math.random() * 2.2) - 1.1).toFixed(2);
+          const dy = ((Math.random() * 6) - 3).toFixed(0);
+          card.style.transform = 'translateY(' + dy + 'px) rotate(' + rot + 'deg)';
+          setTimeout(function () { card.style.transform = ''; }, 240 + (i % 6) * 20);
+          bumpFlex(card, 1);
+          card.classList.add('vybe-hot');
+          setTimeout(function () { card.classList.remove('vybe-hot'); }, 900);
+        });
+      });
+    }
+
+    let gameScore = 0;
+    let gameTarget = Math.floor(Math.random() * 5) + 1;
+    const gameHint = document.getElementById('game-hint');
+    const gameScoreNode = document.getElementById('game-score');
+    document.querySelectorAll('.game-guess').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const guess = Number(button.dataset.n);
+        if (guess === gameTarget) {
+          gameScore += 1;
+          gameHint.textContent = 'Correct! New number generated.';
+          gameTarget = Math.floor(Math.random() * 5) + 1;
+        } else {
+          gameHint.textContent = 'Missed. Try again.';
+        }
+        gameScoreNode.textContent = 'Score: ' + gameScore;
+      });
+    });
+    });
+  })();
+</script>
+<script>
+  (function () {
+    const postList = document.getElementById('mvp-posts-list');
+    const feedback = document.getElementById('mvp-post-feedback');
+    const captionInput = document.getElementById('mvp-post-caption');
+    const bgInput = document.getElementById('mvp-post-bg');
+    const bgCustomInput = document.getElementById('mvp-post-bg-custom');
+    const visibilityInput = document.getElementById('mvp-post-visibility');
+    const mediaInput = document.getElementById('mvp-post-media');
+    const createBtn = document.getElementById('mvp-post-create');
+
+    if (!postList || !createBtn) return;
+
+    let postsCache = [];
+    const quickReplies = ['🔥 facts', 'Big vybe', 'Say less', 'Drop more', 'This is clean'];
+    let bgCustomTouched = false;
+
+    if (bgCustomInput) {
+      bgCustomInput.addEventListener('input', function () {
+        bgCustomTouched = true;
+      });
+    }
+
+    if (mediaInput) {
+      mediaInput.addEventListener('change', function () {
+        if (mediaInput.files && mediaInput.files.length) {
+          selectedGif = null;
+        }
+      });
+    }
+
+    function isHexColor(value) {
+      if (!value || value[0] !== '#') return false;
+      if (value.length !== 4 && value.length !== 7) return false;
+      for (let i = 1; i < value.length; i += 1) {
+        const ch = value[i].toLowerCase();
+        if (!('0123456789abcdef'.includes(ch))) return false;
+      }
+      return true;
+    }
+
+    function isLightColor(hex) {
+      const raw = hex.length === 4
+        ? '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]
+        : hex;
+      const r = parseInt(raw.slice(1, 3), 16) || 0;
+      const g = parseInt(raw.slice(3, 5), 16) || 0;
+      const b = parseInt(raw.slice(5, 7), 16) || 0;
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.62;
+    }
+
+    function setFeedback(text, isError) {
+      if (!feedback) return;
+      feedback.textContent = text || '';
+      feedback.style.color = isError ? 'rgba(255,120,120,.95)' : 'var(--muted)';
+    }
+
+    const emojiRegex = /([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}])/gu;
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function wrapEmojis(text) {
+      const safe = escapeHtml(text);
+      return safe.replace(emojiRegex, '<span class="emoji-3d">$1</span>');
+    }
+
+    function applyEmojiMotionToStaticPosts() {
+      document.querySelectorAll('.post-body').forEach(function (node) {
+        const raw = node.textContent || '';
+        node.innerHTML = wrapEmojis(raw);
+      });
+    }
+
+    function whenLabel(stamp) {
+      if (!stamp) return 'Just now';
+      return stamp.replace('T', ' ').replace('Z', '');
+    }
+
+    function byParent(comments, parentId) {
+      return comments.filter(function (item) {
+        return (item.parent_id || null) === (parentId || null);
+      });
+    }
+
+    function postAction(url, payload) {
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || {})
+      }).then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); });
+    }
+
+    function postFormAction(url, formData) {
+      return fetch(url, {
+        method: 'POST',
+        body: formData
+      }).then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); });
+    }
+
+    const voiceStore = new WeakMap();
+
+    function hasAudio(input) {
+      return voiceStore.has(input) || (input && input.files && input.files[0]);
+    }
+
+    function clearAudio(input, preview) {
+      if (!input) return;
+      voiceStore.delete(input);
+      if (input.files) input.value = '';
+      if (preview) preview.innerHTML = '';
+    }
+
+    function appendAudio(form, input, fieldName) {
+      if (!input) return;
+      const blob = voiceStore.get(input);
+      if (blob) {
+        form.append(fieldName, blob, 'voice-note.webm');
+        return;
+      }
+      if (input.files && input.files[0]) {
+        form.append(fieldName, input.files[0]);
+      }
+    }
+
+    function attachRecorder(button, input, preview) {
+      if (!button || !input) return;
+      let mediaRecorder = null;
+      let chunks = [];
+      let recording = false;
+      let analyser = null;
+      let animationId = null;
+
+      button.addEventListener('click', async function () {
+        if (recording && mediaRecorder) {
+          mediaRecorder.stop();
+          button.classList.remove('recording');
+          button.textContent = '🎙️ Record';
+          return;
+        }
+        if (!navigator.mediaDevices || !window.MediaRecorder) {
+          alert('Recording not supported in this browser.');
+          return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, echoCancellation: true });
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          analyser = audioContext.createAnalyser();
+          const source = audioContext.createMediaStreamSource(stream);
+          source.connect(analyser);
+          analyser.fftSize = 256;
+          
+          mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+          chunks = [];
+          recording = true;
+          button.classList.add('recording');
+          button.textContent = '⏹️ Stop Recording...';
+          
+          mediaRecorder.addEventListener('dataavailable', function (event) {
+            if (event.data && event.data.size) chunks.push(event.data);
+          });
+          
+          mediaRecorder.addEventListener('stop', function () {
+            recording = false;
+            button.classList.remove('recording');
+            button.textContent = '🎙️ Record';
+            cancelAnimationFrame(animationId);
+            stream.getTracks().forEach(function (track) { track.stop(); });
+            audioContext.close();
+            
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            voiceStore.set(input, blob);
+            if (preview) {
+              preview.innerHTML = '';
+              const audio = document.createElement('audio');
+              audio.className = 'mvp-voice-audio';
+              audio.controls = true;
+              audio.src = URL.createObjectURL(blob);
+              preview.appendChild(audio);
+            }
+          });
+          
+          mediaRecorder.start();
+          
+          // Animate waveform during recording
+          function animateWaveform() {
+            if (!recording) return;
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+            animationId = requestAnimationFrame(animateWaveform);
+          }
+          animateWaveform();
+        } catch (error) {
+          alert('Microphone access blocked. Please enable microphone access in your browser settings.');
+        }
+      });
+
+      input.addEventListener('change', function () {
+        voiceStore.delete(input);
+        if (preview) preview.innerHTML = '';
+      });
+    }
+
+    function buildVoiceRow() {
+      const row = document.createElement('div');
+      row.className = 'mvp-voice-row';
+
+      const recordBtn = document.createElement('button');
+      recordBtn.type = 'button';
+      recordBtn.className = 'mvp-voice-btn';
+      recordBtn.textContent = '🎙️ Record';
+
+      const audioInput = document.createElement('input');
+      audioInput.type = 'file';
+      audioInput.accept = 'audio/*';
+      audioInput.className = 'mvp-voice-input';
+      audioInput.style.display = 'none';
+
+      const preview = document.createElement('div');
+      row.appendChild(recordBtn);
+      row.appendChild(audioInput);
+      row.appendChild(preview);
+
+      attachRecorder(recordBtn, audioInput, preview);
+
+      return { row: row, input: audioInput, preview: preview };
+    }
+
+    function refreshPosts() {
+      return fetch("{{ url_for('api_posts_list') }}")
+        .then(function (res) { return res.json(); })
+        .then(function (payload) {
+          postsCache = Array.isArray(payload.posts) ? payload.posts : [];
+          renderPosts();
+        })
+        .catch(function () {
+          setFeedback('Unable to load posts right now.', true);
+        });
+    }
+
+    function renderCommentNode(post, comment, allComments) {
+      const node = document.createElement('div');
+      node.className = 'mvp-comment' + (comment.parent_id ? ' child' : '');
+
+      const header = document.createElement('div');
+      header.className = 'mvp-comment-meta';
+      header.textContent = '@' + comment.author_username + ' • ' + whenLabel(comment.created_at);
+
+      const text = document.createElement('div');
+      text.className = 'mvp-comment-text';
+      text.innerHTML = wrapEmojis(comment.content);
+
+      const controls = document.createElement('div');
+      controls.className = 'mvp-reply-chips';
+
+      const likeBtn = document.createElement('button');
+      likeBtn.type = 'button';
+      likeBtn.className = 'mvp-mini';
+      likeBtn.textContent = (comment.liked ? '💛 Liked ' : '🤍 Like ') + '(' + (comment.like_count || 0) + ')';
+      likeBtn.addEventListener('click', function () {
+        postAction('/api/comments/' + encodeURIComponent(comment.id) + '/like', {})
+          .then(function () { return refreshPosts(); });
+      });
+      controls.appendChild(likeBtn);
+
+      quickReplies.forEach(function (chipText) {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'mvp-mini';
+        chip.textContent = chipText;
+        chip.addEventListener('click', function () {
+          const input = node.querySelector('.mvp-comment-input');
+          if (input) input.value = chipText;
+        });
+        controls.appendChild(chip);
+      });
+
+      const noteForm = document.createElement('div');
+      noteForm.className = 'mvp-comment-form';
+
+      const replyInput = document.createElement('input');
+      replyInput.className = 'mvp-comment-input mvp-post-comment-input';
+      replyInput.placeholder = 'Reply or leave a quick note...';
+
+      const replyBtn = document.createElement('button');
+      replyBtn.type = 'button';
+      replyBtn.className = 'mvp-mini';
+      replyBtn.textContent = 'Reply';
+      const replyVoice = buildVoiceRow();
+      replyBtn.addEventListener('click', function () {
+        const value = (replyInput.value || '').trim();
+        if (!value && !hasAudio(replyVoice.input)) return;
+        const form = new FormData();
+        form.append('content', value);
+        form.append('parent_id', comment.id);
+        appendAudio(form, replyVoice.input, 'voice_note');
+        postFormAction('/api/posts/' + encodeURIComponent(post.id) + '/comments', form)
+          .then(function (resp) {
+            if (!resp.ok) {
+              setFeedback(resp.data && resp.data.error ? resp.data.error : 'Unable to reply.', true);
+              return;
+            }
+            replyInput.value = '';
+            clearAudio(replyVoice.input, replyVoice.preview);
+            refreshPosts();
+          });
+      });
+      noteForm.appendChild(replyInput);
+      noteForm.appendChild(replyBtn);
+      noteForm.appendChild(noteBtn);
+      noteForm.appendChild(replyVoice.row);
+
+      node.appendChild(header);
+      if (comment.content) {
+        node.appendChild(text);
+      }
+
+      if (comment.voice_note_url) {
+        const audioContainer = document.createElement('div');
+        audioContainer.style.marginTop = '8px';
+        
+        const audioLabel = document.createElement('div');
+        audioLabel.style.fontSize = '12px';
+        audioLabel.style.color = 'rgba(255, 154, 61, 0.8)';
+        audioLabel.style.marginBottom = '6px';
+        audioLabel.textContent = '🎙️ Voice Note';
+        audioContainer.appendChild(audioLabel);
+        
+        const audio = document.createElement('audio');
+        audio.className = 'mvp-voice-audio';
+        audio.controls = true;
+        audio.src = comment.voice_note_url;
+        audioContainer.appendChild(audio);
+        node.appendChild(audioContainer);
+      }
+
+      if (comment.note_text) {
+        const noteText = document.createElement('div');
+        noteText.className = 'mvp-comment-note';
+        noteText.innerHTML = wrapEmojis('📝 ' + comment.note_text);
+        node.appendChild(noteText);
+      }
+
+      (comment.notes || []).forEach(function (note) {
+        if (note.text) {
+          const line = document.createElement('div');
+          line.className = 'mvp-note-line';
+          line.innerHTML = wrapEmojis('• ' + note.text + ' — ' + (note.by || 'user'));
+          node.appendChild(line);
+        }
+
+        if (note.audio_url) {
+          const audioContainer = document.createElement('div');
+          audioContainer.style.marginTop = '6px';
+          audioContainer.style.marginLeft = '8px';
+          
+          if (!note.text) {
+            const voiceLabel = document.createElement('div');
+            voiceLabel.style.fontSize = '11px';
+            voiceLabel.style.color = 'rgba(255, 154, 61, 0.7)';
+            voiceLabel.style.marginBottom = '4px';
+            voiceLabel.textContent = '🎙️ ' + (note.by || 'User') + ' left a voice note';
+            audioContainer.appendChild(voiceLabel);
+          }
+          
+          const noteAudio = document.createElement('audio');
+          noteAudio.className = 'mvp-voice-audio';
+          noteAudio.controls = true;
+          noteAudio.src = note.audio_url;
+          audioContainer.appendChild(noteAudio);
+          node.appendChild(audioContainer);
+        }
+      });
+
+      node.appendChild(controls);
+      node.appendChild(noteForm);
+
+      const children = byParent(allComments, comment.id);
+      children.forEach(function (child) {
+        node.appendChild(renderCommentNode(post, child, allComments));
+      });
+
+      return node;
+    }
+
+    function renderPosts() {
+      postList.innerHTML = '';
+
+      if (!postsCache.length) {
+        const empty = document.createElement('div');
+        empty.className = 'mvp-feedback';
+        empty.textContent = 'No posts yet. Publish one above.';
+        postList.appendChild(empty);
+        return;
+      }
+
+      postsCache.forEach(function (post) {
+        const card = document.createElement('article');
+        const bgStyle = post.bg_style || 'default';
+        card.className = 'mvp-card';
+        if (isHexColor(bgStyle)) {
+          card.classList.add('bg-custom');
+          card.style.background = bgStyle;
+          card.style.color = isLightColor(bgStyle) ? '#0b0b0b' : '#f7f7fb';
+        } else {
+          card.classList.add('bg-' + bgStyle);
+        }
+
+        const head = document.createElement('div');
+        head.className = 'mvp-head';
+
+        const user = document.createElement('div');
+        user.className = 'mvp-user';
+        user.innerHTML = '<img class="mvp-avatar" src="' + (post.author_avatar_url || '') + '" alt="avatar">' +
+          '<div><div class="mvp-title">' + post.author_username + '</div>' +
+          '<div class="mvp-sub">' + whenLabel(post.created_at) + ' • ' + (post.visibility || 'Public') + '</div></div>';
+
+        const actions = document.createElement('div');
+        if (post.can_edit) {
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'mvp-mini';
+          editBtn.textContent = 'Edit';
+          editBtn.addEventListener('click', function () {
+            const nextCaption = prompt('Edit caption', post.caption || '');
+            if (nextCaption === null) return;
+            fetch('/api/posts/' + encodeURIComponent(post.id), {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ caption: nextCaption, bg_style: post.bg_style, visibility: post.visibility })
+            }).then(function () { return refreshPosts(); });
+          });
+          actions.appendChild(editBtn);
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.className = 'mvp-mini';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.addEventListener('click', function () {
+            if (!confirm('Delete this post?')) return;
+            fetch('/api/posts/' + encodeURIComponent(post.id), { method: 'DELETE' })
+              .then(function () { return refreshPosts(); });
+          });
+          actions.appendChild(deleteBtn);
+        }
+
+        head.appendChild(user);
+        head.appendChild(actions);
+
+        const caption = document.createElement('div');
+        caption.className = 'mvp-caption';
+        caption.innerHTML = wrapEmojis(post.caption || '');
+
+        card.appendChild(head);
+        if (post.caption) card.appendChild(caption);
+
+        if (post.media_url) {
+          const media = document.createElement('div');
+          media.className = 'mvp-media';
+          if ((post.media_type || '').toLowerCase() === 'video') {
+            media.innerHTML = '<video src="' + post.media_url + '" controls preload="metadata"></video>';
+          } else {
+            media.innerHTML = '<img src="' + post.media_url + '" alt="Post media">';
+          }
+          card.appendChild(media);
+        }
+
+        if (Array.isArray(post.stickers) && post.stickers.length) {
+          const stickerLayer = document.createElement('div');
+          stickerLayer.className = 'mvp-stickers';
+          post.stickers.forEach(function (sticker) {
+            if (!sticker || !sticker.emoji) return;
+            const node = document.createElement('span');
+            node.className = 'mvp-sticker';
+            node.textContent = sticker.emoji;
+            const x = Math.max(0, Math.min(100, Number(sticker.x) || 0));
+            const y = Math.max(0, Math.min(100, Number(sticker.y) || 0));
+            node.style.left = x + '%';
+            node.style.top = y + '%';
+            node.addEventListener('mouseenter', function () {
+              if (window.VybeEmojiSound) window.VybeEmojiSound(sticker.emoji);
+            });
+            stickerLayer.appendChild(node);
+          });
+          card.appendChild(stickerLayer);
+        }
+
+        const postActions = document.createElement('div');
+        postActions.className = 'mvp-actions';
+
+        const likeBtn = document.createElement('button');
+        likeBtn.type = 'button';
+        likeBtn.className = 'mvp-chip';
+        likeBtn.textContent = (post.liked ? '🔥 Liked ' : '🔥 Like ') + '(' + (post.like_count || 0) + ')';
+        likeBtn.addEventListener('click', function () {
+          postAction('/api/posts/' + encodeURIComponent(post.id) + '/like', {})
+            .then(function () { return refreshPosts(); });
+        });
+
+        const reactBtn = document.createElement('button');
+        reactBtn.type = 'button';
+        reactBtn.className = 'mvp-chip';
+        reactBtn.textContent = 'React ' + (post.current_reaction || '⚡');
+        reactBtn.addEventListener('click', function () {
+          const emoji = prompt('Reaction emoji', post.current_reaction || '🔥');
+          if (!emoji) return;
+          postAction('/api/posts/' + encodeURIComponent(post.id) + '/react', { emoji: emoji })
+            .then(function () { return refreshPosts(); });
+        });
+
+        const commentBtn = document.createElement('button');
+        commentBtn.type = 'button';
+        commentBtn.className = 'mvp-chip';
+        commentBtn.textContent = '💬 Comment (' + (post.comment_count || 0) + ')';
+        commentBtn.addEventListener('click', function () {
+          const input = card.querySelector('.mvp-post-comment-input');
+          if (input) input.focus();
+        });
+
+        postActions.appendChild(likeBtn);
+        postActions.appendChild(reactBtn);
+        postActions.appendChild(commentBtn);
+        card.appendChild(postActions);
+
+        const commentForm = document.createElement('div');
+        commentForm.className = 'mvp-comment-form';
+        const commentInput = document.createElement('input');
+        commentInput.className = 'mvp-comment-input mvp-post-comment-input';
+        commentInput.placeholder = 'Add a comment...';
+        const sendBtn = document.createElement('button');
+        sendBtn.type = 'button';
+        sendBtn.className = 'mvp-mini';
+        sendBtn.textContent = 'Send';
+        const commentVoice = buildVoiceRow();
+        sendBtn.addEventListener('click', function () {
+          const value = (commentInput.value || '').trim();
+          if (!value && !hasAudio(commentVoice.input)) return;
+          const form = new FormData();
+          form.append('content', value);
+          appendAudio(form, commentVoice.input, 'voice_note');
+          postFormAction('/api/posts/' + encodeURIComponent(post.id) + '/comments', form)
+            .then(function (resp) {
+              if (!resp.ok) {
+                setFeedback(resp.data && resp.data.error ? resp.data.error : 'Unable to comment.', true);
+                return;
+              }
+              commentInput.value = '';
+              clearAudio(commentVoice.input, commentVoice.preview);
+              refreshPosts();
+            });
+        });
+        commentForm.appendChild(commentInput);
+        commentForm.appendChild(sendBtn);
+        commentForm.appendChild(commentVoice.row);
+        card.appendChild(commentForm);
+
+        const commentsWrap = document.createElement('div');
+        commentsWrap.className = 'mvp-comments';
+        const roots = byParent(post.comments || [], null);
+        roots.forEach(function (comment) {
+          commentsWrap.appendChild(renderCommentNode(post, comment, post.comments || []));
+        });
+        card.appendChild(commentsWrap);
+
+        postList.appendChild(card);
+      });
+      applyEmojiMotionToStaticPosts();
+    }
+
+    createBtn.addEventListener('click', function () {
+      const form = new FormData();
+      const nextCaption = (captionInput.value || '').trim();
+      const fallbackBg = bgInput ? (bgInput.value || 'default') : 'default';
+      const bgValue = (bgCustomInput && bgCustomTouched && bgCustomInput.value) ? bgCustomInput.value : fallbackBg;
+      form.append('caption', nextCaption);
+      form.append('bg_style', bgValue || 'default');
+      form.append('visibility', visibilityInput.value || 'Public');
+      if (mediaInput.files && mediaInput.files[0]) {
+        form.append('media', mediaInput.files[0]);
+      } else if (selectedGif) {
+        form.append('gif_url', selectedGif);
+      }
+
+      createBtn.disabled = true;
+      setFeedback('Publishing...', false);
+
+      fetch("{{ url_for('api_posts_create') }}", {
+        method: 'POST',
+        body: form
+      })
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (resp) {
+          if (!resp.ok) {
+            setFeedback(resp.data && resp.data.error ? resp.data.error : 'Could not publish post.', true);
+            return;
+          }
+          captionInput.value = '';
+          mediaInput.value = '';
+          selectedGif = null;
+          if (bgCustomInput) {
+            bgCustomTouched = false;
+          }
+          if (resp.data && resp.data.post && resp.data.post.id) {
+            const undoBtn = document.createElement('button');
+            undoBtn.type = 'button';
+            undoBtn.className = 'mvp-undo';
+            undoBtn.textContent = 'Undo';
+            setFeedback('Post published.', false);
+            if (feedback) {
+              feedback.textContent = 'Post published.';
+              feedback.appendChild(undoBtn);
+            }
+            const undoId = resp.data.post.id;
+            const timer = setTimeout(function () {
+              setFeedback('Post published.', false);
+            }, 10000);
+            undoBtn.addEventListener('click', function () {
+              clearTimeout(timer);
+              fetch('/api/posts/' + encodeURIComponent(undoId), { method: 'DELETE' })
+                .then(function () { return refreshPosts(); })
+                .finally(function () { setFeedback('Post removed.', false); });
+            });
+          } else {
+            setFeedback('Post published.', false);
+            return refreshPosts();
+          }
+          return refreshPosts();
+        })
+        .catch(function () {
+          setFeedback('Could not publish post.', true);
+        })
+        .finally(function () {
+          createBtn.disabled = false;
+        });
+    });
+
+    refreshPosts();
+  })();
+</script>
+<script>
+  (function () {
+    const holder = document.getElementById('vf-sparkles');
+    if (!holder) return;
+
+    const COUNT = 42;
+    const sparkles = [];
+
+    function rand(min, max){ return Math.random() * (max - min) + min; }
+
+    function placeSpark(el){
+      const x = rand(0, 100);
+      const y = rand(0, 100);
+      const size = rand(4, 9);
+
+      el.style.left = x + 'vw';
+      el.style.top  = y + 'vh';
+      el.style.width = size + 'px';
+      el.style.height = size + 'px';
+
+      el.style.setProperty('--dur', rand(2.4, 4.6).toFixed(2) + 's');
+      el.style.setProperty('--delay', rand(0, 2.0).toFixed(2) + 's');
+    }
+
+    for (let i = 0; i < COUNT; i++){
+      const s = document.createElement('span');
+      s.className = 'vf-spark';
+
+      placeSpark(s);
+
+      s.addEventListener('animationiteration', function () {
+        placeSpark(s);
+      });
+
+      holder.appendChild(s);
+      sparkles.push(s);
+    }
+  })();
+</script>
+{% endblock %}

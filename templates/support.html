@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  .support-shell{
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px 12px;
+  }
+  .support-card{
+    width: min(94vw, 860px);
+    border-radius: 18px;
+    border: 1px solid rgba(255,173,117,.22);
+    background: rgba(255,255,255,.03);
+    backdrop-filter: blur(28px) saturate(1.2);
+    box-shadow: 0 0 24px rgba(255,106,0,.06), 0 8px 24px rgba(0,0,0,.12);
+    padding: 20px;
+    color: #fff;
+  }
+  .support-title{ margin: 0 0 6px; font-size: 26px; }
+  .support-sub{ margin: 0 0 18px; color: rgba(255,255,255,.72); }
+  .support-grid{ display: grid; grid-template-columns: 1.1fr .9fr; gap: 16px; }
+  .support-block{
+    border-radius: 14px;
+    border: 1px solid rgba(255,173,117,.18);
+    background: rgba(0,0,0,.06);
+    backdrop-filter: blur(16px);
+    padding: 14px;
+  }
+  .support-label{ font-weight: 800; margin-bottom: 6px; display: block; }
+  .support-input, .support-textarea{
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid rgba(255,173,117,.22);
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  .support-textarea{ min-height: 120px; resize: vertical; }
+  .support-btn{
+    border: none;
+    border-radius: 999px;
+    padding: 10px 16px;
+    color: #fff;
+    background: linear-gradient(180deg, #ff9a3d, #ff5a00);
+    cursor: pointer;
+    font-weight: 800;
+    margin-top: 10px;
+  }
+  .support-list{ display: grid; gap: 8px; margin: 0; padding-left: 18px; color: rgba(255,255,255,.78); }
+  .support-note{ font-size: 12px; color: rgba(255,255,255,.62); margin-top: 8px; }
+  @media (max-width: 860px){
+    .support-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+
+<section class="support-shell">
+  <div class="support-card">
+    <h1 class="support-title">Help & Support</h1>
+    <p class="support-sub">Need help, feedback, or a report? Reach the VybeFlow team here.</p>
+
+    <div class="support-grid">
+      <div class="support-block">
+        <form method="post" action="{{ url_for('support') }}">
+          <label class="support-label" for="support-name">Name</label>
+          <input id="support-name" name="name" class="support-input" type="text" placeholder="Your name" />
+
+          <label class="support-label" for="support-email" style="margin-top:10px;">Email</label>
+          <input id="support-email" name="email" class="support-input" type="email" placeholder="name@example.com" />
+
+          <label class="support-label" for="support-message" style="margin-top:10px;">Message</label>
+          <textarea id="support-message" name="message" class="support-textarea" placeholder="Tell us what you need..."></textarea>
+
+          <button class="support-btn" type="submit">Send to VybeFlow</button>
+          <div class="support-note">We use this form for support requests and feedback.</div>
+        </form>
+      </div>
+
+      <div class="support-block">
+        <div class="support-label">Contact Options</div>
+        <ul class="support-list">
+          <li>Support email: support@VybeFlow.com</li>
+          <li>Creator safety: safety@VybeFlow.com</li>
+          <li>Report issues: help@VybeFlow.com</li>
+          <li>Business: biz@VybeFlow.com</li>
+        </ul>
+        <div class="support-note">Typical response time: 24 to 48 hours.</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

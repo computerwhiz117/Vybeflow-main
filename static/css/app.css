@@ -1,0 +1,158 @@
+/* Glass + glow buttons */
+.vf-btn-glow{
+  background: rgba(255, 122, 24, 0.14);
+  border: 1px solid rgba(255, 140, 60, 0.55);
+  color: rgba(255, 245, 235, 0.95);
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 0 0 1px rgba(255, 140, 60, 0.15),
+    0 0 18px rgba(255, 122, 24, 0.35),
+    0 0 42px rgba(255, 122, 24, 0.18);
+}
+
+.vf-btn-glow:hover{
+  background: rgba(255, 122, 24, 0.20);
+  box-shadow:
+    0 0 0 1px rgba(255, 170, 90, 0.22),
+    0 0 22px rgba(255, 122, 24, 0.55),
+    0 0 60px rgba(255, 122, 24, 0.25);
+}
+
+.vf-btn-glow:disabled{ opacity:.55; cursor:not-allowed; }
+
+/* Keep comment tools inside post area */
+.comments-section{ margin-top:12px; }
+.comment-tools{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+#recBtn, #sendVoiceBtn {
+  position: static !important;
+  width: auto !important;
+}
+/* Comment section and glowing button styles */
+.comments-section { margin-top: 12px; }
+.comment-tools {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.vf-btn-glow {
+  background: rgba(255, 122, 24, 0.14);
+  border: 1px solid rgba(255, 140, 60, 0.55);
+  color: rgba(255, 245, 235, 0.95);
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 0 0 1px rgba(255, 140, 60, 0.15),
+    0 0 18px rgba(255, 122, 24, 0.35),
+    0 0 42px rgba(255, 122, 24, 0.18);
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+
+.vf-btn-glow:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 122, 24, 0.20);
+  box-shadow:
+    0 0 0 1px rgba(255, 170, 90, 0.22),
+    0 0 22px rgba(255, 122, 24, 0.55),
+    0 0 60px rgba(255, 122, 24, 0.25);
+}
+
+.vf-btn-glow:active {
+  transform: translateY(0px) scale(0.99);
+}
+
+.vf-btn-glow:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow:
+    0 0 0 1px rgba(255, 140, 60, 0.10),
+    0 0 12px rgba(255, 122, 24, 0.18);
+}
+/* Picker panel and GIF styles */
+.picker-panel {
+  background: rgba(20,20,20,.75);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  padding: 10px;
+  margin-top: 10px;
+  max-height: 320px;
+  overflow: hidden;
+}
+
+.hidden { display: none; }
+
+.gif-panel-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#gifSearch {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.35);
+  color: #fff;
+  outline: none;
+}
+
+.gif-close {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.gif-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  overflow: auto;
+  max-height: 240px;
+  padding-right: 4px;
+}
+
+.gif-grid img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.gif-status {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: .8;
+}
+
+/* Glowing voice note button */
+.vf-btn-glow {
+  background: transparent;
+  border: 2px solid #ff9800;
+  color: #ff9800;
+  font-weight: bold;
+  font-size: 16px;
+  border-radius: 12px;
+  padding: 10px 18px;
+  margin-right: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 12px 2px #ff9800aa, 0 0 4px #fff inset;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.vf-btn-glow:active, .vf-btn-glow.recording {
+  box-shadow: 0 0 24px 6px #ff9800, 0 0 8px #fff inset;
+  border-color: #fff;
+}

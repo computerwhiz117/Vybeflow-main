@@ -1,0 +1,4 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // Example: Show a welcome message
+    console.log('Welcome to Vybe Flow!');
+});

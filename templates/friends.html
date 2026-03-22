@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  /* ── VybeFlow Friends Page ── */
+  .fr-shell { max-width:720px; margin:20px auto; padding:0 14px; }
+  .fr-hero { text-align:center; margin-bottom:18px; }
+  .fr-hero h1 { font-size:28px; font-weight:900; background:linear-gradient(135deg,#ff6a00,#ffd8b2); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0; }
+  .fr-hero p { color:rgba(255,255,255,.5); font-size:13px; margin:6px 0 0; }
+
+  /* Tabs */
+  .fr-tabs { display:flex; gap:6px; margin-bottom:16px; }
+  .fr-tab { flex:1; text-align:center; padding:10px; border-radius:12px; border:1px solid rgba(255,153,90,.2); background:rgba(255,255,255,.06); color:rgba(255,255,255,.5); font-weight:700; font-size:13px; cursor:pointer; transition:all .2s; position:relative; }
+  .fr-tab.active { background:linear-gradient(135deg,rgba(255,106,0,.22),rgba(255,216,178,.12)); color:#ffd8b2; border-color:rgba(255,153,90,.45); box-shadow:0 0 16px rgba(255,106,0,.18); }
+  .fr-tab:hover { background:rgba(255,106,0,.12); color:#fff; }
+  .fr-badge { position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; border-radius:9px; background:#ff4444; color:#fff; font-size:10px; font-weight:900; display:flex; align-items:center; justify-content:center; padding:0 5px; }
+
+  /* Cards */
+  .fr-section { display:none; }
+  .fr-section.active { display:block; }
+  .fr-card { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; border:1px solid rgba(255,153,90,.18); background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.04)); backdrop-filter:blur(12px); margin-bottom:10px; transition:all .2s; }
+  .fr-card:hover { border-color:rgba(255,153,90,.4); box-shadow:0 0 20px rgba(255,106,0,.12); transform:translateY(-1px); }
+  .fr-avatar { width:46px; height:46px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,153,90,.3); flex-shrink:0; }
+  .fr-avatar-placeholder { width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg,#ff6a00,#cc5500); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:900; color:#fff; flex-shrink:0; }
+  .fr-info { flex:1; min-width:0; }
+  .fr-name { font-weight:800; font-size:14px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fr-handle { font-size:12px; color:rgba(255,255,255,.4); }
+  .fr-time { font-size:11px; color:rgba(255,255,255,.3); }
+  .fr-actions { display:flex; gap:6px; flex-shrink:0; }
+
+  /* Buttons */
+  .fr-btn { padding:7px 14px; border-radius:10px; border:none; font-weight:800; font-size:12px; cursor:pointer; transition:all .2s; }
+  .fr-btn-accept { background:linear-gradient(135deg,#ff6a00,#ff8a33); color:#fff; }
+  .fr-btn-accept:hover { box-shadow:0 0 14px rgba(255,106,0,.5); transform:scale(1.04); }
+  .fr-btn-reject { background:rgba(255,255,255,.08); color:rgba(255,255,255,.6); border:1px solid rgba(255,255,255,.12); }
+  .fr-btn-reject:hover { background:rgba(255,68,68,.15); color:#ff6666; border-color:rgba(255,68,68,.3); }
+  .fr-btn-cancel { background:rgba(255,255,255,.06); color:rgba(255,255,255,.5); border:1px solid rgba(255,255,255,.1); }
+  .fr-btn-cancel:hover { background:rgba(255,68,68,.12); color:#ff6666; }
+  .fr-btn-unfriend { background:rgba(255,255,255,.06); color:rgba(255,255,255,.5); border:1px solid rgba(255,255,255,.1); }
+  .fr-btn-unfriend:hover { background:rgba(255,68,68,.12); color:#ff6666; }
+  .fr-btn-msg { background:rgba(255,153,90,.12); color:#ffd8b2; border:1px solid rgba(255,153,90,.25); }
+  .fr-btn-msg:hover { background:rgba(255,153,90,.22); box-shadow:0 0 12px rgba(255,106,0,.15); }
+
+  .fr-btn:disabled { opacity:.4; pointer-events:none; }
+
+  .fr-empty { text-align:center; padding:32px 16px; color:rgba(255,255,255,.35); border:1px dashed rgba(255,153,90,.18); border-radius:14px; }
+  .fr-empty-icon { font-size:38px; margin-bottom:8px; }
+  .fr-empty-text { font-size:13px; }
+
+  .fr-back { display:inline-flex; align-items:center; gap:6px; color:#ffd8b2; text-decoration:none; font-size:13px; font-weight:700; margin-bottom:14px; }
+  .fr-back:hover { color:#fff; }
+
+  /* toast */
+  .fr-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#ff6a00,#ff8a33); color:#fff; padding:10px 20px; border-radius:12px; font-weight:800; font-size:13px; z-index:9999; display:none; box-shadow:0 4px 20px rgba(255,106,0,.4); }
+  .fr-toast.show { display:block; animation:frToastIn .3s ease; }
+  @keyframes frToastIn { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+</style>
+
+<section class="fr-shell">
+  <a class="fr-back" href="{{ url_for('feed.feed_page') }}">← Back to Feed</a>
+
+  <div class="fr-hero">
+    <h1>🤝 Friends</h1>
+    <p>Your VybeFlow crew — connect, chat, vibe together</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="fr-tabs">
+    <div class="fr-tab active" data-tab="friends" onclick="switchTab('friends')">
+      👥 Friends <span style="opacity:.6;font-weight:400;">({{ friends|length }})</span>
+    </div>
+    <div class="fr-tab" data-tab="incoming" onclick="switchTab('incoming')">
+      📥 Requests
+      {% if incoming|length > 0 %}<span class="fr-badge">{{ incoming|length }}</span>{% endif %}
+    </div>
+    <div class="fr-tab" data-tab="outgoing" onclick="switchTab('outgoing')">
+      📤 Sent <span style="opacity:.6;font-weight:400;">({{ outgoing|length }})</span>
+    </div>
+  </div>
+
+  <!-- Friends List -->
+  <div id="tab-friends" class="fr-section active">
+    {% if friends %}
+      {% for friend in friends %}
+      <div class="fr-card" id="friend-{{ friend.username }}">
+        {% if friend.avatar_url %}
+          <img class="fr-avatar" src="{{ friend.avatar_url }}" alt="{{ friend.username }}" />
+        {% else %}
+          <div class="fr-avatar-placeholder">{{ friend.username[0]|upper }}</div>
+        {% endif %}
+        <div class="fr-info">
+          <div class="fr-name">{{ friend.display_name or friend.username }}</div>
+          <div class="fr-handle">@{{ friend.username }}</div>
+        </div>
+        <div class="fr-actions">
+          <button class="fr-btn fr-btn-msg" onclick="window.location.href='{{ url_for('messenger') }}'">💬 Message</button>
+          <button class="fr-btn fr-btn-unfriend" onclick="unfriend('{{ friend.username }}', this)">✕ Unfriend</button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="fr-empty">
+        <div class="fr-empty-icon">👋</div>
+        <div class="fr-empty-text">No friends yet — search for people and send requests!</div>
+        <a href="{{ url_for('search') }}" class="fr-btn fr-btn-accept" style="display:inline-block;margin-top:12px;text-decoration:none;">🔍 Find People</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Incoming Requests -->
+  <div id="tab-incoming" class="fr-section">
+    {% if incoming %}
+      {% for req in incoming %}
+      <div class="fr-card" id="req-{{ req.id }}">
+        {% if req.sender.avatar_url %}
+          <img class="fr-avatar" src="{{ req.sender.avatar_url }}" alt="{{ req.sender.username }}" />
+        {% else %}
+          <div class="fr-avatar-placeholder">{{ req.sender.username[0]|upper }}</div>
+        {% endif %}
+        <div class="fr-info">
+          <div class="fr-name">{{ req.sender.display_name or req.sender.username }}</div>
+          <div class="fr-handle">@{{ req.sender.username }} wants to be your friend</div>
+          <div class="fr-time">{{ req.created_at.strftime('%b %d, %Y') if req.created_at else '' }}</div>
+        </div>
+        <div class="fr-actions">
+          <button class="fr-btn fr-btn-accept" onclick="acceptRequest({{ req.id }}, this)">✓ Accept</button>
+          <button class="fr-btn fr-btn-reject" onclick="rejectRequest({{ req.id }}, this)">✕ Decline</button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="fr-empty">
+        <div class="fr-empty-icon">📭</div>
+        <div class="fr-empty-text">No pending friend requests</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Outgoing Requests -->
+  <div id="tab-outgoing" class="fr-section">
+    {% if outgoing %}
+      {% for req in outgoing %}
+      <div class="fr-card" id="req-{{ req.id }}">
+        {% if req.receiver.avatar_url %}
+          <img class="fr-avatar" src="{{ req.receiver.avatar_url }}" alt="{{ req.receiver.username }}" />
+        {% else %}
+          <div class="fr-avatar-placeholder">{{ req.receiver.username[0]|upper }}</div>
+        {% endif %}
+        <div class="fr-info">
+          <div class="fr-name">{{ req.receiver.display_name or req.receiver.username }}</div>
+          <div class="fr-handle">@{{ req.receiver.username }}</div>
+          <div class="fr-time">Sent {{ req.created_at.strftime('%b %d, %Y') if req.created_at else '' }}</div>
+        </div>
+        <div class="fr-actions">
+          <button class="fr-btn fr-btn-cancel" onclick="cancelRequest({{ req.id }}, this)">✕ Cancel</button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="fr-empty">
+        <div class="fr-empty-icon">📬</div>
+        <div class="fr-empty-text">No outgoing requests</div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<div id="fr-toast" class="fr-toast"></div>
+
+<script>
+(function() {
+  /* Tab switching */
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.fr-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.fr-section').forEach(s => s.classList.remove('active'));
+    document.querySelector(`.fr-tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  };
+
+  function toast(msg) {
+    const t = document.getElementById('fr-toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  async function apiCall(url, body) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+
+  window.acceptRequest = async function(id, btn) {
+    btn.disabled = true;
+    const data = await apiCall('/api/friends/accept', { request_id: id });
+    if (data.status === 'accepted') {
+      toast('🤝 You and @' + data.friend + ' are now friends!');
+      const card = document.getElementById('req-' + id);
+      if (card) {
+        card.style.borderColor = 'rgba(0,230,118,.4)';
+        card.querySelector('.fr-actions').innerHTML = '<span style="color:#00e676;font-weight:800;font-size:12px;">✓ Accepted!</span>';
+      }
+    } else {
+      toast('⚠️ ' + (data.error || 'Something went wrong'));
+      btn.disabled = false;
+    }
+  };
+
+  window.rejectRequest = async function(id, btn) {
+    btn.disabled = true;
+    const data = await apiCall('/api/friends/reject', { request_id: id });
+    if (data.status === 'rejected') {
+      toast('Request declined');
+      const card = document.getElementById('req-' + id);
+      if (card) { card.style.opacity = '.4'; card.querySelector('.fr-actions').innerHTML = '<span style="color:rgba(255,255,255,.4);font-size:12px;">Declined</span>'; }
+    } else {
+      btn.disabled = false;
+    }
+  };
+
+  window.cancelRequest = async function(id, btn) {
+    btn.disabled = true;
+    const data = await apiCall('/api/friends/cancel', { request_id: id });
+    if (data.status === 'cancelled') {
+      toast('Request cancelled');
+      const card = document.getElementById('req-' + id);
+      if (card) { card.style.opacity = '.4'; card.querySelector('.fr-actions').innerHTML = '<span style="color:rgba(255,255,255,.4);font-size:12px;">Cancelled</span>'; }
+    } else {
+      btn.disabled = false;
+    }
+  };
+
+  window.unfriend = async function(username, btn) {
+    if (!(await vfConfirm('Unfriend @' + username + '?'))) return;
+    btn.disabled = true;
+    const data = await apiCall('/api/friends/unfriend', { username: username });
+    if (data.status === 'unfriended') {
+      toast('Unfriended @' + username);
+      const card = document.getElementById('friend-' + username);
+      if (card) { card.style.opacity = '.3'; card.querySelector('.fr-actions').innerHTML = '<span style="color:rgba(255,255,255,.4);font-size:12px;">Removed</span>'; }
+    } else {
+      btn.disabled = false;
+    }
+  };
+})();
+</script>
+{% endblock %}

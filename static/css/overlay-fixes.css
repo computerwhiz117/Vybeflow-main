@@ -1,0 +1,253 @@
+/**
+ * VybeFlow - Click-Through & Overlay Utilities
+ * Auto-fixes for decorative overlays blocking clicks
+ * 
+ * This stylesheet is automatically applied to prevent common UI issues
+ * where background elements, watermarks, or overlays block user interactions.
+ */
+
+/* ============================================
+   DECORATIVE ELEMENTS - NO CLICK CAPTURE
+   ============================================ */
+
+/* Prevent all decorative/background elements from capturing clicks */
+.vf-watermark,
+.vf-overlay,
+.vf-bg,
+.bg-overlay,
+.background-logo,
+#vfOverlay,
+.overlay-layer,
+.backdrop,
+.bg-layer,
+.background-layer,
+.decoration,
+.decorative,
+.watermark,
+canvas.background,
+canvas.bg,
+video.background,
+video.bg,
+img.background,
+img.bg,
+.particle-layer,
+.particles,
+.sparkles,
+.glow-layer,
+.effect-layer,
+.blur-layer {
+  pointer-events: none !important;
+}
+
+/* ============================================
+   CLICKABLE CONTENT - ALWAYS INTERACTIVE
+   ============================================ */
+
+/* Ensure all interactive elements can receive clicks */
+button,
+a,
+input,
+textarea,
+select,
+label,
+.btn,
+.button,
+.link,
+.clickable,
+.interactive,
+[role="button"],
+[role="link"],
+[onclick],
+[data-action] {
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+
+/* Avatar links and images must be clickable */
+.vf-avatar-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto !important;
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.vf-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: auto !important;
+  display: block;
+}
+
+/* ============================================
+   Z-INDEX LAYERING
+   ============================================ */
+
+/* Layer 0: Background decorations (behind everything) */
+.vf-watermark,
+.vf-overlay,
+.vf-bg,
+.bg-overlay,
+.backdrop,
+.background-logo,
+canvas.background,
+video.background,
+img.background {
+  z-index: 0 !important;
+  position: absolute;
+}
+
+/* Layer 1-4: Reserved for special backgrounds */
+
+/* Layer 5: Main app content (default) */
+.vf-app,
+main,
+.page,
+.layout,
+.feed,
+.content,
+.main-content,
+article,
+section.content {
+  position: relative;
+  z-index: 5;
+}
+
+/* Layer 10: Navigation & UI chrome */
+nav,
+header,
+footer,
+.navbar,
+.sidebar,
+.header,
+.footer {
+  position: relative;
+  z-index: 10;
+}
+
+/* Layer 100: Modals & overlays (intentional overlays) */
+.modal,
+.dialog,
+.popup,
+.toast,
+.notification,
+.alert {
+  position: relative;
+  z-index: 100;
+}
+
+/* Layer 1000: Critical UI (dropdowns, tooltips) */
+.dropdown,
+.dropdown-menu,
+.tooltip,
+.popover {
+  position: relative;
+  z-index: 1000;
+}
+
+/* ============================================
+   PSEUDO-ELEMENT FIXES
+   ============================================ */
+
+/* Prevent ::before and ::after from blocking clicks on containers */
+.container::before,
+.container::after,
+.wrapper::before,
+.wrapper::after,
+.page::before,
+.page::after,
+.frame::before,
+.frame::after {
+  pointer-events: none !important;
+}
+
+/* ============================================
+   FULL-SCREEN BACKGROUND FIXES
+   ============================================ */
+
+/* Elements that cover the full screen should never block clicks */
+[style*="position: fixed"][style*="inset: 0"],
+[style*="position: absolute"][style*="inset: 0"],
+.fullscreen-bg,
+.full-screen-bg,
+.fixed-bg {
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+/* Exception: Make modals/dialogs clickable even when fullscreen */
+.modal.fullscreen,
+.dialog.fullscreen,
+[role="dialog"] {
+  pointer-events: auto !important;
+  z-index: 100 !important;
+}
+
+/* ============================================
+   CANVAS & VIDEO BACKGROUNDS
+   ============================================ */
+
+/* Canvas elements used for effects/backgrounds */
+canvas:not(.interactive):not(.clickable) {
+  pointer-events: none !important;
+  position: absolute;
+  z-index: 0;
+}
+
+/* Video backgrounds */
+video.bg,
+video.background,
+video[autoplay][muted] {
+  pointer-events: none !important;
+  z-index: 0;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Explicitly make something non-interactive */
+.no-click,
+.no-pointer,
+.ignore-clicks {
+  pointer-events: none !important;
+}
+
+/* Explicitly make something interactive */
+.clickable,
+.interactive,
+.allow-clicks {
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+
+/* Force element to background layer */
+.to-back,
+.behind {
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Force element to front layer */
+.to-front {
+  z-index: 999 !important;
+  pointer-events: auto !important;
+}
+
+/* ============================================
+   DEBUG HELPERS (remove in production)
+   ============================================ */
+
+/* Uncomment to debug click regions:
+.vf-app *:hover {
+  outline: 2px solid rgba(255, 0, 0, 0.5);
+}
+
+[style*="pointer-events: none"] {
+  outline: 2px dashed rgba(0, 255, 0, 0.5) !important;
+}
+*/

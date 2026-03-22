@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  .aux-shell { min-height: 100vh; display: grid; place-items: center; }
+  .aux-card {
+    width: min(92%, 560px);
+    border-radius: 18px;
+    border: 1px solid rgba(255,153,90,.28);
+    background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.07));
+    backdrop-filter: blur(14px);
+    box-shadow: 0 0 32px rgba(255,106,0,.22), 0 14px 36px rgba(0,0,0,.34);
+    padding: 22px;
+    color: #fff;
+  }
+  .aux-link { color: #ffd8b2; }
+</style>
+
+<section class="aux-shell">
+  <div class="aux-card">
+    <h1>Upload</h1>
+    <p>Upload feature is active and ready for media form wiring.</p>
+    <p><a class="aux-link" href="{{ url_for('feed.feed_page') }}">Back to feed</a></p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block body_class %}register-page{% endblock %}
+
+{% block content %}
+<style>
+    body.register-page {
+        color: rgba(255,255,255,.95);
+    }
+    body.register-page .landing-shell {
+        display: none !important;
+    }
+    body.register-page .app-shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    /* ── Floating logo ── */
+    @keyframes vfLogoFloat {
+        0%   { transform: translateY(0)    rotate(0deg)   scale(1);    }
+        25%  { transform: translateY(-10px) rotate(3deg)  scale(1.03); }
+        50%  { transform: translateY(-4px)  rotate(-2deg) scale(1.01); }
+        75%  { transform: translateY(-13px) rotate(2deg)  scale(1.04); }
+        100% { transform: translateY(0)    rotate(0deg)   scale(1);    }
+    }
+    @keyframes vfGlow {
+        0%,100% { filter: drop-shadow(0 0 20px rgba(255,106,0,.7)); }
+        50%     { filter: drop-shadow(0 0 54px rgba(255,160,50,.95)); }
+    }
+    .vf-floating-logo {
+        display: block;
+        margin: 0 auto 12px;
+        width: 72px; height: 72px;
+        border-radius: 18px;
+        animation: vfLogoFloat 5s ease-in-out infinite, vfGlow 3s ease-in-out infinite;
+    }
+
+    /* ── See-through glass card ── */
+    body.register-page .login-card {
+        position: relative !important;
+        z-index: 1 !important;
+        overflow: visible !important;
+        max-width: 420px !important;
+        width: min(92%, 420px) !important;
+        margin: 6vh auto 5vh !important;
+        padding: 28px 30px 24px !important;
+        border-radius: 26px !important;
+        border: 1px solid rgba(255,255,255,.08) !important;
+        background: rgba(255,255,255,.02) !important;
+        box-shadow: 0 0 60px rgba(0,0,0,.4) !important;
+        backdrop-filter: blur(6px) saturate(1.1) !important;
+        -webkit-backdrop-filter: blur(6px) saturate(1.1) !important;
+        color: rgba(255,255,255,.95) !important;
+        text-align: center !important;
+    }
+    body.register-page .login-card::before {
+        content: none !important;
+    }
+    body.register-page .login-card h2 {
+        text-align: center !important;
+        margin: 0 0 18px !important;
+        font-size: 22px !important;
+        font-weight: 800 !important;
+        color: #fff !important;
+        text-shadow: none !important;
+    }
+    body.register-page .login-card input[type="text"],
+    body.register-page .login-card input[type="password"],
+    body.register-page .login-card input[type="email"],
+    body.register-page .login-card input[type="date"] {
+        width: 100% !important;
+        padding: 11px 16px !important;
+        border-radius: 24px !important;
+        border: 1px solid rgba(255,255,255,.18) !important;
+        background: rgba(255,255,255,.08) !important;
+        color: #fff !important;
+        outline: none !important;
+        font-size: 14px !important;
+        box-sizing: border-box !important;
+        margin-bottom: 12px !important;
+        box-shadow: none !important;
+    }
+    body.register-page .login-card input::placeholder {
+        color: rgba(255,255,255,.55) !important;
+    }
+    body.register-page .login-card input:focus {
+        border-color: rgba(255,140,0,.55) !important;
+        box-shadow: 0 0 0 3px rgba(255,100,0,.18) !important;
+    }
+    body.register-page .login-card .login-btn {
+        width: 100% !important;
+        padding: 11px !important;
+        border-radius: 24px !important;
+        border: none !important;
+        background: linear-gradient(90deg, #ff9a3d, #ff6a00, #ff4800) !important;
+        color: #fff !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        cursor: pointer !important;
+        box-shadow: 0 0 14px rgba(255,120,0,.5), 0 0 36px rgba(255,80,0,.3), 0 0 60px rgba(255,60,0,.15) !important;
+        transition: transform .18s, box-shadow .18s !important;
+    }
+    body.register-page .login-card .login-btn:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 0 20px rgba(255,120,0,.7), 0 0 50px rgba(255,80,0,.45), 0 0 80px rgba(255,60,0,.25) !important;
+    }
+    body.register-page .login-card p {
+        text-align: center !important;
+        margin-top: 12px !important;
+        font-size: 14px !important;
+    }
+    body.register-page .login-card a {
+        color: #ffd8a0 !important;
+        text-decoration: none !important;
+        font-weight: 600 !important;
+        text-shadow: 0 0 8px rgba(255,120,0,.3) !important;
+    }
+    body.register-page .login-card a:hover {
+        text-decoration: underline !important;
+        filter: none !important;
+        text-shadow: none !important;
+    }
+    body.register-page .login-card label {
+        display: block;
+        text-align: left;
+        font-size: 13px;
+        color: rgba(255,255,255,.7);
+        margin-bottom: 4px;
+    }
+    .radio-option { color: #fff; font-size: 15px; }
+    .radio-option input[type="radio"] { accent-color: #ff7300; }
+    .account-type-row { justify-content: center; margin: 4px 0 14px; }
+</style>
+
+<div class="login-card">
+    <img src="{{ url_for('static', filename='VFlogo_clean.png') }}" alt="VybeFlow" class="vf-floating-logo" />
+    <h2 data-i18n="signup_title">Sign Up for VybeFlow</h2>
+    <form action="{{ url_for('register') }}" method="POST" data-remember-users="register">
+        <div>
+            <input type="text" id="username" name="username" placeholder="Username" data-i18n-placeholder="username" autocomplete="username" required>
+        </div>
+        <div>
+            <input type="email" id="email" name="email" placeholder="Email" data-i18n-placeholder="email" autocomplete="email" required>
+        </div>
+        <div>
+            <input type="password" id="password" name="password" placeholder="Password" data-i18n-placeholder="password" autocomplete="new-password" required>
+            <div class="password-strength" data-strength-for="password">
+                <div class="strength-bars">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <small class="strength-text" data-i18n="strength_start">Start typing to check password strength.</small>
+                <small class="strength-hint" data-i18n="strength_tip">Use 12+ chars, uppercase, lowercase, numbers, and symbols to harden your password.</small>
+            </div>
+            <div class="password-suggestion" data-suggestion-for="password" data-i18n-prefix="suggestion">Suggestion: Use 3 random words + numbers + symbol.</div>
+        </div>
+        <div>
+            <div class="account-type-row">
+                <label class="radio-option">
+                    <input type="radio" name="account_type" value="regular" checked>
+                    <span data-i18n="regular">Regular</span>
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="account_type" value="professional">
+                    <span data-i18n="professional">Professional</span>
+                </label>
+            </div>
+        </div>
+        <div>
+            <label for="date_of_birth" style="font-size:13px; color:rgba(255,255,255,.7); margin-bottom:4px; display:block;" data-i18n="dob_label">Date of Birth</label>
+            <input type="date" id="date_of_birth" name="date_of_birth" required style="width:100%; padding:10px; border-radius:10px; border:1px solid rgba(255,170,112,.30); background:rgba(255,255,255,.10); color:#fff; font-size:14px; box-sizing:border-box;">
+            <small style="display:block; margin-top:4px; font-size:11px; color:rgba(255,255,255,.45);" data-i18n="dob_hint">You must be at least 13 years old to use VybeFlow.</small>
+            <small style="display:block; margin-top:3px; font-size:11px; color:rgba(255,170,112,.65);">🔒 Only your date of birth is used — no other personal information is stored or viewed.</small>
+        </div>
+        <button type="submit" class="login-btn" data-i18n="create_account">Create Account</button>
+    </form>
+    <p><span data-i18n="already_have">Already have an account?</span> <a href="{{ url_for('login') }}" data-i18n="login_here">Login here</a></p>
+</div>
+{% endblock %}

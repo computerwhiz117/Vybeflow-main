@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  :root{
+    --bg:#0b0f18;
+    --panel:rgba(18,22,37,.78);
+    --border:rgba(255,255,255,.10);
+    --text:#f4f6ff;
+    --dim:rgba(244,246,255,.72);
+    --accent:#ff6a00;
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+  }
+
+  body { background: var(--bg); }
+
+  .story-editor-wrap{
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+    height: calc(100vh - var(--sab));
+    padding: calc(12px + var(--sat)) 12px calc(12px + var(--sab));
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  .story-canvas-area{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+    :root{
+      --sat: env(safe-area-inset-top,0px);
+      --sab: env(safe-area-inset-bottom,0px);
+      --fg:#fff;
+      --muted: rgba(255,255,255,.72);
+      --glass: rgba(0,0,0,.42);
+      --stroke: rgba(255,255,255,.14);
+      --shadow: 0 12px 30px rgba(0,0,0,.55);
+    }
+
+    .reels-page{ background:#000; color:var(--fg); }
+
+    .reels{
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      overflow-y:auto;
+      scroll-snap-type:y mandatory;
+      background:#000;
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .reel{
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      position:relative;
+      scroll-snap-align:start;
+      background:#000;
+      display:flex;
+    }
+  </style>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/reels_ig.css') }}">
+
+      <div class="reels-page">
+        <div class="reels" id="reels">
+          {% if reels and reels|length %}
+            {% for r in reels %}
+            <section class="reel"
+                     data-index="{{ loop.index0 }}"
+                     data-id="{{ r.id or loop.index0 }}"
+                     data-share-url="{{ r.share_url or r.src }}"
+                     data-username="{{ r.username or 'user' }}">
+              <video class="vf-reel"
+                     data-src="{{ r.src }}"
+                     playsinline webkit-playsinline
+                     muted loop preload="none"></video>
+
+              <div class="overlay">
+                <div class="topbar">
+                  <div class="brand">
+                    <span class="pill">Vibe Snaps</span>
+                    <span>VybeFlow</span>
+                  </div>
+                  <div class="pill soundBtn" data-action="sound">Muted</div>
+                </div>
+
+                <div class="progressWrap">
+                  <div class="progress"><i data-role="progressBar"></i></div>
+                </div>
+
+                <div class="hint" data-role="hint">Tap = pause • Double tap = like • Hold = sound</div>
+                <div class="centerToast" data-role="toast">Paused</div>
+
+                <div class="heartPop" data-role="heart">
+                  <svg class="heartSvg" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#fff" d="M12 21s-7-4.35-9.5-8.5C.7 9.1 2.2 6 5.6 6c1.8 0 3.2 1 4.1 2.1C10.6 7 12 6 13.8 6c3.4 0 4.9 3.1 3.1 6.5C19 16.65 12 21 12 21z"/>
+                  </svg>
+                </div>
+
+                <div class="rail">
+                  <div>
+                    <button class="railBtn" type="button" data-action="like" aria-label="Like">
+              .emojiDock { display:flex; gap:6px; align-items:center; margin-right:6px; }
+              .emoji3d { font-size:1.3rem; cursor:pointer; filter: drop-shadow(0 0 4px rgba(0,0,0,.5)); transform: translateZ(0); transition: transform .12s ease, filter .12s ease; }
+              .emoji3d:hover { transform: translateY(-2px) scale(1.05); filter: drop-shadow(0 0 10px rgba(255,255,255,.9)); }
+                      <svg class="icon icon-heart" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M20.8 4.6c-1.7-1.8-4.5-1.8-6.2 0L12 7.2l-2.6-2.6c-1.7-1.8-4.5-1.8-6.2 0-2 2.1-2 5.4 0 7.5l8.8 8.4 8.8-8.4c2-2.1 2-5.4 0-7.5z"/>
+                      </svg>
+                    </button>
+                    <div class="railCount" data-role="likes">{{ r.likes or 0 }}</div>
+                  </div>
+
+                  <div>
+                    <button class="railBtn" type="button" data-action="comment" aria-label="Comment">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+                      </svg>
+                    </button>
+                    <div class="railCount" data-role="comments">{{ r.comments or 0 }}</div>
+                  </div>
+
+                  <div>
+                    <button class="railBtn" type="button" data-action="share" aria-label="Share">
+                      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/>
+                        <path d="M16 6l-4-4-4 4"/>
+                        <path d="M12 2v14"/>
+                      </svg>
+                    </button>
+                    <div class="railCount">Share</div>
+                  </div>
+                </div>
+
+                <div class="meta">
+                  <div class="userRow">
+                    <div class="avatar" aria-hidden="true">{{ (r.username or 'U')[:1]|upper }}</div>
+                    <div class="username">@{{ r.username or "user" }}</div>
+                    <button class="follow" type="button" data-action="follow">Follow</button>
+                  </div>
+
+                  <div class="caption">{{ r.caption or "" }}</div>
+                </div>
+              </div>
+            </section>
+            {% endfor %}
+          {% else %}
+            <section class="reel" data-index="0" data-id="0" data-share-url="{{ initial_reel }}" data-username="user">
+              <video class="vf-reel" data-src="{{ initial_reel }}" playsinline webkit-playsinline muted loop preload="none"></video>
+
+              <div class="overlay">
+                <div class="topbar">
+                  <div class="brand"><span class="pill">Vibe Snaps</span><span>VybeFlow</span></div>
+                  <div class="pill soundBtn" data-action="sound">Muted</div>
+                </div>
+
+                <div class="progressWrap"><div class="progress"><i data-role="progressBar"></i></div></div>
+                <div class="hint show" data-role="hint">Tap = pause • Double tap = like • Hold = sound</div>
+
+                <div class="meta">
+                  <div class="userRow">
+                    <div class="avatar" aria-hidden="true">{{ (current_user or 'U')[:1]|upper }}</div>
+                    <div class="username">@{{ current_user or 'user' }}</div>
+                    <button class="follow" type="button" data-action="follow">Follow</button>
+                  </div>
+                  <div class="caption">Pass <span class="mutedStrong">reels=[]</span> from Flask to load a feed.</div>
+                </div>
+              </div>
+            </section>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Comment modal -->
+      <div class="modal" id="commentModal" aria-hidden="true">
+        <div class="sheet" role="dialog" aria-modal="true" aria-label="Comments">
+          <div class="sheetHead">
+            <b>Comments</b>
+            <button class="closeBtn" type="button" id="closeComments">Close</button>
+          </div>
+          <div class="comments" id="commentList"></div>
+          <div class="composer">
+            <div class="emojiDock" id="commentEmojiDock">
+              <span class="emoji3d" data-emoji="😀">😀</span>
+              <span class="emoji3d" data-emoji="😂">😂</span>
+              <span class="emoji3d" data-emoji="😍">😍</span>
+              <span class="emoji3d" data-emoji="🔥">🔥</span>
+              <span class="emoji3d" data-emoji="🎉">🎉</span>
+              <span class="emoji3d" data-emoji="💃">💃</span>
+              <span class="emoji3d" data-emoji="🕺">🕺</span>
+            </div>
+            <input id="commentInput" type="text" placeholder="Write a comment…" autocomplete="off" />
+            <button id="sendComment" type="button">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <script src="{{ url_for('static', filename='js/reels_ig.js') }}"></script>
+{% endblock %}
+
+<!-- Custom Share Modal -->
+<div id="shareModal" class="modal hidden">
+  <div class="modal-card">
+    <h3>Share this story?</h3>
+    <p>This will post your story to your profile and timeline.</p>
+
+    <div class="modal-actions">
+      <button id="shareOkBtn" type="button">OK</button>
+      <button id="shareCancelBtn" type="button">Cancel</button>
+    </div>
+
+    <div class="share-row">
+      <button id="shareXBtn" type="button">Share to X</button>
+      <button id="copyLinkBtn" type="button">Copy Link</button>
+    </div>
+  </div>
+</div>

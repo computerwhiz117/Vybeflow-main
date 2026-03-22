@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VybeFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animated-emojis.css') }}">
+    <script src="{{ url_for('static', filename='js/animated-emojis.js') }}"></script>
+        <style>
+            :root{
+                --bg: #0a0810;
+                --brand1:#ff9a3d;
+                --brand2:#ff6a00;
+                --brand3:#ff4800;
+            }
+
+            body{
+                margin: 0;
+                background: var(--bg);
+                min-height: 100vh;
+                overflow-x: hidden;
+            }
+
+            body[data-user-theme="1"]{
+                --bg: var(--user-bg);
+                --brand1: var(--user-b1);
+                --brand2: var(--user-b2);
+                --brand3: var(--user-b3);
+            }
+
+            /* ===== BACKGROUND FX (works on ALL pages) ===== */
+                        .vf-bg{
+                position: fixed;
+                inset: 0;
+                z-index: 0;
+                pointer-events: none;
+                                background:
+                                    radial-gradient(1200px 700px at 50% 20%, rgba(255,140,40,.30), transparent 60%),
+                                    radial-gradient(900px 600px at 15% 35%, rgba(255,95,0,.22), transparent 60%),
+                                    radial-gradient(900px 700px at 85% 55%, rgba(255,160,70,.18), transparent 62%),
+                                    linear-gradient(180deg, #2a1303 0%, #190a02 60%, #120601 100%);
+
+                                /* One global VF logo centered with glow; pages
+                                     can layer their own cards on top. */
+                                background-image:
+                                    radial-gradient(circle at 50% 50%, rgba(255,140,40,.20), transparent 60%),
+                                    url("{{ url_for('static', filename='VFlogo_clean.png') }}"),
+                                    radial-gradient(1200px 700px at 50% 20%, rgba(255,140,40,.15), transparent 60%),
+                                    radial-gradient(900px 600px at 15% 35%, rgba(255,95,0,.10), transparent 60%),
+                                    radial-gradient(900px 700px at 85% 55%, rgba(255,160,70,.08), transparent 62%),
+                                    linear-gradient(180deg, #1a0d03 0%, #0f0702 60%, #0a0401 100%);
+                                background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+                                background-size:
+                                    1400px 1400px,
+                                    min(80vw, 1100px),
+                                    auto,
+                                    auto,
+                                    auto,
+                                    auto;
+                                background-position:
+                                    50% 50%,
+                                    50% 50%,
+                                    0 0,
+                                    0 0,
+                                    0 0,
+                                    0 0;
+
+                                opacity: 1;
+                                filter:
+                                    drop-shadow(0 0 90px rgba(255,120,25,.30))
+                                    drop-shadow(0 0 200px rgba(255,90,0,.20));
+
+                                animation: vfGlowPulse 18s ease-in-out infinite;
+            }
+
+                        @keyframes vfGlowPulse {
+                                0%   { transform: scale(1);   opacity: 1; }
+                                50%  { transform: scale(1.05); opacity: 1; }
+                                100% { transform: scale(1);   opacity: 1; }
+                        }
+
+            /* Make sure app content is ABOVE background */
+            .app-shell{
+                position: relative;
+                z-index: 1;
+                min-height: 100vh;
+            }
+
+            /* ===== VYBEFLOW SITE FOOTER ===== */
+            .vf-site-footer{
+                position: relative;
+                z-index: 2;
+                width: 100%;
+                max-width: 980px;
+                margin: 60px auto 0;
+                padding: 0 16px 24px;
+                font-size: 12px;
+                color: rgba(255,255,255,.50);
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            }
+            .vf-site-footer .footer-lang-row{
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+                padding: 12px 0;
+                border-bottom: 1px solid rgba(255,255,255,.10);
+            }
+            .vf-site-footer .footer-lang-row a,
+            .vf-site-footer .footer-lang-row a.lang-chip-btn{
+                color: #ffd8b2;
+                text-decoration: none;
+                font-size: 12px;
+                font-weight: 500;
+                width: auto;
+                display: inline;
+                border: none;
+                background: none;
+                padding: 0;
+                box-shadow: none;
+                transform: none;
+                appearance: none;
+            }
+            .vf-site-footer .footer-lang-row a:hover,
+            .vf-site-footer .footer-lang-row a.lang-chip-btn:hover{
+                text-decoration: underline;
+                transform: none;
+                box-shadow: none;
+                border-color: transparent;
+            }
+            .vf-site-footer .footer-lang-row .lang-plus-btn{
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 22px;
+                height: 22px;
+                border: 1px solid rgba(255,255,255,.18);
+                border-radius: 4px;
+                color: rgba(255,255,255,.55);
+                font-size: 14px;
+                cursor: pointer;
+                background: rgba(255,255,255,.06);
+                text-decoration: none;
+            }
+            .vf-site-footer .footer-lang-row .lang-plus-btn:hover{
+                background: rgba(255,149,61,.15);
+                border-color: rgba(255,149,61,.35);
+                color: #ff9a3d;
+                text-decoration: none;
+            }
+            .vf-site-footer .footer-links-row{
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px 12px;
+                padding: 10px 0;
+            }
+            .vf-site-footer .footer-links-row a{
+                color: rgba(255,255,255,.50);
+                text-decoration: none;
+                font-size: 12px;
+                white-space: nowrap;
+            }
+            .vf-site-footer .footer-links-row a:hover{
+                color: #ff9a3d;
+                text-decoration: underline;
+            }
+            .vf-site-footer .footer-copy{
+                padding-top: 8px;
+                font-size: 12px;
+                color: rgba(255,255,255,.35);
+            }
+            /* Footer only on login & register pages */
+            .vf-site-footer{ display: none; }
+            body.login-page .vf-site-footer,
+            body.register-page .vf-site-footer{
+                display: block;
+                flex-shrink: 0;
+                position: relative;
+                z-index: 10;
+            }
+            /* Backwards compat: hide old class if somehow still referenced */
+            .vf-lang-footer{ display: none !important; }
+
+            /* ===== FEED PAGE OVERRIDES ===== */
+            body.feed-page .landing-shell,
+            body.feed-page .lang-chips{
+                display: none !important;
+            }
+
+            /* Feed should be full width like screenshot */
+            body.feed-page main{
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+                background: transparent;
+            }
+
+            body.feed-page .auth-wrap{
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0 8px;
+                background: transparent;
+            }
+
+            /* If your style.css gives containers a background, force transparent on feed */
+            body.feed-page .container,
+            body.feed-page .page,
+            body.feed-page .content,
+            body.feed-page .card{
+                background: transparent !important;
+            }
+        </style>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <script>
+    /* Apply retro-2011 instantly from localStorage to prevent flash */
+    if(localStorage.getItem('vybe_feed_retro_2011')==='1') document.body.classList.add('retro-2011');
+  </script>
+  <div class="vf-bg" aria-hidden="true"></div>
+
+  <div class="app-shell">
+    <div class="sparkle-field" aria-hidden="true"></div>
+    <main>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes" id="vf-flash-messages">
+                {% for message in messages %}
+                    {% if message != 'Session expired. Please log in again.' %}
+                    <li>{{ message|safe }}</li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+                <script>
+                (function(){
+                  var fl = document.getElementById('vf-flash-messages');
+                  if(!fl) return;
+                  fl.style.transition = 'opacity .6s ease, transform .6s ease';
+                  setTimeout(function(){
+                    fl.style.opacity = '0';
+                    fl.style.transform = 'translateY(-12px)';
+                    setTimeout(function(){ fl.remove(); }, 700);
+                  }, 4000);
+                })();
+                </script>
+            {% endif %}
+        {% endwith %}
+        <div class="auth-wrap">
+        {% block content %}{% endblock %}
+        </div>
+    </main>
+  </div>
+    <!-- ═══ VYBEFLOW SITE FOOTER ═══ -->
+    <footer class="vf-site-footer">
+        <!-- Language row -->
+        <div class="footer-lang-row" aria-label="Language selection">
+            <a href="#" class="lang-chip-btn" data-lang="en">English</a>
+            <a href="#" class="lang-chip-btn" data-lang="es">Español</a>
+            <a href="#" class="lang-chip-btn" data-lang="fr">Français</a>
+            <a href="#" class="lang-chip-btn" data-lang="pt">Português</a>
+            <a href="#" class="lang-chip-btn" data-lang="sw">Kiswahili</a>
+            <a href="#" class="lang-chip-btn" data-lang="ar">العربية</a>
+            <a href="#" class="lang-chip-btn" data-lang="hi">हिन्दी</a>
+            <a href="#" class="lang-chip-btn" data-lang="ja">日本語</a>
+            <a href="#" class="lang-chip-btn" data-lang="ko">한국어</a>
+            <a href="#" class="lang-chip-btn" data-lang="zh">中文</a>
+            <a href="#" class="lang-plus-btn" title="Show more languages">＋</a>
+        </div>
+        <!-- Info links -->
+        <div class="footer-links-row">
+            <a href="#">Community Guidelines</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Consumer Health Privacy</a>
+            <a href="#">Privacy Center</a>
+            <a href="#">About</a>
+            <a href="#">Create Ad</a>
+            <a href="#">Create Page</a>
+            <a href="#">Developers</a>
+            <a href="#">Careers</a>
+            <a href="#">Cookies</a>
+            <a href="#">Ad Choices</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Help Center</a>
+            <a href="#">Contact, Uploading &amp; Non-Users</a>
+            <a href="#">Safety Center</a>
+        </div>
+        <div class="footer-copy">VybeFlow © 2026</div>
+    </footer>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/i18n_app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/vf_theme_enforcer_bot.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme_prefs.js') }}"></script>
+        {% if current_user is defined and current_user.is_authenticated and current_user.preferences %}
+            <style>
+                body{
+                    --user-bg: {{ current_user.preferences.theme_bg }};
+                    --user-b1: {{ current_user.preferences.theme_brand1 }};
+                    --user-b2: {{ current_user.preferences.theme_brand2 }};
+                    --user-b3: {{ current_user.preferences.theme_brand3 }};
+                }
+            </style>
+            <script>
+                document.addEventListener('DOMContentLoaded', function(){
+                    document.body.setAttribute('data-user-theme','1');
+                });
+            </script>
+        {% endif %}
+        {% if active_theme %}
+        <script type="application/json" id="vf-server-theme">{{ active_theme | tojson }}</script>
+        <script>
+            // lightweight sparkle animation: random orange sparks that fade out
+            (function(){
+                const root = document.querySelector('.sparkle-field');
+                if (!root) return;
+                function spawn(){
+                    const s = document.createElement('span');
+                    s.className = 'sparkle-dot';
+                    const size = 3 + Math.random()*4;
+                    s.style.width = s.style.height = size + 'px';
+                    s.style.left = (40 + Math.random()*20) + '%';
+                    s.style.top = (30 + Math.random()*40) + '%';
+                    root.appendChild(s);
+                    setTimeout(()=>s.remove(), 1600);
+                }
+                setInterval(spawn, 260);
+            })();
+
+            (function () {
+                var node = document.getElementById('vf-server-theme');
+                if (!node || !window.VybeTheme) return;
+                try {
+                    var vars = JSON.parse(node.textContent || '{}');
+                    if (vars && typeof vars === 'object') {
+                        window.VybeTheme.saveVars(vars);
+                    }
+                } catch (err) {}
+            })();
+        </script>
+        {% endif %}
+
+<!-- ── Global VybeFlow Toast / Confirm / Prompt (available on all pages) ── -->
+<style>
+.vf-toast-container{position:fixed;top:20px;right:20px;z-index:999999;display:flex;flex-direction:column;gap:10px;pointer-events:none;}
+.vf-toast{pointer-events:auto;min-width:260px;max-width:380px;padding:14px 20px;border-radius:14px;background:rgba(22,14,40,.95);border:1px solid rgba(145,85,255,.25);color:#fff;font-size:14px;font-family:inherit;box-shadow:0 8px 32px rgba(0,0,0,.45);backdrop-filter:blur(12px);animation:vfToastIn .3s ease-out;line-height:1.45;word-break:break-word;}
+.vf-toast.vf-toast-error{border-color:rgba(255,80,80,.35);background:rgba(40,14,14,.95);}
+.vf-toast.vf-toast-success{border-color:rgba(100,255,180,.3);background:rgba(14,30,20,.95);}
+.vf-toast.vf-toast-out{animation:vfToastOut .25s ease-in forwards;}
+@keyframes vfToastIn{from{opacity:0;transform:translateX(40px) scale(.95);}to{opacity:1;transform:translateX(0) scale(1);}}
+@keyframes vfToastOut{from{opacity:1;transform:translateX(0) scale(1);}to{opacity:0;transform:translateX(40px) scale(.9);}}
+.vf-dialog-overlay{position:fixed;inset:0;z-index:999998;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;animation:vfFadeIn .2s ease-out;}
+.vf-dialog{background:rgba(22,14,40,.97);border:1px solid rgba(145,85,255,.25);border-radius:18px;padding:24px 28px;min-width:300px;max-width:420px;color:#fff;font-size:14px;font-family:inherit;box-shadow:0 12px 48px rgba(0,0,0,.5);animation:vfDialogIn .25s ease-out;}
+.vf-dialog-msg{margin-bottom:18px;line-height:1.5;word-break:break-word;}
+.vf-dialog-input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(145,85,255,.25);background:rgba(255,255,255,.06);color:#fff;font-size:14px;margin-bottom:16px;outline:none;box-sizing:border-box;}
+.vf-dialog-input:focus{border-color:rgba(145,85,255,.5);}
+.vf-dialog-actions{display:flex;gap:10px;justify-content:flex-end;}
+.vf-dialog-actions button{padding:8px 22px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:opacity .15s;}
+.vf-dialog-actions button:hover{opacity:.85;}
+.vf-dialog-cancel{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);}
+.vf-dialog-ok{background:linear-gradient(135deg,#9155ff,#ff6a00);color:#fff;}
+@keyframes vfFadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes vfDialogIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+</style>
+<script>
+(function(){
+  if(window.vfToast)return;
+  var tc=document.createElement('div');tc.className='vf-toast-container';document.body.appendChild(tc);
+  window.vfToast=function(msg,type){
+    var t=document.createElement('div');
+    t.className='vf-toast'+(type==='error'?' vf-toast-error':type==='success'?' vf-toast-success':'');
+    t.textContent=msg;tc.appendChild(t);
+    setTimeout(function(){t.classList.add('vf-toast-out');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},300);},3500);
+  };
+  window.vfConfirm=function(msg){
+    return new Promise(function(resolve){
+      var ov=document.createElement('div');ov.className='vf-dialog-overlay';
+      var d=document.createElement('div');d.className='vf-dialog';
+      var m=document.createElement('div');m.className='vf-dialog-msg';m.textContent=msg;
+      var acts=document.createElement('div');acts.className='vf-dialog-actions';
+      var cancel=document.createElement('button');cancel.className='vf-dialog-cancel';cancel.textContent='Cancel';
+      var ok=document.createElement('button');ok.className='vf-dialog-ok';ok.textContent='OK';
+      acts.appendChild(cancel);acts.appendChild(ok);d.appendChild(m);d.appendChild(acts);ov.appendChild(d);document.body.appendChild(ov);
+      ok.focus();
+      function close(val){document.body.removeChild(ov);resolve(val);}
+      ok.addEventListener('click',function(){close(true);});
+      cancel.addEventListener('click',function(){close(false);});
+      ov.addEventListener('click',function(e){if(e.target===ov)close(false);});
+    });
+  };
+  window.vfPrompt=function(msg,def){
+    return new Promise(function(resolve){
+      var ov=document.createElement('div');ov.className='vf-dialog-overlay';
+      var d=document.createElement('div');d.className='vf-dialog';
+      var m=document.createElement('div');m.className='vf-dialog-msg';m.textContent=msg;
+      var inp=document.createElement('input');inp.className='vf-dialog-input';inp.value=def||'';
+      var acts=document.createElement('div');acts.className='vf-dialog-actions';
+      var cancel=document.createElement('button');cancel.className='vf-dialog-cancel';cancel.textContent='Cancel';
+      var ok=document.createElement('button');ok.className='vf-dialog-ok';ok.textContent='OK';
+      acts.appendChild(cancel);acts.appendChild(ok);d.appendChild(m);d.appendChild(inp);d.appendChild(acts);ov.appendChild(d);document.body.appendChild(ov);
+      inp.focus();
+      inp.addEventListener('keydown',function(e){if(e.key==='Enter')close(inp.value);});
+      function close(val){document.body.removeChild(ov);resolve(val);}
+      ok.addEventListener('click',function(){close(inp.value);});
+      cancel.addEventListener('click',function(){close(null);});
+      ov.addEventListener('click',function(e){if(e.target===ov)close(null);});
+    });
+  };
+})();
+</script>
+
+<!-- ── Global Upload Progress ── -->
+<style>
+.vf-upload-progress{position:fixed;top:0;left:0;right:0;z-index:999997;height:4px;background:rgba(0,0,0,.3);display:none;}
+.vf-upload-progress.active{display:block;}
+.vf-upload-progress-bar{height:100%;width:0%;background:linear-gradient(90deg,#9155ff,#ff6a00);border-radius:0 2px 2px 0;transition:width .15s ease-out;}
+.vf-upload-progress-text{position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:999997;background:rgba(22,14,40,.92);color:#fff;font-size:12px;font-weight:700;padding:4px 16px;border-radius:999px;border:1px solid rgba(145,85,255,.25);display:none;backdrop-filter:blur(8px);}
+.vf-upload-progress-text.active{display:block;}
+</style>
+<script>
+(function(){
+  if(window.vfUploadWithProgress)return;
+  var pw=document.createElement('div');pw.className='vf-upload-progress';
+  var pb=document.createElement('div');pb.className='vf-upload-progress-bar';
+  pw.appendChild(pb);document.body.appendChild(pw);
+  var pt=document.createElement('div');pt.className='vf-upload-progress-text';
+  document.body.appendChild(pt);
+  window.vfUploadWithProgress=function(url,formData){
+    return new Promise(function(resolve,reject){
+      var xhr=new XMLHttpRequest();
+      pw.classList.add('active');pt.classList.add('active');
+      pb.style.width='0%';pt.textContent='Uploading… 0%';
+      xhr.upload.addEventListener('progress',function(e){
+        if(e.lengthComputable){
+          var pct=Math.round((e.loaded/e.total)*100);
+          pb.style.width=pct+'%';
+          var mb=function(b){return(b/1048576).toFixed(1);};
+          pt.textContent='Uploading… '+pct+'% ('+mb(e.loaded)+' / '+mb(e.total)+' MB)';
+        }
+      });
+      xhr.addEventListener('load',function(){
+        pb.style.width='100%';pt.textContent='Processing…';
+        setTimeout(function(){pw.classList.remove('active');pt.classList.remove('active');pb.style.width='0%';},1500);
+        var data=null;try{data=JSON.parse(xhr.responseText);}catch(e){}
+        resolve({ok:xhr.status>=200&&xhr.status<300,status:xhr.status,data:data,raw:xhr.responseText});
+      });
+      xhr.addEventListener('error',function(){pw.classList.remove('active');pt.classList.remove('active');reject(new Error('Network error'));});
+      xhr.addEventListener('abort',function(){pw.classList.remove('active');pt.classList.remove('active');reject(new Error('Upload aborted'));});
+      xhr.open('POST',url);xhr.send(formData);
+    });
+  };
+})();
+</script>
+
+</body>
+</html>

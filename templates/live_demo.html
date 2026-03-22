@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>VybeFlow Live</title>
+  <style>
+    body{background:#0b0502;color:#fff;font-family:system-ui;margin:0;padding:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .card{border:1px solid rgba(255,140,60,.35); background:rgba(255,255,255,.06); border-radius:14px; padding:12px}
+    video{width:360px;height:240px;background:#000;border-radius:12px}
+    button{border:1px solid rgba(255,140,60,.35);background:rgba(255,255,255,.08);color:#fff;border-radius:12px;padding:10px 12px;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="row">
+    <div class="card">
+      <div><b>LiveKit</b></div>
+      <button id="join">Join</button>
+      <button id="publish">Publish cam/mic</button>
+      <div id="videos" class="row" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <div><b>Realtime Events</b> (heatmap / pulse / moments / DJ)</div>
+      <button id="tap">Tap 🔥</button>
+      <button id="pulse">Pulse hype</button>
+      <button id="moment">Pin moment</button>
+      <button id="airhorn">DJ airhorn</button>
+      <div id="log" style="margin-top:10px;font-size:12px;opacity:.9"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script type="module">
+    import { Room, createLocalTracks } from "https://cdn.skypack.dev/livekit-client";
+
+    const roomName = "room_1"; // set from server
+    let lkRoom = null;
+
+    const log = (m) => (document.getElementById("log").innerHTML = m + "<br/>" + document.getElementById("log").innerHTML);
+
+    // Socket.IO (events)
+    const socket = io("http://localhost:5000");
+    socket.on("connect", () => {
+      socket.emit("room:join", { room_name: roomName });
+      log("WS connected");
+    });
+
+    socket.on("react:heat", (p) => log("heat " + JSON.stringify(p)));
+    socket.on("pulse:update", (p) => log("pulse " + JSON.stringify(p)));
+    socket.on("moment:pin", (p) => log("moment " + JSON.stringify(p)));
+    socket.on("dj:trigger", (p) => log("dj " + JSON.stringify(p)));
+
+    async function fetchJoinToken() {
+      // you should call your /api/live/join endpoint
+      const res = await fetch("/api/live/join", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ room_name: roomName })
+      });
+      return res.json();
+    }
+
+    document.getElementById("join").onclick = async () => {
+      const data = await fetchJoinToken();
+      if (!data.ok) return vfToast(data.error || "join failed");
+
+      lkRoom = new Room();
+      lkRoom.on("trackSubscribed", (track, publication, participant) => {
+        const el = track.attach();
+        document.getElementById("videos").appendChild(el);
+      });
+
+      await lkRoom.connect(data.livekit_url.replace("ws://","http://").replace("wss://","https://"), data.token);
+      log("LiveKit connected");
+    };
+
+    document.getElementById("publish").onclick = async () => {
+      if (!lkRoom) return vfToast("join first");
+      const tracks = await createLocalTracks({ audio: true, video: true });
+      tracks.forEach(t => lkRoom.localParticipant.publishTrack(t));
+      log("published tracks");
+    };
+
+    // Event buttons
+    document.getElementById("tap").onclick = () => {
+      socket.emit("react:tap", { room_name: roomName, emoji:"🔥", x: Math.random(), y: Math.random(), user_id:"u1" });
+    };
+
+    document.getElementById("pulse").onclick = () => {
+      socket.emit("pulse:set", { room_name: roomName, mood:"hype", user_id:"u1" });
+    };
+
+    document.getElementById("moment").onclick = () => {
+      socket.emit("moment:pin", { room_name: roomName, label:"BARSSS", timestamp: Math.random()*120 });
+    };
+
+    document.getElementById("airhorn").onclick = () => {
+      socket.emit("dj:trigger", { room_name: roomName, event:"airhorn", user_id:"u1" });
+    };
+  </script>
+</body>
+</html>

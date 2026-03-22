@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  .aux-shell { min-height: 100vh; display: flex; justify-content: center; padding: 24px 10px; }
+  .aux-card {
+    width: min(96%, 680px);
+    border-radius: 18px;
+    border: 1px solid rgba(255,153,90,.28);
+    background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.07));
+    backdrop-filter: blur(14px);
+    box-shadow: 0 0 32px rgba(255,106,0,.22), 0 14px 36px rgba(0,0,0,.34);
+    padding: 22px;
+    color: #fff;
+  }
+  .aux-link { color: #ffd8b2; }
+  .result-group { margin-top: 18px; }
+  .result-group h3 { margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: .6px; color: rgba(255,255,255,.55); }
+  .result-list { margin: 0; padding-left: 18px; }
+  .result-list li { margin-bottom: 8px; }
+
+  /* ── Facebook-style People cards ── */
+  .people-grid { display: flex; flex-direction: column; gap: 10px; }
+  .people-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 14px; border-radius: 14px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,170,112,.18);
+    transition: background .2s, border-color .2s;
+    text-decoration: none; color: #fff;
+  }
+  .people-card:hover { background: rgba(255,170,112,.12); border-color: rgba(255,170,112,.38); }
+  .people-avatar {
+    width: 56px; height: 56px; border-radius: 50%; object-fit: cover;
+    border: 2px solid rgba(255,170,112,.35); flex-shrink: 0;
+  }
+  .people-info { flex: 1; min-width: 0; }
+  .people-name {
+    font-weight: 700; font-size: 16px; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .people-name .pro-badge {
+    display: inline-block; background: linear-gradient(135deg,#ff9a3d,#ff4800);
+    color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px;
+    border-radius: 5px; vertical-align: middle; margin-left: 5px;
+  }
+  .people-handle { font-size: 13px; color: rgba(255,255,255,.50); }
+  .people-bio {
+    font-size: 13px; color: rgba(255,255,255,.65); margin-top: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 360px;
+  }
+  .people-actions { flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
+  .friend-btn {
+    border: 1px solid rgba(255,170,112,.35);
+    border-radius: 10px; padding: 6px 12px;
+    background: rgba(255,255,255,.10);
+    color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+    transition: background .2s;
+  }
+  .friend-btn:hover { background: rgba(255,170,112,.22); }
+  .friend-label { font-size: 12px; font-weight: 700; }
+  .friend-label.accepted { color: #6fda6f; }
+  .friend-label.pending { color: rgba(255,255,255,.45); }
+
+  .gif-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .gif-grid img { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid rgba(255,170,112,.26); }
+  .no-results { color: rgba(255,255,255,.45); font-size: 14px; }
+</style>
+
+<section class="aux-shell">
+  <div class="aux-card">
+    <h1 style="margin:0 0 4px;">Results for "{{ query }}"</h1>
+
+    {# ── People ── #}
+    <div class="result-group">
+      <h3>👤 People</h3>
+      {% if results.users %}
+      <div class="people-grid">
+        {% for user in results.users %}
+        {% set uname = user.username|lower %}
+        <a class="people-card" href="{{ url_for('user_profile', username=user.username) }}">
+          <img class="people-avatar"
+               src="{{ user.avatar_url or url_for('static', filename='VFlogo_clean.png') }}"
+               alt="{{ user.username }}"
+               onerror="this.src='{{ url_for('static', filename='VFlogo_clean.png') }}';" />
+          <div class="people-info">
+            <div class="people-name">
+              {{ user.display_name or user.username }}
+              {% if user.account_type == 'professional' %}<span class="pro-badge">PRO</span>{% endif %}
+            </div>
+            <div class="people-handle">@{{ user.username }}{% if user.email and not user.email.endswith('@vybeflow.local') %} · {{ user.email }}{% endif %}</div>
+            {% if user.bio %}<div class="people-bio">{{ user.bio }}</div>{% endif %}
+          </div>
+          <div class="people-actions" onclick="event.stopPropagation();">
+            {% if uname != current_username %}
+              {% if uname in friend_usernames %}
+                <span class="friend-label accepted">✓ Friends</span>
+              {% elif uname in (pending_usernames|default([])) %}
+                <span class="friend-label pending">⏳ Pending</span>
+              {% else %}
+                <form method="post" action="{{ url_for('add_friend', username=user.username) }}" style="margin:0;" onclick="event.preventDefault(); this.submit();">
+                  <input type="hidden" name="next" value="{{ url_for('search', q=query) }}" />
+                  <button type="submit" class="friend-btn">🤝 Add Friend</button>
+                </form>
+              {% endif %}
+            {% else %}
+              <span class="friend-label" style="color:rgba(255,255,255,.35);">You</span>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="no-results">No people found matching "{{ query }}".</p>
+      {% endif %}
+    </div>
+
+    {# ── Posts ── #}
+    <div class="result-group">
+      <h3>📝 Posts</h3>
+      {% if results.posts %}
+      <ul class="result-list">
+        {% for post in results.posts %}
+        <li>{{ post }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="no-results">No matching posts.</p>
+      {% endif %}
+    </div>
+
+    {# ── Stories ── #}
+    <div class="result-group">
+      <h3>📖 Stories</h3>
+      {% if results.stories %}
+      <ul class="result-list">
+        {% for story in results.stories %}
+        <li>
+          <strong>{{ story.title }}</strong> by @{{ story.username }}
+          {% if story.location %} · 📍 {{ story.location }}{% endif %}
+          {% if story.music_track %} · 🎵 {{ story.music_track }}{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="no-results">No matching stories.</p>
+      {% endif %}
+    </div>
+
+    {# ── GIF Library ── #}
+    {% if results.gifs %}
+    <div class="result-group">
+      <h3>🎞 GIFs</h3>
+      <div class="gif-grid">
+        {% for gif in results.gifs %}
+        <img src="{{ gif.url }}" alt="{{ gif.title }}" />
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <p style="margin-top:18px;"><a class="aux-link" href="{{ url_for('search') }}">← Back to search</a></p>
+  </div>
+</section>
+{% endblock %}

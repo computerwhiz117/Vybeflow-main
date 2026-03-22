@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  .td-shell{min-height:100vh;display:grid;place-items:center;padding:20px;}
+  .td-card{width:min(94%,680px);border-radius:18px;border:1px solid rgba(255,153,90,.12);background:rgba(255,255,255,.03);backdrop-filter:blur(28px) saturate(1.2);box-shadow:0 0 24px rgba(255,106,0,.06),0 8px 24px rgba(0,0,0,.12);padding:28px;}
+  .td-card h1{font-size:24px;margin-bottom:6px;background:linear-gradient(135deg,#ff9a3d,#ff4d00);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .td-card p.subtitle{color:rgba(255,255,255,.6);font-size:13px;margin-bottom:20px;}
+  .td-field{margin-bottom:16px;}
+  .td-field label{display:block;font-weight:700;font-size:13px;margin-bottom:4px;color:rgba(255,255,255,.9);}
+  .td-field .hint{font-size:11px;color:rgba(255,200,150,.7);margin-top:2px;}
+  .td-input,.td-select,.td-textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,173,117,.15);background:rgba(0,0,0,.06);backdrop-filter:blur(12px);color:#fff;font-size:14px;font-family:inherit;}
+  .td-input:focus,.td-select:focus,.td-textarea:focus{outline:none;border-color:rgba(255,149,0,.6);box-shadow:0 0 8px rgba(255,149,0,.15);}
+  .td-textarea{min-height:120px;resize:vertical;}
+  .td-select option{background:#1a1a1a;}
+  .td-check{display:flex;align-items:flex-start;gap:10px;margin-top:8px;}
+  .td-check input[type=checkbox]{width:20px;height:20px;accent-color:#ff6a00;flex-shrink:0;margin-top:2px;}
+  .td-check label{font-size:12px;color:rgba(255,255,255,.8);line-height:1.5;}
+  .td-btn{width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,#ff9a3d,#ff4d00);color:#fff;font-weight:800;font-size:15px;cursor:pointer;margin-top:8px;transition:.15s;}
+  .td-btn:hover{filter:brightness(1.15);transform:scale(1.01);}
+  .td-info-box{border:1px solid rgba(255,200,100,.2);border-radius:12px;background:rgba(255,149,0,.08);padding:14px;margin-bottom:18px;}
+  .td-info-box h3{font-size:14px;color:#ffb562;margin-bottom:6px;}
+  .td-info-box ul{margin:0;padding-left:18px;font-size:12px;color:rgba(255,255,255,.7);line-height:1.8;}
+  .back-link{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:12px;border:1px solid rgba(255,173,117,.3);background:rgba(255,255,255,.06);color:#ffb562;font-weight:700;margin-bottom:14px;font-size:13px;text-decoration:none;transition:.15s;}
+  .back-link:hover{background:rgba(255,149,0,.12);border-color:rgba(255,149,0,.5);}
+  /* Types visual */
+  .type-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .type-card{border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:.15s;background:rgba(0,0,0,.2);}
+  .type-card:hover,.type-card.selected{border-color:rgba(255,149,0,.6);background:rgba(255,149,0,.1);}
+  .type-card .icon{font-size:24px;margin-bottom:4px;}
+  .type-card .label{font-size:12px;font-weight:700;}
+  @media(max-width:500px){.type-cards{grid-template-columns:1fr;}}
+</style>
+
+<section class="td-shell">
+  <div class="td-card">
+    <a class="back-link" href="/feed">&#8592; Back to Feed</a>
+
+    <h1>&#128220; Content Takedown Request</h1>
+    <p class="subtitle">Request removal of content that violates your rights or contains your likeness without consent.</p>
+
+    <div class="td-info-box">
+      <h3>&#9888;&#65039; Before You Submit</h3>
+      <ul>
+        <li><b>DMCA / Copyright:</b> You must be the rights holder or authorized agent.</li>
+        <li><b>Consent / Likeness:</b> Content contains your image or likeness without permission.</li>
+        <li><b>Intimate Content:</b> Non-consensual intimate imagery will be removed within 24 hours.</li>
+        <li>False takedown requests may result in account suspension.</li>
+        <li>All requests are logged and reviewed by our moderation team.</li>
+      </ul>
+    </div>
+
+    <form method="post" action="{{ url_for('moderation.takedown_form') }}">
+
+      <!-- Request Type -->
+      <div class="td-field">
+        <label>Request Type</label>
+        <div class="type-cards" id="type-cards">
+          <div class="type-card" data-val="dmca_copyright" onclick="selectType(this)">
+            <div class="icon">&#169;</div>
+            <div class="label">DMCA / Copyright</div>
+          </div>
+          <div class="type-card" data-val="consent_likeness" onclick="selectType(this)">
+            <div class="icon">&#128100;</div>
+            <div class="label">My Likeness / Image</div>
+          </div>
+          <div class="type-card" data-val="consent_intimate" onclick="selectType(this)">
+            <div class="icon">&#128274;</div>
+            <div class="label">Intimate Content</div>
+          </div>
+          <div class="type-card" data-val="other" onclick="selectType(this)">
+            <div class="icon">&#128221;</div>
+            <div class="label">Other</div>
+          </div>
+        </div>
+        <input type="hidden" name="request_type" id="request_type" required value="" />
+      </div>
+
+      <!-- Post ID -->
+      <div class="td-field">
+        <label for="post_id">Post ID (if known)</label>
+        <input class="td-input" id="post_id" name="post_id" type="number" min="1" placeholder="Optional — enter the post ID" />
+        <div class="hint">You can find the Post ID in the post URL or by clicking the &#8286; menu on any post.</div>
+      </div>
+
+      <!-- Full Name -->
+      <div class="td-field">
+        <label for="full_name">Full Legal Name *</label>
+        <input class="td-input" id="full_name" name="full_name" type="text" required maxlength="120" placeholder="Your full legal name" />
+      </div>
+
+      <!-- Email -->
+      <div class="td-field">
+        <label for="td_email">Contact Email *</label>
+        <input class="td-input" id="td_email" name="email" type="email" required maxlength="200" placeholder="you@example.com" />
+      </div>
+
+      <!-- Description -->
+      <div class="td-field">
+        <label for="description">Detailed Description *</label>
+        <textarea class="td-textarea" id="description" name="description" required minlength="20" maxlength="5000" placeholder="Describe the content you want removed and why. Include specific URLs or details. (Minimum 20 characters)"></textarea>
+      </div>
+
+      <!-- Evidence URL -->
+      <div class="td-field">
+        <label for="evidence_url">Evidence URL (optional)</label>
+        <input class="td-input" id="evidence_url" name="evidence_url" type="url" maxlength="1000" placeholder="https://... link to original work or proof" />
+        <div class="hint">For DMCA: link to the original copyrighted work. For likeness: link to proof of identity.</div>
+      </div>
+
+      <!-- Sworn Statement (DMCA) -->
+      <div class="td-field" id="sworn-field" style="display:none;">
+        <div class="td-check">
+          <input type="checkbox" id="sworn_statement" name="sworn_statement" />
+          <label for="sworn_statement">
+            <b>Sworn Statement (required for DMCA):</b> I swear, under penalty of perjury, that the information in this notification is accurate, and that I am the copyright owner or authorized to act on behalf of the owner of an exclusive right that is allegedly infringed.
+          </label>
+        </div>
+      </div>
+
+      <!-- Consent confirmation -->
+      <div class="td-field">
+        <div class="td-check">
+          <input type="checkbox" id="consent_confirm" required />
+          <label for="consent_confirm">
+            I confirm this request is made in good faith and the information provided is accurate. I understand that false claims may result in account penalties.
+          </label>
+        </div>
+      </div>
+
+      <button class="td-btn" type="submit">&#128640; Submit Takedown Request</button>
+    </form>
+  </div>
+</section>
+
+<script>
+function selectType(el) {
+  document.querySelectorAll('.type-card').forEach(function(c) { c.classList.remove('selected'); });
+  el.classList.add('selected');
+  document.getElementById('request_type').value = el.getAttribute('data-val');
+  // Show/hide sworn statement field for DMCA
+  var sworn = document.getElementById('sworn-field');
+  if (sworn) {
+    sworn.style.display = (el.getAttribute('data-val') === 'dmca_copyright') ? '' : 'none';
+  }
+}
+</script>
+{% endblock %}

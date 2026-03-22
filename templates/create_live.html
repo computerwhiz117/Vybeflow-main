@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block body_class %}create-page{% endblock %}
+{% block content %}
+
+<style>
+  :root{
+    --line: rgba(255,173,117,.28);
+    --glass: rgba(255,255,255,.06);
+    --text: rgba(255,255,255,.92);
+  }
+  body.create-page{
+    background: radial-gradient(900px 520px at 55% 40%, rgba(255,30,30,.18), transparent 65%),
+                linear-gradient(180deg, #09070a, #060406);
+    color: var(--text);
+  }
+  .create-wrap{
+    width: min(720px, 96vw); margin: 18px auto;
+    border: 1px solid var(--line); border-radius: 18px;
+    background: rgba(0,0,0,.08); backdrop-filter: blur(28px) saturate(1.2);
+    box-shadow: 0 0 24px rgba(255,106,0,.06), 0 8px 24px rgba(0,0,0,.15);
+    overflow: hidden;
+  }
+  .create-top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 14px; border-bottom: 1px solid var(--line);
+  }
+  .ghost-btn{
+    border: 1px solid var(--line); background: var(--glass); color: var(--text);
+    border-radius: 12px; height: 38px; padding: 0 12px; cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 0 22px rgba(255,106,0,.18);
+  }
+  .ghost-btn:hover{ background: rgba(255,255,255,.10); }
+  .live-body{ padding: 20px; display:flex; flex-direction:column; gap:14px; }
+  .field-input{
+    width:100%; border:1px solid var(--line); background: var(--glass);
+    color:#fff; border-radius:12px; padding:12px 14px; font-size:15px;
+    box-sizing:border-box; outline:none;
+  }
+  .field-input:focus{ border-color: rgba(255,170,112,.55); }
+  .field-input::placeholder{ color:rgba(255,255,255,.35); }
+  .live-preview{
+    width:100%; aspect-ratio:16/9; border-radius:16px;
+    border:1px solid var(--line); background:rgba(0,0,0,.4);
+    display:grid; place-items:center; color:rgba(255,255,255,.5);
+    font-weight:700; font-size:15px; overflow:hidden; position:relative;
+  }
+  .live-preview video{
+    width:100%; height:100%; object-fit:cover; border-radius:16px;
+  }
+  .live-indicator{
+    position:absolute; top:12px; left:12px; padding:4px 12px;
+    background:rgba(255,30,30,.85); color:#fff; font-size:12px;
+    font-weight:900; border-radius:6px; display:none;
+  }
+  .go-live-btn{
+    width:100%; height:52px; border:none; border-radius:999px;
+    background: linear-gradient(180deg,#ff3b3b,#cc0000); color:#fff;
+    font-weight:900; font-size:16px; letter-spacing:.08em; text-transform:uppercase;
+    cursor:pointer; box-shadow: 0 4px 18px rgba(255,30,30,.35);
+    transition: transform .1s, box-shadow .15s;
+  }
+  .go-live-btn:hover{ transform:scale(1.02); box-shadow: 0 6px 24px rgba(255,30,30,.5); }
+  .go-live-btn:disabled{ opacity:.5; cursor:default; transform:none; }
+  .bottom-tabs{
+    display:grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; padding: 12px 14px;
+    border-top: 1px solid var(--line); background: rgba(0,0,0,.25);
+  }
+  .tab{
+    height: 44px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--glass); color: rgba(255,255,255,.85);
+    font-weight: 900; letter-spacing: .12em; text-transform: uppercase; cursor:pointer;
+  }
+  .tab.active{
+    background: linear-gradient(180deg, rgba(255,60,60,.24), rgba(255,0,0,.10));
+    box-shadow: 0 0 0 1px rgba(255,100,100,.30), 0 0 28px rgba(255,30,30,.28);
+  }
+</style>
+
+<div class="create-wrap">
+  <div class="create-top">
+    <button class="ghost-btn" type="button" onclick="window.location.href='{{ url_for('feed.feed_page') }}'">✕</button>
+    <div style="font-weight:900;">Go Live</div>
+    <button class="ghost-btn" type="button" onclick="window.location.href='/settings'">⚙</button>
+  </div>
+
+  <div class="live-body">
+    <div class="live-preview" id="live-preview">
+      <span id="preview-placeholder">Camera preview will appear here</span>
+      <video id="live-video" autoplay muted playsinline style="display:none;"></video>
+      <div class="live-indicator" id="live-indicator">🔴 LIVE</div>
+    </div>
+
+    <div>
+      <input id="live-title" class="field-input" type="text" placeholder="Give your live a title..." maxlength="100" />
+    </div>
+
+    <button class="ghost-btn" id="camera-btn" style="width:100%;">📹 Enable Camera</button>
+
+    <button class="go-live-btn" id="go-live-btn">🔴 Go Live</button>
+
+    <div id="live-feedback" style="font-size:13px; margin-top:4px;"></div>
+
+    <div style="display:flex; gap:10px;">
+      <a class="ghost-btn" href="{{ url_for('live_hub') }}" style="flex:1;display:grid;place-items:center;text-decoration:none;color:var(--text);">Browse Live Rooms</a>
+    </div>
+  </div>
+
+  <div class="bottom-tabs">
+    <button class="tab" type="button" onclick="window.location.href='{{ url_for('create_post') }}'">Post</button>
+    <button class="tab" type="button" onclick="window.location.href='{{ url_for('create_story') }}'">Story</button>
+    <button class="tab" type="button" onclick="window.location.href='{{ url_for('create_reel') }}'">Vibe Snap</button>
+    <button class="tab active" type="button">Live</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var video = document.getElementById('live-video');
+  var placeholder = document.getElementById('preview-placeholder');
+  var cameraBtn = document.getElementById('camera-btn');
+  var goLiveBtn = document.getElementById('go-live-btn');
+  var titleInput = document.getElementById('live-title');
+  var feedback = document.getElementById('live-feedback');
+  var indicator = document.getElementById('live-indicator');
+  var stream = null;
+
+  /* Enable camera */
+  cameraBtn.addEventListener('click', function(){
+    if(stream){
+      stream.getTracks().forEach(function(t){ t.stop(); });
+      stream = null;
+      video.srcObject = null;
+      video.style.display = 'none';
+      placeholder.style.display = '';
+      cameraBtn.textContent = '📹 Enable Camera';
+      return;
+    }
+    cameraBtn.textContent = 'Starting…';
+    cameraBtn.disabled = true;
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(function(s){
+        stream = s;
+        video.srcObject = s;
+        video.style.display = '';
+        placeholder.style.display = 'none';
+        cameraBtn.textContent = '📹 Disable Camera';
+        cameraBtn.disabled = false;
+      })
+      .catch(function(err){
+        feedback.textContent = 'Camera access denied: ' + err.message;
+        feedback.style.color = 'rgba(255,120,120,.95)';
+        cameraBtn.textContent = '📹 Enable Camera';
+        cameraBtn.disabled = false;
+      });
+  });
+
+  /* Go Live */
+  goLiveBtn.addEventListener('click', function(){
+    var title = (titleInput.value || '').trim() || 'Untitled Live';
+    goLiveBtn.disabled = true;
+    feedback.textContent = 'Creating live room…';
+    feedback.style.color = 'rgba(255,200,120,.9)';
+
+    fetch('/live/create', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ title: title })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d.ok && d.room_id){
+        indicator.style.display = '';
+        feedback.textContent = 'You are LIVE! Room: ' + d.room_id;
+        feedback.style.color = 'rgba(255,120,120,.95)';
+        goLiveBtn.textContent = '🔴 LIVE NOW';
+        /* Try to navigate to live room if route exists */
+        if(d.room_id){
+          setTimeout(function(){ window.location.href = '/live/' + d.room_id; }, 1200);
+        }
+      } else {
+        feedback.textContent = d.error || 'Failed to create live room.';
+        feedback.style.color = 'rgba(255,120,120,.95)';
+        goLiveBtn.disabled = false;
+      }
+    })
+    .catch(function(){
+      feedback.textContent = 'Network error — try again.';
+      feedback.style.color = 'rgba(255,120,120,.95)';
+      goLiveBtn.disabled = false;
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,1031 @@
+{% extends "base.html" %}
+{% block body_class %}reel-pro-editor{% endblock %}
+{% block content %}
+<style>
+  :root{
+    --bg:#0b0f18;
+    --panel:rgba(18,22,37,.12);
+    --border:rgba(255,255,255,.10);
+    --text:#f4f6ff;
+    --dim:rgba(244,246,255,.72);
+    --accent:#ff6a00;
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+  }
+
+  .reel-pro-wrap{
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(1200px 700px at 40% 20%, rgba(255,120,0,.20), transparent 55%),
+                radial-gradient(900px 600px at 65% 55%, rgba(255,70,0,.15), transparent 60%),
+                var(--bg);
+    color: var(--text);
+    overflow:hidden;
+    z-index: 100;
+  }
+
+  .reel-stage{
+    position:absolute;
+    inset:0;
+    display:grid;
+    place-items:center;
+    padding: calc(12px + var(--sat)) 12px calc(98px + var(--sab)) 12px;
+  }
+
+  .reel-canvas{
+    width:min(380px, 92vw);
+    aspect-ratio: 9/16;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(0,0,0,.12), rgba(20,10,5,.15));
+    border:1px solid var(--border);
+    box-shadow: 0 18px 60px rgba(0,0,0,.55);
+    position:relative;
+    overflow:hidden;
+  }
+
+  .reel-video-layer{
+    position:absolute;
+    inset:0;
+    z-index:1;
+  }
+
+  .reel-video-layer video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .reel-overlay-layer{
+    position:absolute;
+    inset:0;
+    z-index:3;
+    pointer-events:none;
+  }
+
+  .reel-sticker{
+    position:absolute;
+    left:50%; top:35%;
+    transform: translate(-50%,-50%);
+    padding: 10px 12px;
+    border-radius: 14px;
+    border:1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.42);
+    backdrop-filter: blur(10px);
+    font-weight: 800;
+    cursor: grab;
+    user-select:none;
+    max-width: 84%;
+    pointer-events:auto;
+    animation: stickerPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes stickerPop {
+    0% { transform: translate(-50%,-50%) scale(0); opacity: 0; }
+    50% { transform: translate(-50%,-50%) scale(1.1); }
+    100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  }
+  
+  @keyframes stickerFloat {
+    0%, 100% { transform: translate(-50%,-50%) translateY(0px) rotate(0deg); }
+    25% { transform: translate(-50%,-50%) translateY(-3px) rotate(-1deg); }
+    50% { transform: translate(-50%,-50%) translateY(-6px) rotate(0deg); }
+    75% { transform: translate(-50%,-50%) translateY(-3px) rotate(1deg); }
+  }
+  
+  @keyframes stickerPulse {
+    0%, 100% { transform: translate(-50%,-50%) scale(1); }
+    50% { transform: translate(-50%,-50%) scale(1.05); }
+  }
+  
+  @keyframes stickerBounce {
+    0%, 20%, 50%, 80%, 100% { transform: translate(-50%,-50%) translateY(0); }
+    40% { transform: translate(-50%,-50%) translateY(-8px); }
+    60% { transform: translate(-50%,-50%) translateY(-4px); }
+  }
+  
+  .reel-sticker[data-animation="float"] { animation: stickerPop 0.4s, stickerFloat 3s ease-in-out infinite 0.4s; }
+  .reel-sticker[data-animation="pulse"] { animation: stickerPop 0.4s, stickerPulse 2s ease-in-out infinite 0.4s; }
+  .reel-sticker[data-animation="bounce"] { animation: stickerPop 0.4s, stickerBounce 2s ease-in-out infinite 0.4s; }
+  .reel-sticker:hover { animation: stickerPulse 0.5s ease-in-out; z-index: 999; }
+
+  @keyframes flameFlicker {
+    0% { transform: translate(-50%,-50%) scale(1) rotate(-1deg); filter: drop-shadow(0 0 8px rgba(255,106,0,.7)); }
+    25% { transform: translate(-50%,-50%) scale(1.04) rotate(1deg); filter: drop-shadow(0 0 12px rgba(255,140,0,.9)); }
+    50% { transform: translate(-50%,-50%) scale(0.98) rotate(-2deg); filter: drop-shadow(0 0 10px rgba(255,70,0,.8)); }
+    75% { transform: translate(-50%,-50%) scale(1.06) rotate(2deg); filter: drop-shadow(0 0 14px rgba(255,160,0,.95)); }
+    100% { transform: translate(-50%,-50%) scale(1) rotate(-1deg); filter: drop-shadow(0 0 8px rgba(255,106,0,.7)); }
+  }
+
+  .reel-sticker.reel-flame{
+    animation: flameFlicker 1.1s ease-in-out infinite;
+  }
+
+  .reel-placeholder{
+    width:100%;
+    height:100%;
+    display:grid;
+    place-items:center;
+    background: rgba(255,255,255,.03);
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all .3s ease;
+  }
+
+  .reel-placeholder:hover{
+    border-color: var(--accent);
+    background: rgba(255,106,0,.08);
+  }
+
+  .topbar, .bottombar{
+    position:absolute;
+    left:0; right:0;
+    z-index:10;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    pointer-events:none;
+  }
+  .topbar{ top:0; padding: calc(10px + var(--sat)) 12px 10px 12px; }
+  .bottombar{ bottom:0; padding: 10px 12px calc(10px + var(--sab)) 12px; }
+
+  .row{ display:flex; gap:10px; pointer-events:auto; flex-wrap:wrap; align-items:center; }
+
+  .btn{
+    appearance:none;
+    border:1px solid var(--border);
+    background: rgba(18,22,37,.12);
+    color: var(--text);
+    backdrop-filter: blur(16px);
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .2s ease;
+  }
+
+  .btn:hover{
+    background: rgba(255,106,0,.25);
+    border-color: var(--accent);
+  }
+
+  .btn.primary{
+    background: linear-gradient(135deg, rgba(255,106,0,.9), rgba(255,140,0,.8));
+    box-shadow: 0 0 24px rgba(255,106,0,.28);
+  }
+
+  .btn.primary:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 0 32px rgba(255,106,0,.40);
+  }
+
+  .pill{
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,.42);
+    backdrop-filter: blur(10px);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* Font Modal */
+  .font-backdrop{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.25);
+    z-index: 1000;
+    display: none;
+    backdrop-filter: blur(12px);
+  }
+  .font-backdrop.active{ display: block; }
+
+  .font-modal{
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(480px, 92vw);
+    max-height: 80vh;
+    background: linear-gradient(180deg, rgba(18,22,37,.20), rgba(10,15,25,.20));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    z-index: 1001;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .font-modal.active{ display: flex; }
+
+  .font-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .font-body{
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .font-input{
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    font-size: 18px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .font-grid{
+    display: grid;
+    gap: 10px;
+  }
+
+  .font-option{
+    padding: 16px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: rgba(255,255,255,.04);
+    cursor: pointer;
+    transition: all .2s ease;
+    text-align: center;
+    font-size: 24px;
+  }
+
+  .font-option:hover{
+    border-color: var(--accent);
+    background: rgba(255,106,0,.15);
+  }
+
+  .font-classic{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .font-bold{ font-family: Impact, 'Arial Black', sans-serif; font-weight: 900; }
+  .font-serif{ font-family: Georgia, 'Times New Roman', serif; }
+  .font-mono{ font-family: 'Courier New', monospace; }
+  .font-hand{ font-family: 'Brush Script MT', cursive; }
+  .font-modern{ font-family: 'Trebuchet MS', sans-serif; letter-spacing: 2px; }
+  .font-neon{ font-family: 'Arial Black', sans-serif; text-shadow: 0 0 10px #ff6a00, 0 0 20px #ff6a00; }
+  .font-3d{ font-family: Impact, sans-serif; text-shadow: 2px 2px 0 #000, 4px 4px 0 rgba(255,106,0,.5); }
+  .font-outline{ font-family: 'Arial Black', sans-serif; -webkit-text-stroke: 2px #ff6a00; -webkit-text-fill-color: transparent; }
+
+  .color-row{
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .color-chip{
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.2);
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .color-chip:hover, .color-chip.active{
+    transform: scale(1.2);
+    border-color: #fff;
+    box-shadow: 0 0 12px currentColor;
+  }
+
+  .reel-font{
+    display:inline-block;
+    font-size: 28px;
+    line-height: 1.1;
+    text-align: center;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Music Sheet */
+  .backdrop{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.20);
+    z-index: 998;
+    display: none;
+    backdrop-filter: blur(8px);
+  }
+
+  .music-sheet{
+    position: fixed;
+    left:0; right:0; bottom:0;
+    max-height: 70vh;
+    background: linear-gradient(180deg, rgba(18,22,37,.20), rgba(10,15,25,.20));
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    z-index: 999;
+    transform: translateY(100%);
+    transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .music-sheet.open{ transform: translateY(0%); }
+
+  .music-sheet header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .closex{
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.05);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .field{
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    margin: 12px 16px;
+    max-width: calc(100% - 32px);
+    box-sizing: border-box;
+  }
+
+  .music-list{
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .song{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.04);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+
+  .song:hover{
+    background: rgba(255,106,0,.15);
+  }
+
+  .song .meta .t{
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .song .meta .a{
+    font-size: 11px;
+    opacity: .7;
+    margin-top: 2px;
+  }
+
+  .song .tag{
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255,106,0,.20);
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  /* Speed Controls */
+  .speed-panel{
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 15;
+    background: rgba(18,22,37,.15);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px;
+    backdrop-filter: blur(16px);
+    display: none;
+  }
+
+  .speed-panel.active{
+    display: block;
+  }
+
+  .speed-btn{
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    margin: 6px 0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 800;
+    transition: all .2s ease;
+  }
+
+  .speed-btn:hover, .speed-btn.active{
+    background: rgba(255,106,0,.25);
+    border-color: var(--accent);
+  }
+
+  /* Filters */
+  .filter-strip{
+    position: absolute;
+    bottom: 90px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px;
+    background: rgba(0,0,0,.12);
+    border-radius: 16px;
+    z-index: 12;
+    display: none;
+  }
+
+  .filter-strip.active{
+    display: flex;
+  }
+
+  .filter-box{
+    min-width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: rgba(255,255,255,.05);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 800;
+    transition: all .2s ease;
+  }
+
+  .filter-box:hover, .filter-box.active{
+    border-color: var(--accent);
+    background: rgba(255,106,0,.15);
+  }
+
+  @media (max-width: 600px){
+    .reel-canvas{
+      width: 100%;
+      border-radius: 0;
+    }
+    .speed-panel{
+      right: 10px;
+    }
+  }
+</style>
+
+<div class="reel-pro-wrap" id="reelWrap">
+  <div class="reel-stage">
+    <div class="reel-canvas" id="reelCanvas">
+      <div class="reel-video-layer" id="videoLayer">
+        <div class="reel-placeholder" onclick="document.getElementById('videoInput').click()">
+          <div style="text-align:center;">
+            <p style="font-size:48px;margin:0 0 12px;">🎬</p>
+            <p style="margin:0;font-size:15px;font-weight:900;">Tap to upload video</p>
+            <p style="margin:6px 0 0;font-size:12px;opacity:.7;">or record with camera</p>
+          </div>
+        </div>
+      </div>
+      <div class="reel-overlay-layer" id="overlayLayer"></div>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <div class="row">
+      <button class="btn" type="button" onclick="history.back()">✕ <span class="pill">Close</span></button>
+      <div class="pill" id="durationPill">0:00</div>
+    </div>
+    <div class="row">
+      <button class="btn" type="button" onclick="REEL.toggleSpeed()">⏱️ Speed</button>
+      <button class="btn" type="button" onclick="REEL.toggleFilters()">🎨 Filters</button>
+      <button class="btn" type="button" onclick="REEL.toggleSound()" id="soundBtn">🔊 Sound</button>
+      <button class="btn" type="button" onclick="REEL.openMusic()">🎵 Music</button>
+    </div>
+  </div>
+
+  <div class="bottombar">
+    <div class="row">
+      <button class="btn" type="button" onclick="REEL.addText()">Aa</button>
+      <button class="btn" type="button" onclick="REEL.addSticker('🔥')">🔥</button>
+      <button class="btn" type="button" onclick="REEL.addSticker('💯')">💯</button>
+      <button class="btn" type="button" onclick="REEL.addSticker('✨')">✨</button>
+      <button class="btn" type="button" onclick="REEL.addCaption()">📝 Caption</button>
+    </div>
+    <div class="row">
+      <button class="btn" type="button" onclick="REEL.saveDraft()">💾 Save</button>
+      <button class="btn primary" type="button" onclick="publishReelNow()">Post →</button>
+    </div>
+  </div>
+
+  <input type="file" id="videoInput" accept="video/*" style="display:none;" onchange="REEL.loadVideo(this)">
+</div>
+
+<!-- Speed Panel -->
+<div class="speed-panel" id="speedPanel">
+  <button class="speed-btn" onclick="REEL.setSpeed(0.5, this)">0.5x</button>
+  <button class="speed-btn active" onclick="REEL.setSpeed(1, this)">1x</button>
+  <button class="speed-btn" onclick="REEL.setSpeed(1.5, this)">1.5x</button>
+  <button class="speed-btn" onclick="REEL.setSpeed(2, this)">2x</button>
+</div>
+
+<!-- Filter Strip -->
+<div class="filter-strip" id="filterStrip">
+  <div class="filter-box active" onclick="REEL.applyFilter('none', this)">Original</div>
+  <div class="filter-box" onclick="REEL.applyFilter('vintage', this)">Vintage</div>
+  <div class="filter-box" onclick="REEL.applyFilter('bw', this)">B&W</div>
+  <div class="filter-box" onclick="REEL.applyFilter('warm', this)">Warm</div>
+  <div class="filter-box" onclick="REEL.applyFilter('cool', this)">Cool</div>
+  <div class="filter-box" onclick="REEL.applyFilter('vibrant', this)">Vibrant</div>
+</div>
+
+<!-- Music Picker -->
+<div class="backdrop" id="musicBackdrop" onclick="REEL.closeMusic()"></div>
+<div id="musicSheet" class="music-sheet">
+  <header>
+    <b>Add Music</b>
+    <button class="closex" type="button" onclick="REEL.closeMusic()">✕</button>
+  </header>
+  <input id="musicSearch" class="field" type="text" placeholder="Search song, artist..." inputmode="search" />
+  <div id="musicResults" class="music-list"></div>
+</div>
+
+<audio id="musicPreview" style="display:none;" playsinline></audio>
+
+<!-- Font Modal -->
+<div class="font-backdrop" id="fontBackdrop" onclick="REEL.closeFont()"></div>
+<div class="font-modal" id="fontModal">
+  <div class="font-header">
+    <b>Add Text</b>
+    <button class="closex" type="button" onclick="REEL.closeFont()">✕</button>
+  </div>
+  <div class="font-body">
+    <input type="text" id="fontTextInput" class="font-input" placeholder="Type your text here..." maxlength="100" />
+    <h4 style="margin: 0 0 8px; font-size: 12px; opacity: .8;">Choose Font Style:</h4>
+    <select id="vfFontSel" class="field">
+      <option value="default">Default</option>
+      <option value="bold">Bold</option>
+      <option value="tall">Tall</option>
+      <option value="script">Script</option>
+      <option value="pixel">Pixel</option>
+    </select>
+    <button class="btn" type="button" style="margin-top:10px;" onclick="REEL.applyFont()">Add Text</button>
+    <h4 style="margin: 16px 0 8px; font-size: 12px; opacity: .8;">Text Color:</h4>
+    <div class="color-row">
+      <div class="color-chip active" style="background: #ffffff;" onclick="REEL.setTextColor('#ffffff', this)"></div>
+      <div class="color-chip" style="background: #000000;" onclick="REEL.setTextColor('#000000', this)"></div>
+      <div class="color-chip" style="background: #ff6a00;" onclick="REEL.setTextColor('#ff6a00', this)"></div>
+      <div class="color-chip" style="background: #ff0066;" onclick="REEL.setTextColor('#ff0066', this)"></div>
+      <div class="color-chip" style="background: #00ff88;" onclick="REEL.setTextColor('#00ff88', this)"></div>
+      <div class="color-chip" style="background: #00aaff;" onclick="REEL.setTextColor('#00aaff', this)"></div>
+      <div class="color-chip" style="background: #ffcc00;" onclick="REEL.setTextColor('#ffcc00', this)"></div>
+      <div class="color-chip" style="background: #aa00ff;" onclick="REEL.setTextColor('#aa00ff', this)"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script>
+const REEL = (() => {
+  const videoLayer = document.getElementById('videoLayer');
+  const overlayLayer = document.getElementById('overlayLayer');
+  const durationPill = document.getElementById('durationPill');
+  const speedPanel = document.getElementById('speedPanel');
+  const filterStrip = document.getElementById('filterStrip');
+  const musicSheet = document.getElementById('musicSheet');
+  const musicBackdrop = document.getElementById('musicBackdrop');
+  const musicSearch = document.getElementById('musicSearch');
+  const musicResults = document.getElementById('musicResults');
+  const musicPreview = document.getElementById('musicPreview');
+  const soundBtn = document.getElementById('soundBtn');
+  const fontBackdrop = document.getElementById('fontBackdrop');
+  const fontModal = document.getElementById('fontModal');
+  const fontInput = document.getElementById('fontTextInput');
+  const fontSel = document.getElementById('vfFontSel');
+
+  let state = {
+    videoFile: null,
+    videoUrl: null,
+    stickers: [],
+    music: null,
+    speed: 1,
+    filter: 'none',
+    caption: '',
+    hashtags: '',
+    soundOn: true,
+    textColor: '#ffffff'
+  };
+
+  let videoElement = null;
+  let searchTimer = null;
+  let searchAborter = null;
+  let autosaveTimer = null;
+
+  function loadVideo(input) {
+    const file = input.files[0];
+    if(!file || !file.type.startsWith('video/')) {
+      vfToast('Please select a valid video file');
+      return;
+    }
+
+    state.videoFile = file;
+    state.videoUrl = URL.createObjectURL(file);
+
+    videoLayer.innerHTML = '<video id="mainVideo" playsinline loop style="width:100%;height:100%;object-fit:cover;"></video>';
+    videoElement = document.getElementById('mainVideo');
+    videoElement.src = state.videoUrl;
+    videoElement.muted = !state.soundOn;
+    
+    videoElement.addEventListener('loadedmetadata', () => {
+      const duration = Math.floor(videoElement.duration);
+      const mins = Math.floor(duration / 60);
+      const secs = duration % 60;
+      durationPill.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+      videoElement.play().catch(() => {});
+    });
+
+    videoElement.playbackRate = state.speed;
+    applyFilterToVideo();
+    queueAutosave();
+  }
+
+  function addText() {
+    openFont();
+  }
+
+  function addSticker(emoji) {
+    const x = 30 + Math.random() * 40;
+    const y = 25 + Math.random() * 50;
+    const anims = ['float', 'pulse', 'bounce'];
+    const anim = anims[Math.floor(Math.random() * anims.length)];
+    addStickerToCanvas(emoji, x, y, anim);
+  }
+
+  function addStickerToCanvas(html, x, y, animation = null) {
+    const id = 'sticker_' + Date.now() + Math.random().toString(36).slice(2);
+    const isFlame = typeof html === 'string' && html.includes('🔥');
+    const sticker = { id, html, x, y, animation, fx: isFlame ? 'flame' : '' };
+    state.stickers.push(sticker);
+    renderStickers();
+    queueAutosave();
+  }
+
+  function addStyledText(fontKey){
+    const text = (fontInput?.value || '').trim();
+    if(!text) return;
+    const family = mapFont(fontKey || 'default');
+    const html = `<span class="reel-font" style="font-family:${family};color:${state.textColor};">${escapeHtml(text)}</span>`;
+    const x = 30 + Math.random() * 40;
+    const y = 25 + Math.random() * 50;
+    const anims = ['float', 'pulse', 'bounce', null];
+    const anim = anims[Math.floor(Math.random() * anims.length)];
+    addStickerToCanvas(html, x, y, anim);
+    fontInput.value = '';
+    closeFont();
+    queueAutosave();
+  }
+
+  function setTextColor(hex, el){
+    state.textColor = hex;
+    document.querySelectorAll('.color-chip').forEach(c => c.classList.remove('active'));
+    if(el) el.classList.add('active');
+  }
+
+  function applyFont(){
+    const val = fontSel?.value || 'default';
+    addStyledText(val);
+  }
+
+  function mapFont(val){
+    switch(val){
+      case 'bold':   return "'Montserrat', system-ui, sans-serif";
+      case 'tall':   return "'Bebas Neue', system-ui, sans-serif";
+      case 'script': return "'Pacifico', cursive";
+      case 'pixel':  return "'Press Start 2P', monospace";
+      default:       return "system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif";
+    }
+  }
+
+  function openFont(){
+    fontBackdrop?.classList.add('active');
+    fontModal?.classList.add('active');
+    setTimeout(() => fontInput?.focus(), 50);
+  }
+
+  function closeFont(){
+    fontBackdrop?.classList.remove('active');
+    fontModal?.classList.remove('active');
+  }
+
+  if(fontInput){
+    fontInput.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        applyFont();
+      }
+    });
+  }
+
+  function renderStickers() {
+    overlayLayer.querySelectorAll('.reel-sticker').forEach(el => el.remove());
+    state.stickers.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'reel-sticker';
+      div.innerHTML = s.html;
+      div.dataset.id = s.id;
+      if(s.animation) div.dataset.animation = s.animation;
+      if(s.fx === 'flame') div.classList.add('reel-flame');
+      div.style.left = s.x + '%';
+      div.style.top = s.y + '%';
+      makeDraggable(div);
+      overlayLayer.appendChild(div);
+    });
+  }
+
+  function makeDraggable(el) {
+    let dragging = false, startX = 0, startY = 0;
+    el.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      el.style.cursor = 'grabbing';
+      startX = e.clientX;
+      startY = e.clientY;
+      e.preventDefault();
+    });
+    window.addEventListener('pointermove', (e) => {
+      if(!dragging) return;
+      const canvas = document.getElementById('reelCanvas');
+      const rect = canvas.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      el.style.left = Math.max(5, Math.min(95, x)) + '%';
+      el.style.top = Math.max(5, Math.min(95, y)) + '%';
+      
+      const sticker = state.stickers.find(s => s.id === el.dataset.id);
+      if(sticker) {
+        sticker.x = parseFloat(el.style.left);
+        sticker.y = parseFloat(el.style.top);
+      }
+    });
+    window.addEventListener('pointerup', () => {
+      dragging = false;
+      el.style.cursor = 'grab';
+    });
+  }
+
+  function toggleSpeed() {
+    speedPanel.classList.toggle('active');
+    filterStrip.classList.remove('active');
+  }
+
+  function setSpeed(speed, btnEl) {
+    state.speed = speed;
+    if(videoElement) videoElement.playbackRate = speed;
+    document.querySelectorAll('.speed-btn').forEach(btn => btn.classList.remove('active'));
+    if(btnEl) btnEl.classList.add('active');
+    queueAutosave();
+  }
+
+  function toggleFilters() {
+    filterStrip.classList.toggle('active');
+    speedPanel.classList.remove('active');
+  }
+
+  function applyFilter(filter, btnEl) {
+    state.filter = filter;
+    document.querySelectorAll('.filter-box').forEach(box => box.classList.remove('active'));
+    if(btnEl) btnEl.classList.add('active');
+    applyFilterToVideo();
+    queueAutosave();
+  }
+
+  function applyFilterToVideo() {
+    if(!videoElement) return;
+    const filterMap = {
+      'none': 'none',
+      'vintage': 'sepia(0.5) contrast(1.2) brightness(0.9)',
+      'bw': 'grayscale(1) contrast(1.1)',
+      'warm': 'sepia(0.3) saturate(1.3) brightness(1.05)',
+      'cool': 'hue-rotate(180deg) saturate(1.2)',
+      'vibrant': 'contrast(1.3) saturate(1.5) brightness(1.1)'
+    };
+    videoElement.style.filter = filterMap[state.filter] || 'none';
+  }
+
+  function openMusic() {
+    musicSheet?.classList.add('open');
+    if(musicBackdrop) musicBackdrop.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => musicSearch?.focus(), 100);
+  }
+
+  function closeMusic() {
+    musicSheet?.classList.remove('open');
+    if(musicBackdrop) musicBackdrop.style.display = 'none';
+    document.body.style.overflow = '';
+    try { musicPreview?.pause?.(); } catch(e) {}
+  }
+
+  if(musicSearch){
+    musicSearch.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const q = musicSearch.value.trim();
+      searchTimer = setTimeout(() => searchMusic(q), 300);
+    });
+  }
+
+  async function searchMusic(q) {
+    if(q.length < 2) {
+      musicResults.innerHTML = '';
+      return;
+    }
+
+    if(searchAborter) searchAborter.abort();
+    searchAborter = new AbortController();
+
+    musicResults.innerHTML = '<div style="padding:14px;opacity:.7">🎵 Searching...</div>';
+
+    try {
+      const res = await fetch(`/api/music/search?q=${encodeURIComponent(q)}&limit=50`, {
+        signal: searchAborter.signal
+      });
+      if(!res.ok) throw new Error('Search failed');
+      const data = await res.json();
+      const list = data.results || [];
+
+      if(!list.length) {
+        musicResults.innerHTML = `
+          <div style="padding:20px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:8px;">🎧</div>
+            <div style="font-weight:900;margin-bottom:6px;">No results</div>
+            <div style="opacity:.7;font-size:13px;">Try: "Drake", "Travis Scott", "Lil Baby"</div>
+          </div>
+        `;
+        return;
+      }
+
+      musicResults.innerHTML = list.map(r => `
+        <div class="song" data-preview="${escapeHtml(r.preview_url||'')}" data-title="${escapeHtml(r.title||'')}" data-artist="${escapeHtml(r.artist||'')}">
+          <div class="meta">
+            <div class="t">${escapeHtml(r.title||'Untitled')}</div>
+            <div class="a">${escapeHtml(r.artist||'')}</div>
+          </div>
+          <div class="tag">🎵 Add</div>
+        </div>
+      `).join('');
+
+      musicResults.querySelectorAll('.song').forEach(el => {
+        el.addEventListener('click', () => {
+          const title = el.dataset.title;
+          const artist = el.dataset.artist;
+          const preview = el.dataset.preview;
+          
+          if(!preview){
+            vfToast("This track doesn't have a 30s preview clip. Try another song.");
+            return;
+          }
+
+          state.music = { title, artist, preview };
+          
+          if(preview) {
+            try {
+              musicPreview.src = preview;
+              musicPreview.muted = false;
+              musicPreview.play().catch(() => {});
+            } catch(e) {}
+          }
+
+          addStickerToCanvas(`🎵 ${title}${artist ? ' — ' + artist : ''}`, 50, 10, 'pulse');
+          queueAutosave();
+          
+          el.style.background = 'rgba(255,106,0,.3)';
+          el.querySelector('.tag').textContent = '✓ Added';
+          
+          setTimeout(() => closeMusic(), 600);
+        });
+      });
+
+    } catch(err) {
+      if(err.name === 'AbortError') return;
+      musicResults.innerHTML = '<div style="padding:14px;opacity:.7">Search error</div>';
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  async function addCaption() {
+    const caption = await vfPrompt('Enter caption:');
+    if(caption) state.caption = caption;
+    
+    const hashtags = await vfPrompt('Enter hashtags (e.g., #viral #trending):');
+    if(hashtags) state.hashtags = hashtags;
+    queueAutosave();
+  }
+
+  function saveDraft() {
+    try{
+      localStorage.setItem('reel_draft', JSON.stringify({
+        caption: state.caption,
+        hashtags: state.hashtags,
+        music: state.music,
+        filter: state.filter,
+        speed: state.speed,
+        soundOn: state.soundOn,
+        savedAt: new Date().toISOString()
+      }));
+    }catch(e){}
+  }
+
+  function queueAutosave(){
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(saveDraft, 500);
+  }
+
+  function toggleSound(){
+    state.soundOn = !state.soundOn;
+    if(videoElement){
+      videoElement.muted = !state.soundOn;
+      if(state.soundOn){
+        videoElement.play().catch(() => {});
+      }
+    }
+    if(soundBtn){
+      soundBtn.textContent = state.soundOn ? '🔊 Sound' : '🔇 Sound';
+    }
+    queueAutosave();
+  }
+
+  async function publishReelNow(){
+    try{ musicPreview?.pause?.(); }catch(e){}
+
+    state.caption = (document.getElementById("captionText")?.value || state.caption || "");
+
+    const payload = {
+      state,
+      duration_sec: 15
+    };
+
+    const res = await fetch("/api/reel/publish", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json().catch(()=>({error:"Publish failed"}));
+    if(!res.ok){
+      vfToast(data.error || "Publish failed");
+      return;
+    }
+
+    window.location.href = "{{ url_for('feed.feed_page') }}";
+  }
+
+  async function publish() {
+    return publishReelNow();
+  }
+
+  return {
+    loadVideo,
+    addText,
+    addSticker,
+    addStyledText,
+    applyFont,
+    openFont,
+    closeFont,
+    setTextColor,
+    toggleSound,
+    toggleSpeed,
+    setSpeed,
+    toggleFilters,
+    applyFilter,
+    openMusic,
+    closeMusic,
+    addCaption,
+    saveDraft,
+    publish,
+    publishReelNow
+  };
+})();
+</script>
+{% endblock %}

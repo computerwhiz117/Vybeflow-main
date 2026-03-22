@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+{% block body_class %}vyvid-page login-page{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --vv-bg:     #0d0a12;
+    --vv-brand:  #9b4dff;
+    --vv-brand2: #c94dff;
+    --vv-red:    #ff4466;
+    --vv-line:   rgba(180,120,255,.22);
+    --vv-text:   rgba(255,255,255,.92);
+    --vv-muted:  rgba(255,255,255,.55);
+    --vv-card:   rgba(255,255,255,.03);
+    --vv-radius: 16px;
+  }
+
+  body.vyvid-page {
+    background:
+      radial-gradient(1000px 600px at 50% 10%, rgba(100,0,200,.28), transparent 60%),
+      radial-gradient(700px 500px at 10% 50%, rgba(160,0,255,.16), transparent 65%),
+      radial-gradient(700px 600px at 90% 60%, rgba(200,0,150,.14), transparent 65%),
+      linear-gradient(180deg, #0d0a12 0%, #0a0810 60%, #08060d 100%);
+    color: var(--vv-text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gate-wrap {
+    width: 100%;
+    max-width: 520px;
+    margin: 40px auto;
+    padding: 0 16px;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ─── Glass card ─── */
+  .gate-card {
+    background: rgba(30, 18, 50, 0.12);
+    border: 1px solid var(--vv-line);
+    border-radius: var(--vv-radius);
+    padding: 36px 32px 32px;
+    backdrop-filter: blur(28px) saturate(1.2);
+    box-shadow:
+      0 16px 48px rgba(0,0,0,.20),
+      0 0 40px rgba(155,77,255,.10),
+      inset 0 1px 0 rgba(255,255,255,.06);
+  }
+
+  .gate-icon {
+    font-size: 52px;
+    text-align: center;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .gate-card h1 {
+    font-size: 24px;
+    font-weight: 900;
+    text-align: center;
+    margin: 0 0 6px;
+    background: linear-gradient(135deg, #bf7fff, #ff4dff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .gate-card .subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: var(--vv-muted);
+    margin: 0 0 28px;
+    line-height: 1.6;
+  }
+
+  /* ─── Steps ─── */
+  .gate-steps {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .gate-step {
+    flex: 1;
+    padding: 12px 10px;
+    border-radius: 12px;
+    background: var(--vv-card);
+    border: 1px solid var(--vv-line);
+    text-align: center;
+    font-size: 12px;
+    color: var(--vv-muted);
+    line-height: 1.4;
+  }
+  .gate-step .step-num {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+    color: #bf7fff;
+    margin-bottom: 4px;
+  }
+
+  /* ─── Form ─── */
+  .gate-form { display: flex; flex-direction: column; gap: 16px; }
+
+  .form-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--vv-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  .form-field input[type="date"],
+  .form-field input[type="file"] {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--vv-line);
+    background: rgba(255,255,255,.06);
+    color: var(--vv-text);
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    transition: .2s;
+    font-family: inherit;
+  }
+  .form-field input[type="date"]:focus,
+  .form-field input[type="file"]:focus {
+    border-color: var(--vv-brand);
+    box-shadow: 0 0 0 3px rgba(155,77,255,.18);
+  }
+  .form-field input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(.6);
+    cursor: pointer;
+  }
+
+  .form-field .field-hint {
+    font-size: 12px;
+    color: var(--vv-muted);
+    margin-top: 5px;
+    line-height: 1.5;
+  }
+
+  .gate-submit {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--vv-brand), var(--vv-brand2));
+    color: #fff;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(155,77,255,.38);
+    transition: transform .15s, box-shadow .15s;
+    margin-top: 4px;
+  }
+  .gate-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgba(155,77,255,.5);
+  }
+
+  /* ─── Privacy notice ─── */
+  .privacy-notice {
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(16,185,129,.08);
+    border: 1px solid rgba(16,185,129,.22);
+    font-size: 13px;
+    color: rgba(255,255,255,.65);
+    line-height: 1.6;
+  }
+  .privacy-notice strong { color: #6ee7b7; }
+
+  /* ─── Policy box ─── */
+  .policy-box {
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(155,77,255,.07);
+    border: 1px solid rgba(155,77,255,.20);
+  }
+  .policy-box h4 {
+    font-size: 13px;
+    font-weight: 800;
+    color: #bf7fff;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .policy-box .policy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 480px) { .policy-box .policy-grid { grid-template-columns: 1fr; } }
+
+  .policy-box .pol-col p {
+    font-size: 12px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  .policy-box .pol-col.allow p { color: #6ee7b7; }
+  .policy-box .pol-col.deny  p { color: #fca5a5; }
+  .policy-box .pol-col ul {
+    margin: 0;
+    padding-left: 16px;
+  }
+  .policy-box .pol-col li {
+    font-size: 12px;
+    color: var(--vv-muted);
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  /* Flash messages */
+  .vv-flash { padding: 10px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
+  .vv-flash.error   { background: rgba(255,68,102,.12); border: 1px solid rgba(255,68,102,.3); color: #ff8099; }
+  .vv-flash.warning { background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.3); color: #fde68a; }
+  .vv-flash.success { background: rgba(16,185,129,.10); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
+
+  /* Upload-mode banner */
+  .upload-mode-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    background: rgba(255,180,50,.10);
+    border: 1px solid rgba(255,180,50,.30);
+    font-size: 13px;
+    color: #fde68a;
+    line-height: 1.5;
+  }
+  .upload-mode-banner .bicon { font-size: 20px; flex-shrink: 0; }
+
+  .id-required-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(255,68,102,.75);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+</style>
+
+<div class="gate-wrap">
+  <div class="gate-card">
+    {% if next_action == 'upload' %}
+      <span class="gate-icon">🪪</span>
+      <h1>ID Verification</h1>
+      <p class="subtitle">
+        Uploading videos to Vyvid requires a government-issued ID.<br>
+        Verify once — your ID image is never stored.
+      </p>
+    {% else %}
+      <span class="gate-icon">🔞</span>
+      <h1>Age Verification</h1>
+      <p class="subtitle">
+        Vyvid's Mature content is restricted to users 18+.
+        Verify once — your privacy is protected.
+      </p>
+    {% endif %}
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="vv-flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% if next_action == 'upload' %}
+      <div class="upload-mode-banner">
+        <span class="bicon">📤</span>
+        <span>
+          <strong>You're verifying to upload a video.</strong>
+          A real government-issued ID (passport, driving licence, national ID card) is
+          <strong>required</strong> for all Vyvid uploads. Your date of birth is extracted;
+          the ID image itself is immediately discarded.
+        </span>
+      </div>
+    {% endif %}
+
+    <!-- How it works -->
+    <div class="gate-steps">
+      <div class="gate-step">
+        <span class="step-num">①</span>
+        Enter your date of birth
+      </div>
+      <div class="gate-step">
+        <span class="step-num">②</span>
+        {% if next_action == 'upload' %}Upload your ID <span class="id-required-badge">Required</span>
+        {% else %}Optionally upload your ID{% endif %}
+      </div>
+      <div class="gate-step">
+        <span class="step-num">③</span>
+        Only status stored — ID discarded
+      </div>
+    </div>
+
+    <!-- Verification form -->
+    <form class="gate-form" method="POST" action="{{ url_for('vyvid.vyvid_age_gate_submit') }}" enctype="multipart/form-data">
+
+      <!-- Pass the next action through so the POST knows where to redirect -->
+      <input type="hidden" name="next_action" value="{{ next_action | default('mature') }}" />
+
+      <div class="form-field">
+        <label for="date_of_birth">Date of Birth *</label>
+        <input
+          type="date"
+          id="date_of_birth"
+          name="date_of_birth"
+          required
+          max=""
+        />
+        <p class="field-hint">You must be 18 or older to use Vyvid.</p>
+        <p class="field-hint" style="color:rgba(255,170,112,.80); margin-top:4px;">🔒 Only your date of birth is used — no other personal information is stored or viewed.</p>
+      </div>
+
+      <div class="form-field">
+        {% if next_action == 'upload' %}
+          <label for="id_document">
+            Government-Issued ID *
+            <span class="id-required-badge">Required to upload</span>
+          </label>
+          <input
+            type="file"
+            id="id_document"
+            name="id_document"
+            accept="image/*,.pdf"
+            required
+          />
+          <p class="field-hint">
+            Accepted: passport, driving licence, national ID card (photo or PDF).
+            <strong>Your ID image is never stored</strong> — we record only that verification was completed.
+          </p>
+        {% else %}
+          <label for="id_document">Government-Issued ID (Optional — unlocks uploading)</label>
+          <input
+            type="file"
+            id="id_document"
+            name="id_document"
+            accept="image/*,.pdf"
+          />
+          <p class="field-hint">
+            Uploading an ID unlocks <strong>video uploading</strong> on Vyvid.
+            Required for creators; optional for viewers of mature content.
+            <strong>Your ID image is never stored.</strong>
+          </p>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="gate-submit">
+        {% if next_action == 'upload' %}
+          🪪 Verify ID &amp; Go to Upload
+        {% else %}
+          ✔ Verify My Age &amp; Unlock Mature Content
+        {% endif %}
+      </button>
+    </form>
+
+    <!-- Privacy notice -->
+    <div class="privacy-notice">
+      🔒 <strong>Your privacy is protected.</strong>
+      We store only your <strong>verification status</strong> and <strong>date of birth</strong>.
+      Your ID image is <strong>never saved</strong> to our servers.
+      This data is never sold or shared with advertisers.
+    </div>
+
+    <!-- Content policy reminder -->
+    <div class="policy-box">
+      <h4>📋 Vyvid Content Policy</h4>
+      <div class="policy-grid">
+        <div class="pol-col allow">
+          <p>✅ Allowed</p>
+          <ul>
+            <li>Explicit sexual language &amp; adult discussions</li>
+            <li>Adult comedy and podcasts</li>
+            <li>Relationship / sexual education</li>
+            <li>Swearing and mature conversation</li>
+          </ul>
+        </div>
+        <div class="pol-col deny">
+          <p>🚫 Not Allowed</p>
+          <ul>
+            <li>Graphic violence (gore, torture, killings)</li>
+            <li>Violence being glorified or encouraged</li>
+            <li>Content involving minors</li>
+            <li>Targeted harassment or hate</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <p style="text-align:center;margin-top:18px;">
+      <a href="{{ url_for('vyvid.vyvid_home') }}" style="color:var(--vv-muted);font-size:13px;text-decoration:none;">
+        ← Back to Vyvid (General &amp; Teen content)
+      </a>
+    </p>
+  </div>
+</div>
+{% endblock %}

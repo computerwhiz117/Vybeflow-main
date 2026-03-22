@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .pro-page{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+  .pro-hero{background:linear-gradient(135deg,rgba(255,149,0,.15),rgba(255,77,0,.08));border:1px solid rgba(255,149,0,.3);border-radius:18px;padding:28px;margin-bottom:24px;}
+  .pro-hero h1{margin:0 0 6px;font-size:24px;font-weight:900;color:#ffb562;}
+  .pro-hero p{margin:0;color:rgba(255,255,255,.55);font-size:14px;}
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:#ff9a3d;text-decoration:none;font-size:14px;font-weight:700;margin-bottom:16px;}
+  .back-link:hover{text-decoration:underline;}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px;}
+  .stat-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,149,0,.15);border-radius:14px;padding:20px;text-align:center;}
+  .stat-card .icon{font-size:28px;margin-bottom:8px;}
+  .stat-card .num{font-size:32px;font-weight:900;color:#ff9a3d;line-height:1;}
+  .stat-card .label{font-size:12px;color:rgba(255,255,255,.45);margin-top:6px;}
+  .stat-card .change{font-size:11px;margin-top:4px;font-weight:700;}
+  .stat-card .change.up{color:#22c55e;}
+  .stat-card .change.down{color:#ef4444;}
+  .chart-section{background:rgba(255,255,255,.06);border:1px solid rgba(255,149,0,.15);border-radius:14px;padding:20px;margin-bottom:20px;}
+  .chart-section h3{margin:0 0 14px;font-size:16px;font-weight:800;color:#ffb562;}
+  .chart-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .chart-bar-label{width:60px;font-size:12px;color:rgba(255,255,255,.5);text-align:right;}
+  .chart-bar-track{flex:1;height:24px;background:rgba(255,255,255,.06);border-radius:8px;overflow:hidden;}
+  .chart-bar-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#ff9a3d,#ff4800);transition:width .6s ease;}
+  .chart-bar-value{width:40px;font-size:12px;color:rgba(255,255,255,.6);font-weight:700;}
+  .insight-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,149,0,.1);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;}
+  .insight-card .icon{font-size:20px;flex-shrink:0;}
+  .insight-card h4{margin:0 0 4px;font-size:14px;font-weight:700;color:rgba(255,255,255,.8);}
+  .insight-card p{margin:0;font-size:12px;color:rgba(255,255,255,.45);line-height:1.4;}
+  .section-title{font-size:18px;font-weight:900;color:#ffb562;margin:0 0 14px;padding-bottom:8px;border-bottom:1px solid rgba(255,149,0,.15);}
+</style>
+<div class="pro-page">
+  <a href="{{ url_for('pro_dashboard') }}" class="back-link">← Back to Dashboard</a>
+
+  <div class="pro-hero">
+    <h1>📈 Profile Analytics</h1>
+    <p>Track your professional presence and engagement metrics</p>
+  </div>
+
+  <!-- Key Metrics -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="icon">👁</div>
+      <div class="num">0</div>
+      <div class="label">Profile Views (7d)</div>
+      <div class="change up">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">📝</div>
+      <div class="num">{{ post_count }}</div>
+      <div class="label">Total Posts</div>
+      <div class="change up">Your content</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">🤝</div>
+      <div class="num">0</div>
+      <div class="label">Connections</div>
+      <div class="change up">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">🔍</div>
+      <div class="num">0</div>
+      <div class="label">Search Appearances</div>
+      <div class="change up">—</div>
+    </div>
+  </div>
+
+  <!-- Engagement Chart -->
+  <div class="chart-section">
+    <h3>📊 Weekly Engagement</h3>
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">Mon</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:15%;"></div></div>
+      <div class="chart-bar-value">3</div>
+    </div>
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">Tue</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:25%;"></div></div>
+      <div class="chart-bar-value">5</div>
+    </div>
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">Wed</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:45%;"></div></div>
+      <div class="chart-bar-value">9</div>
+    </div>
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">Thu</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:35%;"></div></div>
+      <div class="chart-bar-value">7</div>
+    </div>
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">Fri</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:60%;"></div></div>
+      <div class="chart-bar-value">12</div>
+    </div>
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">Sat</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:80%;"></div></div>
+      <div class="chart-bar-value">16</div>
+    </div>
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">Sun</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:50%;"></div></div>
+      <div class="chart-bar-value">10</div>
+    </div>
+  </div>
+
+  <!-- Content Performance -->
+  <div class="chart-section">
+    <h3>🏆 Top Content Types</h3>
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">Posts</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:70%;background:linear-gradient(90deg,#ff9a3d,#ff4800);"></div></div>
+      <div class="chart-bar-value">70%</div>
+    </div>
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">Articles</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:20%;background:linear-gradient(90deg,#a855f7,#7c3aed);"></div></div>
+      <div class="chart-bar-value">20%</div>
+    </div>
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">Media</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:10%;background:linear-gradient(90deg,#22c55e,#16a34a);"></div></div>
+      <div class="chart-bar-value">10%</div>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div class="section-title">💡 Insights & Recommendations</div>
+  <div class="insight-card">
+    <div class="icon">📸</div>
+    <div>
+      <h4>Add a professional headshot</h4>
+      <p>Profiles with professional photos get up to 14x more views. Upload a clean, high-quality portrait.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <div class="icon">✍️</div>
+    <div>
+      <h4>Post industry content regularly</h4>
+      <p>Professionals who post weekly see 3x more profile engagement. Share articles, insights, or project updates.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <div class="icon">🤝</div>
+    <div>
+      <h4>Grow your network</h4>
+      <p>Connect with more professionals in your field. A larger network increases your visibility in search results.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <div class="icon">📄</div>
+    <div>
+      <h4>Complete your resume</h4>
+      <p>Filling out your resume section makes your profile 5x more likely to appear in employer searches.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

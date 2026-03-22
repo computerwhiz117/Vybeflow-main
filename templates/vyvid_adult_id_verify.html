@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% block body_class %}vyvid-page login-page{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --vv-bg:     #0d0a12;
+    --vv-brand:  #9b4dff;
+    --vv-brand2: #c94dff;
+    --vv-red:    #ff4466;
+    --vv-green:  #10b981;
+    --vv-line:   rgba(180,120,255,.22);
+    --vv-text:   rgba(255,255,255,.92);
+    --vv-muted:  rgba(255,255,255,.55);
+    --vv-card:   rgba(255,255,255,.03);
+    --vv-radius: 16px;
+  }
+
+  body.vyvid-page {
+    background:
+      radial-gradient(1000px 600px at 50% 10%, rgba(100,0,200,.28), transparent 60%),
+      radial-gradient(700px 500px at 10% 50%, rgba(160,0,255,.16), transparent 65%),
+      radial-gradient(700px 600px at 90% 60%, rgba(200,0,150,.14), transparent 65%),
+      linear-gradient(180deg, #0d0a12 0%, #0a0810 60%, #08060d 100%);
+    color: var(--vv-text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .verify-wrap {
+    width: 100%;
+    max-width: 560px;
+    margin: 40px auto;
+    padding: 0 16px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .verify-card {
+    background: rgba(30, 18, 50, 0.72);
+    border: 1px solid rgba(255, 68, 102, 0.35);
+    border-radius: var(--vv-radius);
+    padding: 36px 32px 32px;
+    backdrop-filter: blur(20px) saturate(1.2);
+    box-shadow:
+      0 24px 64px rgba(0,0,0,.55),
+      0 0 60px rgba(255,68,102,.14),
+      inset 0 1px 0 rgba(255,255,255,.08);
+  }
+
+  /* ── Alert banner ── */
+  .ai-alert-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: rgba(255, 68, 102, .10);
+    border: 1px solid rgba(255, 68, 102, .35);
+    margin-bottom: 28px;
+  }
+  .ai-alert-icon { font-size: 28px; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+  .ai-alert-body { flex: 1; }
+  .ai-alert-title { font-size: 15px; font-weight: 800; color: #ff8099; margin: 0 0 5px; }
+  .ai-alert-text  { font-size: 13px; color: var(--vv-muted); line-height: 1.6; margin: 0; }
+
+  /* ── Video info strip ── */
+  .video-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--vv-card);
+    border: 1px solid var(--vv-line);
+    margin-bottom: 24px;
+    font-size: 13px;
+  }
+  .video-strip .strip-label   { color: var(--vv-muted); }
+  .video-strip .strip-title   { font-weight: 700; color: var(--vv-text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .video-strip .strip-badge   {
+    padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 800;
+    background: rgba(255,44,77,.85); color: #fff; flex-shrink: 0;
+  }
+
+  /* ── Steps ── */
+  .verify-steps {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .verify-step {
+    flex: 1;
+    padding: 12px 10px;
+    border-radius: 12px;
+    background: var(--vv-card);
+    border: 1px solid var(--vv-line);
+    text-align: center;
+    font-size: 12px;
+    color: var(--vv-muted);
+    line-height: 1.4;
+  }
+  .verify-step .sn { display: block; font-size: 20px; font-weight: 800; color: #ff8099; margin-bottom: 4px; }
+
+  /* ── Form ── */
+  .verify-form { display: flex; flex-direction: column; gap: 18px; }
+
+  .form-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--vv-muted);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  .form-field input[type="date"],
+  .form-field input[type="file"] {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,68,102,.35);
+    background: rgba(255,255,255,.06);
+    color: var(--vv-text);
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    transition: .2s;
+    font-family: inherit;
+  }
+  .form-field input[type="date"]:focus,
+  .form-field input[type="file"]:focus {
+    border-color: #ff4466;
+    box-shadow: 0 0 0 3px rgba(255,68,102,.18);
+  }
+  .form-field input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(.6); cursor: pointer;
+  }
+
+  .form-field .field-hint {
+    font-size: 12px;
+    color: var(--vv-muted);
+    margin-top: 6px;
+    line-height: 1.55;
+  }
+
+  /* ── Privacy highlight box ── */
+  .privacy-highlight {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(16,185,129,.08);
+    border: 1px solid rgba(16,185,129,.28);
+  }
+  .privacy-highlight .ph-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+  .privacy-highlight .ph-body { flex: 1; }
+  .privacy-highlight .ph-title { font-size: 13px; font-weight: 800; color: #6ee7b7; margin: 0 0 5px; }
+  .privacy-highlight .ph-list  {
+    margin: 0; padding-left: 16px;
+    font-size: 12px; color: rgba(255,255,255,.65);
+    line-height: 1.7;
+  }
+  .privacy-highlight .ph-list li strong { color: #6ee7b7; }
+
+  /* ── Submit button ── */
+  .verify-submit {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #ff4466, #c94dff);
+    color: #fff;
+    font-weight: 800;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(255,68,102,.32);
+    transition: transform .15s, box-shadow .15s;
+    margin-top: 4px;
+  }
+  .verify-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgba(255,68,102,.45);
+  }
+
+  /* ── Back link ── */
+  .back-link {
+    display: block;
+    text-align: center;
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--vv-muted);
+    text-decoration: none;
+    transition: color .15s;
+  }
+  .back-link:hover { color: var(--vv-text); }
+
+  /* ── Flash ── */
+  .vv-flash { padding: 10px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 18px; }
+  .vv-flash.error   { background: rgba(255,68,102,.12); border: 1px solid rgba(255,68,102,.3); color: #ff8099; }
+  .vv-flash.success { background: rgba(16,185,129,.10); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
+  .vv-flash.warning { background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.3); color: #fde68a; }
+</style>
+
+<div class="verify-wrap">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="vv-flash {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="verify-card">
+
+    <!-- AI detection alert -->
+    <div class="ai-alert-banner">
+      <span class="ai-alert-icon">🤖</span>
+      <div class="ai-alert-body">
+        <p class="ai-alert-title">Adult Content Detected by AI</p>
+        <p class="ai-alert-text">
+          Our AI scanner detected <strong>explicit adult content</strong> in your video.
+          To comply with our platform policies and legal requirements, you must verify
+          that you are 18 years of age or older with a government-issued ID before this
+          video can be reviewed for publishing.
+        </p>
+      </div>
+    </div>
+
+    <!-- Video reference -->
+    <div class="video-strip">
+      <span class="strip-label">📹</span>
+      <span class="strip-title">{{ video.title }}</span>
+      <span class="strip-badge">18+ Adult</span>
+    </div>
+
+    <!-- Steps overview -->
+    <div class="verify-steps">
+      <div class="verify-step">
+        <span class="sn">1</span>Enter your date of birth
+      </div>
+      <div class="verify-step">
+        <span class="sn">2</span>Upload your ID photo
+      </div>
+      <div class="verify-step">
+        <span class="sn">3</span>Video enters moderation review
+      </div>
+    </div>
+
+    <!-- Privacy guarantee — shown prominently BEFORE the form -->
+    <div class="privacy-highlight" style="margin-bottom: 24px;">
+      <span class="ph-icon">🔒</span>
+      <div class="ph-body">
+        <p class="ph-title">Your Privacy Is Protected</p>
+        <ul class="ph-list">
+          <li><strong>Only your date of birth</strong> is recorded from your ID.</li>
+          <li>Your ID photo is <strong>never saved</strong> to our servers — it is discarded immediately after verification.</li>
+          <li>No other personal details from your document are stored or shared.</li>
+          <li>Information is processed securely and in line with our Privacy Policy.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Verification form -->
+    <form
+      class="verify-form"
+      method="POST"
+      action="{{ url_for('vyvid.adult_id_verify_submit', video_id=video.id) }}"
+      enctype="multipart/form-data"
+    >
+
+      <div class="form-field">
+        <label for="date_of_birth">Your Date of Birth *</label>
+        <input
+          type="date"
+          id="date_of_birth"
+          name="date_of_birth"
+          required
+          max="{{ '{:%Y-%m-%d}'.format(today) }}"
+        />
+        <p class="field-hint">Must be 18 or older. Only this date will be stored.</p>
+      </div>
+
+      <div class="form-field">
+        <label for="id_document">Government-Issued ID *</label>
+        <input
+          type="file"
+          id="id_document"
+          name="id_document"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          required
+        />
+        <p class="field-hint">
+          Accepted: Driver's License, National ID Card, Passport — JPG, PNG, WebP or PDF.<br />
+          <strong style="color:#6ee7b7;">🔒 The image is verified and immediately discarded. It is never stored.</strong>
+        </p>
+      </div>
+
+      <button type="submit" class="verify-submit">
+        🪪 Verify My Age &amp; Submit for Review
+      </button>
+
+    </form>
+
+    <a class="back-link" href="{{ url_for('vyvid.vyvid_watch', video_id=video.id) }}">
+      ← Go back to my video
+    </a>
+
+  </div>
+</div>
+
+<script>
+// Set max date to 18 years ago
+(function() {
+  var today = new Date();
+  var maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+  var yyyy = maxDate.getFullYear();
+  var mm   = String(maxDate.getMonth() + 1).padStart(2, '0');
+  var dd   = String(maxDate.getDate()).padStart(2, '0');
+  var dobInput = document.getElementById('date_of_birth');
+  if (dobInput) dobInput.max = yyyy + '-' + mm + '-' + dd;
+})();
+</script>
+{% endblock %}

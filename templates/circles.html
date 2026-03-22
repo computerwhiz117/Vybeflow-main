@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block body_class %}circles-page{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --bg: #2a1204;
+    --card: rgba(255,255,255,.04);
+    --card2: rgba(255,255,255,.06);
+    --text: rgba(255,255,255,.94);
+    --muted: rgba(255,255,255,.60);
+    --brand1:#ffb562;
+    --brand2:#ff8226;
+    --brand3:#ff4d00;
+    --radius: 16px;
+  }
+
+  .circles-wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  .circles-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .circles-header h1 {
+    font-size: 28px; font-weight: 800;
+    background: linear-gradient(135deg, var(--brand1), var(--brand3));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .btn-create {
+    padding: 10px 22px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, var(--brand2), var(--brand3));
+    color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+    text-decoration: none; transition: transform .15s;
+  }
+  .btn-create:hover { transform: scale(1.05); }
+
+  .section-title {
+    font-size: 18px; font-weight: 700; color: var(--brand1);
+    margin: 28px 0 14px; display: flex; align-items: center; gap: 8px;
+  }
+
+  .circle-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .circle-card {
+    background: var(--card); border: 1px solid rgba(255,160,90,.18);
+    border-radius: var(--radius); padding: 20px;
+    backdrop-filter: blur(12px); transition: transform .2s, box-shadow .2s;
+  }
+  .circle-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(255,100,0,.18); }
+
+  .circle-card .circle-name {
+    font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+  }
+  .circle-card .circle-vibe {
+    font-size: 12px; color: var(--brand2);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .circle-card .circle-desc {
+    font-size: 13px; color: var(--muted); line-height: 1.4; margin-bottom: 12px;
+  }
+  .circle-card .circle-meta {
+    display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted);
+  }
+  .circle-card .circle-meta .badge {
+    padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    background: rgba(255,130,38,.18); color: var(--brand2);
+  }
+
+  .circle-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .btn-sm {
+    padding: 7px 16px; border-radius: 10px; border: none; font-size: 12px;
+    font-weight: 600; cursor: pointer; transition: .15s;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--brand2), var(--brand3)); color: #fff; }
+  .btn-outline { background: transparent; border: 1px solid var(--brand2); color: var(--brand2); }
+  .btn-sm:hover { transform: scale(1.04); }
+
+  .invite-card {
+    background: rgba(255,180,98,.08); border: 1px solid rgba(255,180,98,.22);
+    border-radius: var(--radius); padding: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .invite-info { font-size: 14px; color: var(--text); }
+  .invite-info span { color: var(--brand1); font-weight: 700; }
+
+  .empty-state {
+    text-align: center; padding: 48px 20px;
+    color: var(--muted); font-size: 15px;
+  }
+  .empty-state .big-icon { font-size: 48px; margin-bottom: 12px; }
+</style>
+
+<div class="circles-wrap">
+  <div class="circles-header">
+    <h1>🔥 My Circles</h1>
+    <a href="{{ url_for('circles.create_circle') }}" class="btn-create">+ Create Crew</a>
+  </div>
+
+  <!-- Pending Invites -->
+  {% if current_user %}
+    {% set pending_invites = [] %}
+    {% for invite in current_user.received_requests if false %}{% endfor %}
+  {% endif %}
+
+  <!-- My Circles -->
+  <div class="section-title">👥 Your Crews</div>
+  {% if my_circles %}
+    <div class="circle-grid">
+      {% for c in my_circles %}
+      <div class="circle-card">
+        <div class="circle-name">{{ c.name }}</div>
+        {% if c.vibe %}<div class="circle-vibe">{{ c.vibe }}</div>{% endif %}
+        <div class="circle-desc">{{ c.description or "No description yet." }}</div>
+        <div class="circle-meta">
+          <span>{{ c.members | length }} members</span>
+          <span class="badge">{{ c.privacy }}</span>
+        </div>
+        <div class="circle-actions">
+          <a href="{{ url_for('circles.view_circle', circle_id=c.id) }}" class="btn-sm btn-primary">Enter</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="big-icon">👥</div>
+      <p>You haven't joined any crews yet. Create one or discover below!</p>
+    </div>
+  {% endif %}
+
+  <!-- Discover Public Circles -->
+  <div class="section-title">🔍 Discover Crews</div>
+  {% if discover %}
+    <div class="circle-grid">
+      {% for c in discover %}
+      <div class="circle-card">
+        <div class="circle-name">{{ c.name }}</div>
+        {% if c.vibe %}<div class="circle-vibe">{{ c.vibe }}</div>{% endif %}
+        <div class="circle-desc">{{ c.description or "No description yet." }}</div>
+        <div class="circle-meta">
+          <span>{{ c.members | length }} members</span>
+          <span class="badge">public</span>
+        </div>
+        <div class="circle-actions">
+          <form method="POST" action="{{ url_for('circles.join_circle', circle_id=c.id) }}">
+            <button type="submit" class="btn-sm btn-primary">Join Crew</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <p>No public crews to discover right now.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

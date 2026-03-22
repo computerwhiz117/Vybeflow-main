@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block body_class %}create-page{% endblock %}
+{% block content %}
+<style>
+  .create-picker-shell{
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+  }
+  .create-picker-card{
+    width: min(720px, 96vw);
+    border-radius: 18px;
+    border: 1px solid rgba(255,173,117,.28);
+    background: rgba(0,0,0,.08);
+    backdrop-filter: blur(28px) saturate(1.2);
+    box-shadow: 0 0 24px rgba(255,106,0,.06), 0 8px 24px rgba(0,0,0,.15);
+    padding: 18px;
+    color: rgba(255,255,255,.92);
+  }
+  .create-picker-grid{
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .create-picker-link{
+    display: grid;
+    place-items: center;
+    height: 92px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,173,117,.24);
+    background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+    color: #fff;
+    text-decoration: none;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+</style>
+
+<section class="create-picker-shell">
+  <div class="create-picker-card">
+    <h1 style="margin:0;">Create</h1>
+    <p style="margin:8px 0 0; color: rgba(255,255,255,.72);">Choose what you want to create.</p>
+
+    <div class="create-picker-grid">
+      <a class="create-picker-link" href="{{ url_for('create_post') }}">Post</a>
+      <a class="create-picker-link" href="{{ url_for('create_story') }}">Story</a>
+      <a class="create-picker-link" href="{{ url_for('create_reel') }}">Vibe Snap</a>
+      <a class="create-picker-link" href="{{ url_for('create_live') }}">Live</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

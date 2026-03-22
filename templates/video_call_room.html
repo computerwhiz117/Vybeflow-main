@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ room.topic }} - Video Call</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070b18;
+      --panel: rgba(18, 23, 43, 0.9);
+      --panel-soft: rgba(255, 255, 255, 0.05);
+      --text: #f8f5ff;
+      --muted: #b8bed9;
+      --accent: #ff9347;
+      --accent-soft: rgba(255, 147, 71, 0.14);
+      --border: rgba(255, 255, 255, 0.11);
+      --success: #4bd39c;
+      --warning: #ffd166;
+      --danger: #ff6b6b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 147, 71, 0.16), transparent 25%),
+        radial-gradient(circle at top right, rgba(96, 96, 255, 0.12), transparent 25%),
+        linear-gradient(180deg, #070b18 0%, #111832 100%);
+    }
+
+    .page {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 24px 18px 40px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand img {
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+      padding: 6px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .actions,
+    .controls,
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn,
+    button {
+      border: 1px solid rgba(255, 171, 111, 0.55);
+      background: rgba(255, 147, 71, 0.12);
+      color: var(--text);
+      padding: 11px 16px;
+      border-radius: 999px;
+      text-decoration: none;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .btn:hover,
+    button:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 147, 71, 0.18);
+      box-shadow: 0 0 18px rgba(255, 147, 71, 0.24);
+    }
+
+    button.secondary,
+    .btn.secondary {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    button.danger {
+      background: rgba(255, 107, 107, 0.14);
+      border-color: rgba(255, 107, 107, 0.45);
+    }
+
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .chip.success { color: var(--success); border-color: rgba(75, 211, 156, 0.35); }
+    .chip.warning { color: var(--warning); border-color: rgba(255, 209, 102, 0.35); }
+    .chip.danger { color: var(--danger); border-color: rgba(255, 107, 107, 0.35); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.5fr .7fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: 0 22px 52px rgba(0, 0, 0, 0.24);
+    }
+
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .video-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      min-height: 320px;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      min-height: 320px;
+      object-fit: cover;
+      background: #05070f;
+      display: block;
+    }
+
+    .video-label {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(7, 11, 24, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 13px;
+      z-index: 2;
+    }
+
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      background: radial-gradient(circle at center, rgba(255, 147, 71, 0.14), rgba(7, 11, 24, 0.6) 58%);
+      z-index: 1;
+    }
+
+    .side-stack {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .invite-box {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    code {
+      flex: 1 1 240px;
+      color: #ffdcb6;
+      word-break: break-all;
+      font-family: monospace;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .participant-card {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .participant-card strong { display: block; margin-bottom: 6px; }
+    .muted { color: var(--muted); }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .video-grid { grid-template-columns: 1fr; }
+      .video-card, video { min-height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="brand">
+        <img src="/static/VFlogo_cool.png" alt="VybeFlow logo">
+        <div>
+          <h1 style="margin:0 0 6px;">{{ room.topic }}</h1>
+          <p class="muted" style="margin:0;">Private browser-to-browser video room · {{ room.room_code }}</p>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="{{ url_for('video_call_lobby') }}">Lobby</a>
+        <a class="btn secondary" href="{{ url_for('feed') }}">Feed</a>
+        <a class="btn secondary" href="{{ url_for('profile') }}">Profile</a>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="panel" style="margin-bottom:16px;">
+          {% for message in messages %}
+            <div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.08);">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="status-bar">
+      <span id="room-status-chip" class="chip {{ 'success' if room.status == 'active' else 'warning' }}">{{ room.status }}</span>
+      <span class="chip">Host: {{ host_user.username }}</span>
+      <span id="partner-chip" class="chip {{ 'success' if guest_user else 'warning' }}">{{ guest_user.username if guest_user else 'Waiting for guest' }}</span>
+      <span class="chip">Signed in as {{ user.username }}</span>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="video-grid">
+          <article class="video-card">
+            <div class="video-label">You · {{ user.username }}</div>
+            <div id="local-placeholder" class="placeholder">Enable your camera and microphone to join the call.</div>
+            <video id="local-video" autoplay playsinline muted></video>
+          </article>
+          <article class="video-card">
+            <div class="video-label">Remote participant</div>
+            <div id="remote-placeholder" class="placeholder">Invite another member to this room. Their video will appear here once connected.</div>
+            <video id="remote-video" autoplay playsinline></video>
+          </article>
+        </div>
+
+        <div class="controls" style="margin-top:18px;">
+          <button id="start-media-btn" type="button">Start Camera</button>
+          <button id="toggle-mic-btn" type="button" class="secondary" disabled>Mute Mic</button>
+          <button id="toggle-camera-btn" type="button" class="secondary" disabled>Hide Camera</button>
+          <button id="copy-invite-btn" type="button" class="secondary">Copy Invite Link</button>
+          <button id="end-call-btn" type="button" class="danger">End Call</button>
+        </div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="panel">
+          <h2 style="margin-bottom:8px;">Call status</h2>
+          <p id="call-status-text" class="muted" style="margin-bottom:16px;">Preparing local media and waiting for the other participant.</p>
+          <div class="invite-box">
+            <code id="invite-link">{{ call_config.inviteLink }}</code>
+            <button id="copy-invite-inline-btn" type="button">Copy</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3 style="margin-bottom:12px;">Participants</h3>
+          <div class="participant-card">
+            <strong>{{ host_user.username }}</strong>
+            <span class="muted">Host</span>
+          </div>
+          <div class="participant-card" style="margin-top:12px;">
+            <strong id="participant-two-name">{{ guest_user.username if guest_user else 'Waiting for guest' }}</strong>
+            <span id="participant-two-role" class="muted">{{ 'Guest connected' if guest_user else 'Invite link not opened yet' }}</span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3 style="margin-bottom:12px;">Quick tips</h3>
+          <ul class="list">
+            <li>Both participants must be logged in to join the same room.</li>
+            <li>Allow camera and microphone access when your browser asks.</li>
+            <li>If the call fails, use the invite link again to refresh the connection.</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const callConfig = {{ call_config|tojson }};
+
+    const localVideo = document.getElementById('local-video');
+    const remoteVideo = document.getElementById('remote-video');
+    const localPlaceholder = document.getElementById('local-placeholder');
+    const remotePlaceholder = document.getElementById('remote-placeholder');
+    const statusText = document.getElementById('call-status-text');
+    const roomStatusChip = document.getElementById('room-status-chip');
+    const partnerChip = document.getElementById('partner-chip');
+    const participantTwoName = document.getElementById('participant-two-name');
+    const participantTwoRole = document.getElementById('participant-two-role');
+    const startMediaBtn = document.getElementById('start-media-btn');
+    const toggleMicBtn = document.getElementById('toggle-mic-btn');
+    const toggleCameraBtn = document.getElementById('toggle-camera-btn');
+    const copyInviteBtn = document.getElementById('copy-invite-btn');
+    const copyInviteInlineBtn = document.getElementById('copy-invite-inline-btn');
+    const endCallBtn = document.getElementById('end-call-btn');
+    const inviteLinkNode = document.getElementById('invite-link');
+
+    let localStream = null;
+    let peerConnection = null;
+    let lastSignalId = 0;
+    let offerSent = false;
+    let readySent = false;
+    let remoteDescriptionReady = false;
+    let pendingCandidates = [];
+    let activeOtherUserId = null;
+    let roomEnded = false;
+    let isEnding = false;
+
+    const rtcConfig = {
+      iceServers: [
+        { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }
+      ]
+    };
+
+    function setStatus(message, tone = 'warning') {
+      statusText.textContent = message;
+      roomStatusChip.className = 'chip ' + tone;
+      if (roomEnded) {
+        roomStatusChip.className = 'chip danger';
+      }
+    }
+
+    function updateRoomState(room) {
+      activeOtherUserId = room.other_user_id || null;
+      roomEnded = room.status === 'ended';
+      roomStatusChip.textContent = room.status;
+      roomStatusChip.className = 'chip ' + (room.status === 'active' ? 'success' : room.status === 'ended' ? 'danger' : 'warning');
+
+      const guestName = room.guest && room.guest.username ? room.guest.username : 'Waiting for guest';
+      participantTwoName.textContent = guestName;
+      participantTwoRole.textContent = room.guest && room.guest.username ? 'Guest connected' : 'Invite link not opened yet';
+      partnerChip.textContent = room.guest && room.guest.username ? room.guest.username : 'Waiting for guest';
+      partnerChip.className = 'chip ' + (room.guest && room.guest.username ? 'success' : 'warning');
+
+      if (room.status === 'ended') {
+        setStatus('This call has ended.', 'danger');
+        closePeerConnection();
+      } else if (room.status === 'active' && room.guest && room.guest.username) {
+        setStatus('Both participants are present. Connecting the call…', 'success');
+      } else {
+        setStatus('Waiting for another participant to join this room.', 'warning');
+      }
+    }
+
+    async function copyInviteLink(button) {
+      try {
+        await navigator.clipboard.writeText(inviteLinkNode.textContent.trim());
+        const previous = button.textContent;
+        button.textContent = 'Copied';
+        setTimeout(() => {
+          button.textContent = previous;
+        }, 1400);
+      } catch (error) {
+        button.textContent = 'Copy failed';
+      }
+    }
+
+    async function ensureLocalMedia() {
+      if (localStream) {
+        return localStream;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setStatus('This browser does not support camera access.', 'danger');
+        throw new Error('getUserMedia unavailable');
+      }
+
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localVideo.srcObject = localStream;
+      localPlaceholder.style.display = 'none';
+      startMediaBtn.disabled = true;
+      toggleMicBtn.disabled = false;
+      toggleCameraBtn.disabled = false;
+
+      if (!callConfig.isHost && activeOtherUserId && !readySent) {
+        await postSignal('ready', { status: 'ready' }, activeOtherUserId);
+        readySent = true;
+      }
+
+      return localStream;
+    }
+
+    function closePeerConnection() {
+      if (peerConnection) {
+        peerConnection.onicecandidate = null;
+        peerConnection.ontrack = null;
+        peerConnection.onconnectionstatechange = null;
+        peerConnection.close();
+        peerConnection = null;
+      }
+      remoteDescriptionReady = false;
+      pendingCandidates = [];
+      remoteVideo.srcObject = null;
+      remotePlaceholder.style.display = 'flex';
+    }
+
+    function buildPeerConnection() {
+      if (peerConnection) {
+        return peerConnection;
+      }
+
+      const pc = new RTCPeerConnection(rtcConfig);
+      peerConnection = pc;
+
+      if (localStream) {
+        localStream.getTracks().forEach((track) => {
+          pc.addTrack(track, localStream);
+        });
+      }
+
+      pc.onicecandidate = async (event) => {
+        if (event.candidate && activeOtherUserId) {
+          await postSignal('candidate', event.candidate.toJSON ? event.candidate.toJSON() : event.candidate, activeOtherUserId);
+        }
+      };
+
+      pc.ontrack = (event) => {
+        if (event.streams && event.streams[0]) {
+          remoteVideo.srcObject = event.streams[0];
+        }
+        remotePlaceholder.style.display = 'none';
+        setStatus('Video call connected.', 'success');
+      };
+
+      pc.onconnectionstatechange = () => {
+        const state = pc.connectionState || 'new';
+        if (state === 'connected') {
+          setStatus('Video call connected.', 'success');
+        } else if (state === 'connecting') {
+          setStatus('Negotiating connection…', 'warning');
+        } else if (state === 'failed' || state === 'disconnected') {
+          setStatus('Connection dropped. Waiting to reconnect…', 'danger');
+        }
+      };
+
+      return pc;
+    }
+
+    async function flushPendingCandidates() {
+      if (!peerConnection || !remoteDescriptionReady || !pendingCandidates.length) {
+        return;
+      }
+
+      while (pendingCandidates.length) {
+        const candidate = pendingCandidates.shift();
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (error) {
+          console.warn('ICE candidate error', error);
+        }
+      }
+    }
+
+    async function createOffer() {
+      if (!callConfig.isHost || !activeOtherUserId || roomEnded || offerSent) {
+        return;
+      }
+
+      await ensureLocalMedia();
+      const pc = buildPeerConnection();
+      const offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
+      await pc.setLocalDescription(offer);
+      offerSent = true;
+      await postSignal('offer', offer, activeOtherUserId);
+      setStatus('Invite accepted. Waiting for the answer…', 'warning');
+    }
+
+    async function handleOffer(event) {
+      await ensureLocalMedia();
+      closePeerConnection();
+      const pc = buildPeerConnection();
+      await pc.setRemoteDescription(new RTCSessionDescription(event.payload));
+      remoteDescriptionReady = true;
+      await flushPendingCandidates();
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await postSignal('answer', answer, event.sender_user_id);
+      setStatus('Answer sent. Connecting…', 'success');
+    }
+
+    async function handleAnswer(event) {
+      if (!peerConnection) {
+        return;
+      }
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(event.payload));
+      remoteDescriptionReady = true;
+      await flushPendingCandidates();
+      setStatus('Answer received. Finalizing the call…', 'success');
+    }
+
+    async function handleCandidate(event) {
+      if (!peerConnection || !remoteDescriptionReady) {
+        pendingCandidates.push(event.payload);
+        return;
+      }
+      try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(event.payload));
+      } catch (error) {
+        console.warn('ICE add error', error);
+      }
+    }
+
+    async function handleHangup() {
+      offerSent = false;
+      readySent = false;
+      closePeerConnection();
+      setStatus('The other participant left the call.', 'warning');
+    }
+
+    async function handleSignal(event) {
+      lastSignalId = Math.max(lastSignalId, event.id || 0);
+      if (event.type === 'ready') {
+        if (callConfig.isHost) {
+          await createOffer();
+        }
+        return;
+      }
+      if (event.type === 'offer') {
+        await handleOffer(event);
+        return;
+      }
+      if (event.type === 'answer') {
+        await handleAnswer(event);
+        return;
+      }
+      if (event.type === 'candidate') {
+        await handleCandidate(event);
+        return;
+      }
+      if (event.type === 'hangup') {
+        await handleHangup();
+      }
+    }
+
+    async function postSignal(type, payload, recipientUserId = null) {
+      const response = await fetch(`/api/video-call/${encodeURIComponent(callConfig.roomCode)}/signals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type,
+          payload,
+          recipient_user_id: recipientUserId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Signal request failed: ${response.status}`);
+      }
+
+      return response.json();
+    }
+
+    async function pollSignals() {
+      if (roomEnded) {
+        return;
+      }
+
+      const response = await fetch(`/api/video-call/${encodeURIComponent(callConfig.roomCode)}/signals?since=${lastSignalId}`, {
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        setStatus('Unable to sync call state right now.', 'danger');
+        return;
+      }
+
+      const data = await response.json();
+      if (data.room) {
+        updateRoomState(data.room);
+      }
+
+      if (!callConfig.isHost && activeOtherUserId && localStream && !readySent) {
+        await postSignal('ready', { status: 'ready' }, activeOtherUserId);
+        readySent = true;
+      }
+
+      if (callConfig.isHost && activeOtherUserId && localStream && !offerSent) {
+        await createOffer();
+      }
+
+      for (const event of data.events || []) {
+        await handleSignal(event);
+      }
+    }
+
+    async function endCall() {
+      if (isEnding) {
+        return;
+      }
+      isEnding = true;
+      try {
+        await postSignal('hangup', { reason: 'left_call' }, activeOtherUserId);
+      } catch (error) {
+        console.warn('Unable to send hangup signal', error);
+      }
+      if (localStream) {
+        localStream.getTracks().forEach((track) => track.stop());
+      }
+      closePeerConnection();
+      window.location.href = '{{ url_for('video_call_lobby') }}';
+    }
+
+    startMediaBtn.addEventListener('click', async () => {
+      try {
+        await ensureLocalMedia();
+        await pollSignals();
+      } catch (error) {
+        setStatus('Camera access was denied or unavailable.', 'danger');
+      }
+    });
+
+    toggleMicBtn.addEventListener('click', () => {
+      if (!localStream) {
+        return;
+      }
+      const enabled = !localStream.getAudioTracks().every((track) => track.enabled === false);
+      localStream.getAudioTracks().forEach((track) => {
+        track.enabled = !enabled;
+      });
+      toggleMicBtn.textContent = enabled ? 'Unmute Mic' : 'Mute Mic';
+    });
+
+    toggleCameraBtn.addEventListener('click', () => {
+      if (!localStream) {
+        return;
+      }
+      const enabled = !localStream.getVideoTracks().every((track) => track.enabled === false);
+      localStream.getVideoTracks().forEach((track) => {
+        track.enabled = !enabled;
+      });
+      toggleCameraBtn.textContent = enabled ? 'Show Camera' : 'Hide Camera';
+    });
+
+    copyInviteBtn.addEventListener('click', () => copyInviteLink(copyInviteBtn));
+    copyInviteInlineBtn.addEventListener('click', () => copyInviteLink(copyInviteInlineBtn));
+    endCallBtn.addEventListener('click', endCall);
+
+    async function bootstrapCall() {
+      try {
+        await ensureLocalMedia();
+      } catch (error) {
+        console.warn('Local media unavailable on load', error);
+      }
+
+      await pollSignals();
+      setInterval(() => {
+        pollSignals().catch((error) => {
+          console.warn('Polling error', error);
+        });
+      }, 1500);
+    }
+
+    bootstrapCall();
+  </script>
+</body>
+</html>

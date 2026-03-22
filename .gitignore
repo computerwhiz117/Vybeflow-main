@@ -1,0 +1,35 @@
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# IDE and OS files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Runtime data
+instance/*.db
+*.db-journal
+server.log
+
+# User-uploaded/generated media
+uploads/
+static/uploads/
+
+# Git temp artifacts from interrupted operations
+.git/objects/**/tmp_obj_*

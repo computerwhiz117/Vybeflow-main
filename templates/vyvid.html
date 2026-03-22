@@ -1,0 +1,717 @@
+{% extends "base.html" %}
+{% block body_class %}vyvid-page{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --vv-bg:     #0d0a12;
+    --vv-card:   rgba(255,255,255,.03);
+    --vv-card2:  rgba(255,255,255,.06);
+    --vv-line:   rgba(180,120,255,.22);
+    --vv-text:   rgba(255,255,255,.92);
+    --vv-muted:  rgba(255,255,255,.55);
+    --vv-brand:  #9b4dff;
+    --vv-brand2: #c94dff;
+    --vv-red:    #ff4466;
+    --vv-green:  #10b981;
+    --vv-radius: 14px;
+  }
+
+  body.vyvid-page {
+    background:
+      radial-gradient(1000px 600px at 50% 10%, rgba(100,0,200,.28), transparent 60%),
+      radial-gradient(700px 500px at 10% 50%, rgba(160,0,255,.16), transparent 65%),
+      radial-gradient(700px 600px at 90% 60%, rgba(200,0,150,.14), transparent 65%),
+      linear-gradient(180deg, #0d0a12 0%, #0a0810 60%, #08060d 100%);
+    color: var(--vv-text);
+    min-height: 100vh;
+  }
+
+  .vyvid-shell {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 0 12px 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── Header ─── */
+  .vyvid-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0 10px;
+    border-bottom: 1px solid var(--vv-line);
+    margin-bottom: 18px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(13,10,18,.15);
+    backdrop-filter: blur(24px) saturate(1.2);
+  }
+
+  .vyvid-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+
+  .vyvid-logo-icon {
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #9b4dff, #c94dff, #ff4dff);
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    box-shadow: 0 0 22px rgba(155,77,255,.55);
+  }
+
+  .vyvid-logo-name {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -.5px;
+    background: linear-gradient(90deg, #bf7fff, #ff4dff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .vyvid-logo-name sup {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,.55);
+    letter-spacing: 0;
+    vertical-align: super;
+    margin-left: 2px;
+  }
+
+  .vyvid-search {
+    flex: 1;
+    max-width: 520px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--vv-line);
+    background: rgba(255,255,255,.07);
+    color: var(--vv-text);
+    padding: 0 16px;
+    font-size: 14px;
+    outline: none;
+    transition: .2s;
+  }
+  .vyvid-search::placeholder { color: var(--vv-muted); }
+  .vyvid-search:focus {
+    border-color: var(--vv-brand);
+    box-shadow: 0 0 0 3px rgba(155,77,255,.22), 0 0 18px rgba(155,77,255,.28);
+  }
+
+  .vyvid-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+
+  .vv-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    text-decoration: none;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .vv-btn:hover { transform: translateY(-1px); }
+
+  .vv-btn-primary {
+    background: linear-gradient(135deg, var(--vv-brand), var(--vv-brand2));
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(155,77,255,.38);
+  }
+  .vv-btn-primary:hover {
+    box-shadow: 0 8px 28px rgba(155,77,255,.55);
+  }
+
+  .vv-btn-ghost {
+    background: var(--vv-card);
+    color: var(--vv-text);
+    border: 1px solid var(--vv-line);
+  }
+
+  /* ─── Age-verified badge ─── */
+  .vv-verified-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(155,77,255,.18);
+    border: 1px solid rgba(155,77,255,.35);
+    color: #bf7fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .vv-gate-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(255,68,102,.12);
+    border: 1px solid rgba(255,68,102,.30);
+    color: #ff8099;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .15s;
+  }
+  .vv-gate-chip:hover { background: rgba(255,68,102,.22); }
+
+  /* ─── Filter bar ─── */
+  .vyvid-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--vv-line);
+  }
+
+  .filter-label {
+    font-size: 12px;
+    color: var(--vv-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-right: 4px;
+  }
+
+  .filter-chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--vv-line);
+    background: var(--vv-card);
+    color: var(--vv-text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: .15s;
+    white-space: nowrap;
+  }
+  .filter-chip:hover {
+    background: rgba(155,77,255,.18);
+    border-color: rgba(155,77,255,.45);
+    color: #c490ff;
+  }
+  .filter-chip.active {
+    background: linear-gradient(135deg, rgba(155,77,255,.35), rgba(201,77,255,.25));
+    border-color: rgba(155,77,255,.6);
+    color: #d4a0ff;
+  }
+
+  .rating-chip-teen     { border-color: rgba(251,191,36,.35); color: #fbbf24; }
+  .rating-chip-teen.active { background: rgba(251,191,36,.15); border-color: rgba(251,191,36,.6); }
+  .rating-chip-mature   { border-color: rgba(255,68,102,.35); color: #ff8099; }
+  .rating-chip-mature.active { background: rgba(255,68,102,.15); border-color: rgba(255,68,102,.6); }
+
+  .filter-sep { width: 1px; height: 22px; background: var(--vv-line); margin: 0 4px; }
+
+  /* ─── Content warning banner ─── */
+  .vyvid-policy-bar {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: var(--vv-radius);
+    background: rgba(155,77,255,.08);
+    border: 1px solid rgba(155,77,255,.22);
+    margin-bottom: 22px;
+    font-size: 13px;
+    color: var(--vv-muted);
+    line-height: 1.6;
+  }
+  .vyvid-policy-bar .policy-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+  .vyvid-policy-bar strong { color: var(--vv-text); }
+
+  /* ─── Video grid ─── */
+  .vyvid-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+  }
+
+  .vv-card {
+    background: var(--vv-card);
+    border: 1px solid var(--vv-line);
+    border-radius: var(--vv-radius);
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--vv-text);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .vv-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(155,77,255,.45);
+    box-shadow:
+      0 12px 36px rgba(0,0,0,.4),
+      0 0 28px rgba(155,77,255,.25);
+  }
+
+  .vv-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: rgba(0,0,0,.35);
+    overflow: hidden;
+  }
+
+  .vv-thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .3s ease;
+  }
+  .vv-card:hover .vv-thumb-img { transform: scale(1.04); }
+
+  .vv-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    font-size: 48px;
+    background: linear-gradient(135deg, rgba(155,77,255,.12), rgba(201,77,255,.08));
+  }
+
+  .vv-rating-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 3px 9px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    backdrop-filter: blur(8px);
+  }
+  .vv-rating-badge.general  { background: rgba(16,185,129,.85); color: #fff; }
+  .vv-rating-badge.teen     { background: rgba(251,191,36,.85); color: #000; }
+  .vv-rating-badge.mature   { background: rgba(255,44,77,.88); color: #fff; }
+
+  .vv-duration {
+    position: absolute;
+    bottom: 7px;
+    right: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(0,0,0,.30);
+    color: #fff;
+    padding: 2px 7px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+  }
+
+  .vv-play-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    background: rgba(0,0,0,.30);
+    transition: opacity .2s;
+  }
+  .vv-card:hover .vv-play-overlay { opacity: 1; }
+  .vv-play-icon {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(155,77,255,.85);
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    box-shadow: 0 0 22px rgba(155,77,255,.6);
+  }
+
+  .vv-info {
+    padding: 12px 14px 14px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .vv-title {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--vv-text);
+  }
+
+  .vv-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--vv-muted);
+    flex-wrap: wrap;
+  }
+
+  .vv-author-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 4px;
+  }
+  .vv-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(155,77,255,.2);
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .vv-author-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--vv-muted);
+  }
+
+  .vv-category-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(155,77,255,.15);
+    color: #bf7fff;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  /* ─── Empty state ─── */
+  .vyvid-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--vv-muted);
+  }
+  .vyvid-empty .empty-icon { font-size: 56px; display: block; margin-bottom: 16px; }
+  .vyvid-empty h3 { font-size: 20px; font-weight: 700; color: var(--vv-text); margin: 0 0 8px; }
+  .vyvid-empty p  { font-size: 14px; max-width: 400px; margin: 0 auto; }
+
+  /* ─── Mature gate notice ─── */
+  .vyvid-mature-gate {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 48px 20px;
+    background: rgba(255,44,77,.06);
+    border: 1px solid rgba(255,44,77,.20);
+    border-radius: var(--vv-radius);
+  }
+  .vyvid-mature-gate .gate-icon { font-size: 52px; display: block; margin-bottom: 14px; }
+  .vyvid-mature-gate h3 { font-size: 22px; font-weight: 800; color: var(--vv-text); margin: 0 0 8px; }
+  .vyvid-mature-gate p  { font-size: 14px; color: var(--vv-muted); max-width: 440px; margin: 0 auto 20px; line-height: 1.6; }
+
+  /* ─── Section headings ─── */
+  .vyvid-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    margin-top: 28px;
+  }
+  .vyvid-section-head h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--vv-text);
+    margin: 0;
+  }
+
+  /* ─── Content policy sidebar / expandable ─── */
+  .vyvid-policy-panel {
+    background: var(--vv-card);
+    border: 1px solid var(--vv-line);
+    border-radius: var(--vv-radius);
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .vyvid-policy-panel summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--vv-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+  }
+  .vyvid-policy-panel summary::-webkit-details-marker { display: none; }
+  .vyvid-policy-panel[open] summary::before { content: "▾"; }
+  .vyvid-policy-panel:not([open]) summary::before { content: "▸"; }
+
+  .policy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 16px;
+  }
+  @media (max-width: 600px) { .policy-grid { grid-template-columns: 1fr; } }
+
+  .policy-col {
+    background: rgba(0,0,0,.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .policy-col h4 {
+    font-size: 13px;
+    font-weight: 800;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .policy-col.allow h4 { color: var(--vv-green); }
+  .policy-col.deny  h4 { color: var(--vv-red); }
+  .policy-col ul { margin: 0; padding-left: 18px; }
+  .policy-col li { font-size: 13px; color: var(--vv-muted); margin-bottom: 5px; line-height: 1.5; }
+
+  .rating-legend {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .rating-legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--vv-muted);
+    line-height: 1.4;
+  }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 600px) {
+    .vyvid-header { flex-wrap: wrap; }
+    .vyvid-search { max-width: 100%; }
+  }
+</style>
+
+<div class="vyvid-shell">
+
+  <!-- Header -->
+  <header class="vyvid-header">
+    <a class="vyvid-logo" href="{{ url_for('vyvid.vyvid_home') }}">
+      <div class="vyvid-logo-icon">📺</div>
+      <span class="vyvid-logo-name">Vyvid<sup>18+</sup></span>
+    </a>
+
+    <input
+      class="vyvid-search"
+      type="text"
+      id="vyvid-search-input"
+      placeholder="Search Vyvid..."
+      autocomplete="off"
+    />
+
+    <div class="vyvid-header-actions">
+      {% if age_verified %}
+        <span class="vv-verified-chip">✔ 18+ Verified</span>
+      {% else %}
+        <a class="vv-gate-chip" href="{{ url_for('vyvid.vyvid_age_gate') }}">🔒 Unlock Mature</a>
+      {% endif %}
+      <a class="vv-btn vv-btn-primary" href="{{ url_for('vyvid.vyvid_upload_page') }}">
+        ➕ Upload
+      </a>
+      <a class="vv-btn vv-btn-ghost" href="{{ url_for('feed.feed_page') }}">← Feed</a>
+    </div>
+  </header>
+
+  <!-- Content Policy (collapsible) -->
+  <details class="vyvid-policy-panel">
+    <summary>📋 Vyvid Content Policy</summary>
+    <div class="policy-grid">
+      <div class="policy-col allow">
+        <h4>✅ Allowed on Vyvid</h4>
+        <ul>
+          <li>Explicit sexual language and adult discussions</li>
+          <li>Adult comedy and podcasts</li>
+          <li>Relationship or sexual education content</li>
+          <li>Swearing and mature conversation</li>
+        </ul>
+      </div>
+      <div class="policy-col deny">
+        <h4>🚫 Not Allowed</h4>
+        <ul>
+          <li>Graphic violence against others (killings, severe injury, torture, gore)</li>
+          <li>Violence being encouraged or glorified</li>
+          <li>Content involving minors in sexual or exploitative contexts</li>
+          <li>Harassment or targeted hate content</li>
+        </ul>
+      </div>
+    </div>
+    <div class="rating-legend">
+      <div class="rating-legend-item">
+        <span class="vv-rating-badge general" style="position:static;">G</span>
+        <span><strong>General</strong> — Safe for all audiences. No verification needed.</span>
+      </div>
+      <div class="rating-legend-item">
+        <span class="vv-rating-badge teen" style="position:static;">T</span>
+        <span><strong>Teen</strong> — Mild profanity, mild themes. No verification needed.</span>
+      </div>
+      <div class="rating-legend-item">
+        <span class="vv-rating-badge mature" style="position:static;">18+</span>
+        <span><strong>Mature</strong> — Explicit language, adult content. 18+ age verification required.</span>
+      </div>
+    </div>
+  </details>
+
+  <!-- Filters -->
+  <div class="vyvid-filters">
+    <span class="filter-label">Rating</span>
+    <a class="filter-chip {% if rating_filter == 'all' %}active{% endif %}"
+       href="{{ url_for('vyvid.vyvid_home', rating='all', category=category_filter, sort=sort) }}">All</a>
+    <a class="filter-chip rating-chip-general {% if rating_filter == 'general' %}active{% endif %}"
+       href="{{ url_for('vyvid.vyvid_home', rating='general', category=category_filter, sort=sort) }}">G General</a>
+    <a class="filter-chip rating-chip-teen {% if rating_filter == 'teen' %}active{% endif %}"
+       href="{{ url_for('vyvid.vyvid_home', rating='teen', category=category_filter, sort=sort) }}">T Teen</a>
+    {% if age_verified %}
+      <a class="filter-chip rating-chip-mature {% if rating_filter == 'mature' %}active{% endif %}"
+         href="{{ url_for('vyvid.vyvid_home', rating='mature', category=category_filter, sort=sort) }}">18+ Mature</a>
+    {% else %}
+      <a class="filter-chip rating-chip-mature" href="{{ url_for('vyvid.vyvid_age_gate') }}"
+         style="opacity:.55; cursor:pointer;" title="Verify your age to view mature content">🔒 18+ Mature</a>
+    {% endif %}
+
+    <div class="filter-sep"></div>
+    <span class="filter-label">Sort</span>
+    <a class="filter-chip {% if sort == 'new' %}active{% endif %}"
+       href="{{ url_for('vyvid.vyvid_home', rating=rating_filter, category=category_filter, sort='new') }}">🕐 New</a>
+    <a class="filter-chip {% if sort == 'popular' %}active{% endif %}"
+       href="{{ url_for('vyvid.vyvid_home', rating=rating_filter, category=category_filter, sort='popular') }}">🔥 Popular</a>
+
+    <div class="filter-sep"></div>
+    <span class="filter-label">Category</span>
+    <a class="filter-chip {% if category_filter == 'all' %}active{% endif %}"
+       href="{{ url_for('vyvid.vyvid_home', rating=rating_filter, category='all', sort=sort) }}">All</a>
+    {% for cat in categories %}
+      <a class="filter-chip {% if category_filter == cat %}active{% endif %}"
+         href="{{ url_for('vyvid.vyvid_home', rating=rating_filter, category=cat, sort=sort) }}">
+        {{ cat | replace('_', ' ') | title }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <!-- Video Grid -->
+  <div class="vyvid-grid" id="vyvid-grid">
+
+    {% if rating_filter == 'mature' and not age_verified %}
+      <!-- Mature gate -->
+      <div class="vyvid-mature-gate">
+        <span class="gate-icon">🔞</span>
+        <h3>18+ Age Verification Required</h3>
+        <p>
+          Mature content on Vyvid is restricted to verified adults only.
+          Verify your age with a quick ID check — we store your verification
+          status only, never your ID image.
+        </p>
+        <a class="vv-btn vv-btn-primary" href="{{ url_for('vyvid.vyvid_age_gate') }}">
+          Verify My Age →
+        </a>
+      </div>
+
+    {% elif videos %}
+      {% for video in videos %}
+        <a class="vv-card" href="{{ url_for('vyvid.vyvid_watch', video_id=video.id) }}">
+          <div class="vv-thumb">
+            {% if video.thumbnail_url %}
+              <img class="vv-thumb-img" src="{{ video.thumbnail_url }}" alt="{{ video.title }}" loading="lazy" />
+            {% else %}
+              <div class="vv-thumb-placeholder">🎬</div>
+            {% endif %}
+
+            <span class="vv-rating-badge {{ video.content_rating }}">
+              {% if video.content_rating == 'general' %}G
+              {% elif video.content_rating == 'teen' %}T
+              {% else %}18+{% endif %}
+            </span>
+
+            {% if video.duration_sec %}
+              <span class="vv-duration">
+                {{ "%d:%02d" | format(video.duration_sec // 60, video.duration_sec % 60) }}
+              </span>
+            {% endif %}
+
+
+
+            <div class="vv-play-overlay">
+              <div class="vv-play-icon">▶</div>
+            </div>
+          </div>
+
+          <div class="vv-info">
+            <div class="vv-title">{{ video.title }}</div>
+            <div class="vv-meta">
+              <span>👁 {{ "{:,}".format(video.views_count) }}</span>
+              <span>❤ {{ video.likes_count }}</span>
+              <span class="vv-category-tag">{{ video.category | replace('_', ' ') | title }}</span>
+            </div>
+            <div class="vv-author-row">
+              {% if video.author and video.author.avatar_url %}
+                <img class="vv-avatar" src="{{ video.author.avatar_url }}" alt="{{ video.author.display_name or video.author.username }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                <div class="vv-avatar" style="display:none">👤</div>
+              {% else %}
+                <div class="vv-avatar">👤</div>
+              {% endif %}
+              <span class="vv-author-name">
+                {{ (video.author.display_name or video.author.username) if video.author else 'Unknown' }}
+              </span>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+
+    {% else %}
+      <div class="vyvid-empty">
+        <span class="empty-icon">📭</span>
+        <h3>No videos yet</h3>
+        <p>Be the first to upload content in this category!</p>
+        <br/>
+        <a class="vv-btn vv-btn-primary" href="{{ url_for('vyvid.vyvid_upload_page') }}">Upload a Video</a>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+// Client-side search filter
+const searchInput = document.getElementById('vyvid-search-input');
+const grid = document.getElementById('vyvid-grid');
+if (searchInput && grid) {
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    grid.querySelectorAll('.vv-card').forEach(card => {
+      const title = card.querySelector('.vv-title')?.textContent.toLowerCase() || '';
+      const author = card.querySelector('.vv-author-name')?.textContent.toLowerCase() || '';
+      card.style.display = (!q || title.includes(q) || author.includes(q)) ? '' : 'none';
+    });
+  });
+}
+</script>
+{% endblock %}

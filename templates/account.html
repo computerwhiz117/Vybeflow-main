@@ -1,0 +1,3328 @@
+{% extends "base.html" %}
+
+{% block body_class %}profile-page{% endblock %}
+
+{% block content %}
+<style>
+  /* ═══════════════════════════════════════════════
+     ACCOUNT / PROFILE PAGE — FULL OVERHAUL
+     Features: Avatar crop/zoom/pan, Cover crop editor,
+     Wallpaper customization (MySpace-style), Glitter,
+     Animation effects, Music sync wallpaper
+     ═══════════════════════════════════════════════ */
+  .aux-shell { min-height: 100vh; position: relative; overflow: hidden; }
+  .aux-card {
+    position: relative; z-index: 2;
+    width: min(96%, 820px); margin: 24px auto; padding: 0;
+    border-radius: 18px;
+    border: 1px solid rgba(255,153,90,.22);
+    background: rgba(10,8,18,.10);
+    backdrop-filter: blur(28px) saturate(1.2);
+    box-shadow: 0 0 24px rgba(255,106,0,.06), 0 8px 24px rgba(0,0,0,.12);
+    color: #fff; overflow: hidden;
+  }
+
+  /* ═══ WALLPAPER CANVAS (behind everything) ═══ */
+  #wallpaper-canvas {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 0; pointer-events: none;
+  }
+  .wp-bg-layer {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 0; pointer-events: none;
+    background-size: cover; background-position: center;
+  }
+
+  /* ═══ COVER PHOTO ═══ */
+  .cover-photo-wrap {
+    position: relative; width: 100%; height: 240px; overflow: hidden;
+    background: linear-gradient(135deg, rgba(26,10,46,.15) 0%, rgba(13,8,24,.12) 100%);
+    cursor: pointer;
+  }
+  .cover-photo-wrap img {
+    width: 100%; height: 100%; object-fit: cover; object-position: center;
+    display: block; transition: transform .3s;
+  }
+  .cover-edit-overlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.20); opacity: 0; transition: opacity .3s; pointer-events: none;
+  }
+  .cover-photo-wrap:hover .cover-edit-overlay { opacity: 1; pointer-events: auto; }
+  .cover-edit-btn {
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+    color: #fff; padding: 10px 20px; border-radius: 999px; font-weight: 700;
+    cursor: pointer; backdrop-filter: blur(8px); font-size: 14px;
+  }
+
+  /* ═══ AVATAR (tear-proof) ═══ */
+  .avatar-section {
+    display: flex; align-items: flex-end; gap: 16px; padding: 0 24px;
+    margin-top: -52px; position: relative; z-index: 5;
+  }
+  .avatar-glow-wrap {
+    position: relative; width: 110px; height: 110px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    cursor: pointer;
+  }
+  .avatar-glow-wrap::before {
+    content: ''; position: absolute; inset: -8px; border-radius: 22px; z-index: 0;
+    opacity: 0.85; animation: idleGlowColors 8s ease-in-out infinite;
+  }
+  .avatar-glow-wrap.music-playing::before {
+    opacity: 1;
+    animation: musicGlowColors 3s ease-in-out infinite,
+               musicGlowPulse 0.6s ease-in-out infinite alternate;
+  }
+  /* ═══ FIX TORN AVATARS ═══ */
+  .avatar-large {
+    width: 110px; height: 110px; border-radius: 20px;
+    border: 3px solid rgba(255,180,130,.5);
+    object-fit: cover; /* PREVENTS tearing/stretching */
+    object-position: center;
+    position: relative; z-index: 1;
+    background: rgba(26,16,32,.15);
+    image-rendering: auto; /* smooth scaling */
+    display: block;
+  }
+  .avatar-edit-badge {
+    position: absolute; bottom: 4px; right: 4px; z-index: 3;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #ff9a3d, #ff4800);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; border: 2px solid #0a0810; cursor: pointer;
+  }
+  .username-row { padding-bottom: 14px; }
+  .username-row h1 { margin: 0; font-size: 26px; font-weight: 900; }
+  .profile-meta { color: #ffd8b2; font-size: 13px; }
+
+  /* ═══ Glow Animations ═══ */
+  @keyframes idleGlowColors {
+    0%      { box-shadow: 0 0 18px 6px rgba(255,106,0,.45),  0 0 36px 12px rgba(255,106,0,.18); }
+    16.6%   { box-shadow: 0 0 18px 6px rgba(255,64,144,.45), 0 0 36px 12px rgba(255,64,144,.18); }
+    33.3%   { box-shadow: 0 0 18px 6px rgba(160,96,224,.45), 0 0 36px 12px rgba(160,96,224,.18); }
+    50%     { box-shadow: 0 0 18px 6px rgba(64,144,255,.45), 0 0 36px 12px rgba(64,144,255,.18); }
+    66.6%   { box-shadow: 0 0 18px 6px rgba(0,208,192,.45),  0 0 36px 12px rgba(0,208,192,.18); }
+    83.3%   { box-shadow: 0 0 18px 6px rgba(37,255,128,.45), 0 0 36px 12px rgba(37,255,128,.18); }
+    100%    { box-shadow: 0 0 18px 6px rgba(255,106,0,.45),  0 0 36px 12px rgba(255,106,0,.18); }
+  }
+  @keyframes musicGlowColors {
+    0%      { box-shadow: 0 0 26px 10px rgba(255,106,0,.8),  0 0 50px 18px rgba(255,106,0,.3); }
+    16.6%   { box-shadow: 0 0 26px 10px rgba(255,64,144,.8), 0 0 50px 18px rgba(255,64,144,.3); }
+    33.3%   { box-shadow: 0 0 26px 10px rgba(160,96,224,.8), 0 0 50px 18px rgba(160,96,224,.3); }
+    50%     { box-shadow: 0 0 26px 10px rgba(64,144,255,.8), 0 0 50px 18px rgba(64,144,255,.3); }
+    66.6%   { box-shadow: 0 0 26px 10px rgba(0,208,192,.8),  0 0 50px 18px rgba(0,208,192,.3); }
+    83.3%   { box-shadow: 0 0 26px 10px rgba(37,255,128,.8), 0 0 50px 18px rgba(37,255,128,.3); }
+    100%    { box-shadow: 0 0 26px 10px rgba(255,106,0,.8),  0 0 50px 18px rgba(255,106,0,.3); }
+  }
+  @keyframes musicGlowPulse { 0%{transform:scale(1)} 100%{transform:scale(1.04)} }
+
+  /* ═══ Content sections ═══ */
+  .profile-body { padding: 10px 24px 24px; }
+  .bio-box {
+    margin-top: 12px; border: 1px solid rgba(255,170,112,.24);
+    border-radius: 12px; padding: 12px 14px;
+    background: rgba(255,255,255,.06); font-size: 14px; line-height: 1.5;
+  }
+  .profile-music-box {
+    margin-top: 12px; padding: 12px 16px; border-radius: 14px;
+    border: 1px solid rgba(255,149,0,.30); background: rgba(255,149,0,.08);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .profile-actions {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px;
+  }
+  .action-btn {
+    border: 1px solid rgba(255,170,112,.35); border-radius: 999px;
+    padding: 10px 18px; color: #fff; background: rgba(255,255,255,.10);
+    text-decoration: none; font-weight: 700; font-size: 13px;
+    transition: all .2s; cursor: pointer;
+  }
+  .action-btn:hover { background: rgba(255,170,112,.2); }
+  .action-btn.primary {
+    background: linear-gradient(135deg, #ff9a3d, #ff4800);
+    border-color: transparent;
+  }
+
+  /* ═══ IMAGE CROP MODAL ═══ */
+  .crop-modal {
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.55); backdrop-filter: blur(12px);
+    align-items: center; justify-content: center;
+  }
+  .crop-modal.open { display: flex; }
+  .crop-dialog {
+    background: rgba(26,18,40,.20); border-radius: 20px;
+    border: 1px solid rgba(255,153,90,.15);
+    padding: 24px; width: min(94vw, 520px); max-height: 90vh; overflow-y: auto;
+  }
+  .crop-dialog h2 { margin: 0 0 16px; font-size: 20px; }
+  .crop-viewport {
+    position: relative; width: 100%; aspect-ratio: 1; overflow: hidden;
+    border-radius: 16px; background: rgba(17,17,17,.15); cursor: grab;
+    touch-action: none; border: 2px solid rgba(255,170,112,.3);
+  }
+  .crop-viewport.cover-mode { aspect-ratio: 16/6; border-radius: 12px; }
+  .crop-viewport img {
+    position: absolute; top: 0; left: 0; transform-origin: 0 0;
+    max-width: none; max-height: none; user-select: none; -webkit-user-drag: none;
+  }
+  .crop-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .crop-controls label {
+    display: flex; align-items: center; gap: 10px; font-size: 13px; color: #ffd8b2;
+  }
+  .crop-controls input[type="range"] { flex: 1; accent-color: #ff6a00; }
+  .crop-btn-row { display: flex; gap: 10px; margin-top: 16px; }
+  .crop-btn {
+    flex: 1; padding: 12px; border-radius: 12px; font-weight: 700;
+    text-align: center; cursor: pointer; font-size: 14px; border: none;
+  }
+  .crop-btn.cancel { background: rgba(255,255,255,.1); color: #fff; }
+  .crop-btn.save { background: linear-gradient(135deg, #ff9a3d, #ff4800); color: #fff; }
+
+  /* ═══ WALLPAPER CUSTOMIZATION PANEL ═══ */
+  .wp-panel {
+    margin-top: 20px; border: 1px solid rgba(255,170,112,.25);
+    border-radius: 16px; overflow: hidden; background: rgba(255,255,255,.04);
+  }
+  .wp-panel-header {
+    padding: 14px 18px; background: rgba(255,255,255,.06);
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none;
+  }
+  .wp-panel-header h3 { margin: 0; font-size: 16px; }
+  .wp-panel-body { padding: 16px 18px; display: none; }
+  .wp-panel.open .wp-panel-body { display: block; }
+  .wp-section { margin-bottom: 18px; }
+  .wp-section h4 { margin: 0 0 8px; font-size: 13px; color: #ffd8b2; text-transform: uppercase; letter-spacing: 1px; }
+  .wp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; }
+  .wp-swatch {
+    aspect-ratio: 1; border-radius: 10px; cursor: pointer;
+    border: 2px solid transparent; transition: all .2s;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; text-align: center;
+    color: rgba(255,255,255,.8); text-shadow: 0 1px 3px rgba(0,0,0,.5);
+    position: relative; overflow: hidden;
+  }
+  .wp-swatch:hover { border-color: rgba(255,170,112,.5); transform: scale(1.05); }
+  .wp-swatch.active { border-color: #ff6a00; box-shadow: 0 0 12px rgba(255,106,0,.4); }
+  .wp-color-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .wp-color-row label { font-size: 12px; color: #ffd8b2; min-width: 70px; }
+  .wp-color-row input[type="color"] {
+    width: 48px; height: 32px; border: 1px solid rgba(255,170,112,.3);
+    border-radius: 8px; background: transparent; cursor: pointer; padding: 2px;
+  }
+  .wp-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .wp-toggle-row:last-child { border-bottom: none; }
+  .wp-toggle-label { font-size: 13px; }
+  .wp-toggle-desc { font-size: 11px; color: rgba(255,255,255,.4); }
+  .mini-switch {
+    width: 40px; height: 22px; appearance: none; border-radius: 999px;
+    border: 1px solid rgba(255,170,112,.35); background: rgba(255,255,255,.18);
+    position: relative; cursor: pointer; flex-shrink: 0;
+  }
+  .mini-switch::before {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: .2s ease;
+  }
+  .mini-switch:checked { background: linear-gradient(90deg, #ff9a3d, #ff6a00); }
+  .mini-switch:checked::before { transform: translateX(18px); }
+
+  /* ═══ PATTERN PREVIEWS ═══ */
+  .pat-stars { background: radial-gradient(1px 1px at 10% 20%, #fff 50%, transparent 100%), radial-gradient(1px 1px at 80% 50%, #fff 50%, transparent 100%), radial-gradient(1.5px 1.5px at 50% 80%, #ffd700 50%, transparent 100%), radial-gradient(1px 1px at 30% 60%, #fff 50%, transparent 100%); }
+  .pat-hearts::after { content: "\2665\2665\2665"; font-size: 18px; color: #ff4d6a; }
+  .pat-diamonds::after { content: "\25C6\25C6"; font-size: 20px; color: #66ccff; }
+  .pat-dots { background-image: radial-gradient(rgba(255,255,255,.3) 1px, transparent 1px); background-size: 12px 12px; }
+  .pat-grid { background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px); background-size: 20px 20px; }
+  .pat-tribal::after { content: "\16DF\16D2\16D7"; font-size: 16px; color: #ff9a3d; }
+
+  /* Edit form section */
+  .profile-edit-section {
+    margin-top: 20px; border: 1px solid rgba(255,170,112,.2);
+    border-radius: 14px; padding: 18px; background: rgba(255,255,255,.04);
+  }
+  .profile-field { margin-top: 12px; }
+  .profile-field label { display: block; font-size: 12px; color: #ffd8b2; margin-bottom: 4px; font-weight: 700; }
+  .profile-field input, .profile-field textarea {
+    width: 100%; border-radius: 10px; border: 1px solid rgba(255,170,112,.30);
+    background: rgba(255,255,255,.08); color: #fff; padding: 10px 12px;
+    box-sizing: border-box; font-size: 14px;
+  }
+  .profile-field textarea { min-height: 80px; resize: vertical; }
+
+  /* Retro 2011 mode */
+  .profile-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-top: 16px; padding: 12px 14px;
+    border: 1px solid rgba(255,170,112,.25); border-radius: 12px;
+    background: rgba(255,255,255,.04);
+  }
+  .retro-switch input { width:40px; height:22px; appearance:none; border-radius:999px; border:1px solid rgba(255,170,112,.35); background: rgba(255,255,255,.18); position: relative; cursor:pointer; }
+  .retro-switch input::before { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:.2s ease; }
+  .retro-switch input:checked { background: linear-gradient(90deg, #ff9a3d, #ff6a00); }
+  .retro-switch input:checked::before { transform: translateX(18px); }
+
+  body.profile-page.retro-2011 { background: #e9ebee; color: #1d2129; }
+  body.profile-page.retro-2011 .aux-card { background: #fff; border-radius: 2px; border: 1px solid #d3d7df; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  body.profile-page.retro-2011 .cover-photo-wrap { max-height: 160px; }
+  body.profile-page.retro-2011 .action-btn { background: #f5f6f7; border: 1px solid #ccd0d5; color: #1d2129; }
+  body.profile-page.retro-2011 .avatar-large { border-radius: 2px; border: 2px solid #fff; }
+  body.profile-page.retro-2011 .bio-box { background: #fff; color: #1d2129; border-radius: 0; }
+  body.profile-page.retro-2011 .profile-field input, body.profile-page.retro-2011 .profile-field textarea { background: #fff; color: #1d2129; border: 1px solid #ccd0d5; }
+
+  /* Retro 2011 Create Section */
+  .retro-create-section { display: none; margin-top: 14px; }
+  body.profile-page.retro-2011 .retro-create-section { display: block; }
+  .retro-create-box {
+    background: #fff; border: 1px solid #d3d7df; border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.1); padding: 12px 14px;
+  }
+  .retro-create-box h3 { margin: 0 0 10px; font-size: 14px; font-weight: 700; color: #1d2129; }
+  .retro-create-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .retro-create-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 14px; border-radius: 3px; border: 1px solid #ccd0d5;
+    background: #f5f6f7; color: #1d2129; text-decoration: none;
+    font-size: 13px; font-weight: 600; transition: background .15s;
+  }
+  .retro-create-btn:hover { background: #e4e6eb; }
+  .retro-create-btn.primary-retro { background: #4267b2; border-color: #365899; color: #fff; }
+  .retro-create-btn.primary-retro:hover { background: #365899; }
+
+  .profile-links { margin-top: 14px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+
+  /* ═══ STREET / GHETTO PRESET SWATCHES ═══ */
+  .street-swatch {
+    aspect-ratio: 1; border-radius: 10px; cursor: pointer;
+    border: 2px solid transparent; transition: all .2s;
+    display: flex; align-items: flex-end; justify-content: center;
+    font-size: 10px; font-weight: 900; text-align: center; padding-bottom: 6px;
+    color: rgba(255,255,255,.9); text-shadow: 0 1px 4px rgba(0,0,0,.8);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    position: relative; overflow: hidden;
+  }
+  .street-swatch:hover { border-color: rgba(255,170,112,.5); transform: scale(1.05); }
+  .street-swatch.active { border-color: #ff6a00; box-shadow: 0 0 12px rgba(255,106,0,.4); }
+  .street-swatch::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(transparent 40%, rgba(0,0,0,.7));
+  }
+  .street-swatch span { position: relative; z-index: 1; }
+
+  /* ═══ MOTION EFFECTS ═══ */
+  .motion-swatch {
+    aspect-ratio: 1; border-radius: 10px; cursor: pointer;
+    border: 2px solid transparent; transition: all .2s;
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    font-size: 10px; font-weight: 700; text-align: center; gap: 2px;
+    color: rgba(255,255,255,.8); text-shadow: 0 1px 3px rgba(0,0,0,.5);
+    position: relative; overflow: hidden;
+  }
+  .motion-swatch:hover { border-color: rgba(255,170,112,.5); transform: scale(1.05); }
+  .motion-swatch.active { border-color: #ff6a00; box-shadow: 0 0 12px rgba(255,106,0,.4); }
+  .motion-icon { font-size: 22px; }
+
+  /* Wobble preview animation on hover */
+  .motion-swatch[data-motion="zoom_pulse"]:hover { animation: previewZoom .6s ease infinite; }
+  .motion-swatch[data-motion="shake"]:hover { animation: previewShake .3s ease infinite; }
+  .motion-swatch[data-motion="bounce"]:hover { animation: previewBounce .5s ease infinite; }
+  .motion-swatch[data-motion="dance"]:hover { animation: previewDance .5s ease infinite; }
+  .motion-swatch[data-motion="sway"]:hover { animation: previewSway .8s ease infinite; }
+  .motion-swatch[data-motion="breathe"]:hover { animation: previewBreathe 1.2s ease infinite; }
+  .motion-swatch[data-motion="earthquake"]:hover { animation: previewEarthquake .15s ease infinite; }
+  @keyframes previewZoom { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+  @keyframes previewShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+  @keyframes previewBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+  @keyframes previewDance { 0%{transform:rotate(0) scale(1)} 25%{transform:rotate(-2deg) scale(1.03)} 50%{transform:rotate(0) scale(1)} 75%{transform:rotate(2deg) scale(1.03)} }
+  @keyframes previewSway { 0%,100%{transform:rotate(0)} 50%{transform:rotate(2deg)} }
+  @keyframes previewBreathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+  @keyframes previewEarthquake { 0%{transform:translate(0)} 25%{transform:translate(-2px,1px)} 50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,-2px)} }
+
+  /* ═══ AI WALLPAPER GENERATOR ═══ */
+  .ai-gen-panel {
+    margin-top: 4px; padding: 14px; border-radius: 12px;
+    border: 1px solid rgba(255,170,112,.18); background: rgba(255,255,255,.04);
+  }
+  .ai-gen-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .ai-gen-input {
+    flex: 1; padding: 10px 14px; border-radius: 10px;
+    border: 1px solid rgba(255,170,112,.3); background: rgba(255,255,255,.08);
+    color: #fff; font-size: 14px; font-family: inherit;
+  }
+  .ai-gen-input::placeholder { color: rgba(255,255,255,.35); }
+  .ai-gen-select {
+    padding: 10px 12px; border-radius: 10px;
+    border: 1px solid rgba(255,170,112,.3); background: rgba(20,15,30,.15);
+    color: #ffd8b2; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .ai-gen-btn {
+    padding: 10px 18px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #ff9a3d, #ff4800); color: #fff;
+    font-weight: 900; font-size: 13px; cursor: pointer; white-space: nowrap;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .ai-gen-btn:hover { transform: scale(1.03); box-shadow: 0 0 16px rgba(255,106,0,.4); }
+  .ai-gen-btn:active { transform: scale(.97); }
+  .ai-gen-btn.generating { opacity: .6; pointer-events: none; }
+  .ai-preview-wrap {
+    position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 10px;
+    overflow: hidden; border: 1px solid rgba(255,170,112,.2); background: rgba(10,8,16,.15);
+    display: none;
+  }
+  .ai-preview-wrap.has-preview { display: block; }
+  .ai-preview-wrap canvas { width: 100%; height: 100%; display: block; }
+  .ai-use-btn {
+    position: absolute; bottom: 10px; right: 10px;
+    padding: 8px 16px; border-radius: 8px; border: none;
+    background: linear-gradient(135deg, #ff9a3d, #ff4800); color: #fff;
+    font-weight: 900; font-size: 12px; cursor: pointer; z-index: 2;
+  }
+  .ai-style-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .ai-chip {
+    padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    border: 1px solid rgba(255,170,112,.3); background: rgba(255,255,255,.06);
+    color: #ffd8b2; cursor: pointer; transition: all .2s; user-select: none;
+  }
+  .ai-chip:hover { background: rgba(255,170,112,.15); }
+  .ai-chip.active { background: linear-gradient(135deg, #ff9a3d, #ff4800); border-color: transparent; color: #fff; }
+</style>
+
+<!-- ═══ WALLPAPER BACKGROUND LAYER ═══ -->
+<div class="wp-bg-layer" id="wp-bg-layer"></div>
+<canvas id="wallpaper-canvas"></canvas>
+
+<!-- ═══ IMAGE CROP MODAL (shared by avatar + cover) ═══ -->
+<div class="crop-modal" id="crop-modal">
+  <div class="crop-dialog">
+    <h2 id="crop-title">Crop Image</h2>
+    <div class="crop-viewport" id="crop-viewport">
+      <img id="crop-img" src="" alt="crop" />
+    </div>
+    <div class="crop-controls">
+      <label>🔍 Zoom
+        <input type="range" id="crop-zoom" min="1" max="4" step="0.02" value="1" />
+      </label>
+      <label>↔ Pan X
+        <input type="range" id="crop-pan-x" min="0" max="100" step="0.5" value="50" />
+      </label>
+      <label>↕ Pan Y
+        <input type="range" id="crop-pan-y" min="0" max="100" step="0.5" value="50" />
+      </label>
+    </div>
+    <div class="crop-btn-row">
+      <button class="crop-btn cancel" id="crop-cancel">Cancel</button>
+      <button class="crop-btn save" id="crop-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<section class="aux-shell">
+  <div class="aux-card">
+    <!-- ═══ COVER PHOTO ═══ -->
+    <div class="cover-photo-wrap" id="cover-photo-wrap">
+      {% if profile_bg_url %}
+        <img id="cover-img" src="{{ profile_bg_url }}" alt="cover" />
+      {% else %}
+        <img id="cover-img" src="" alt="cover" style="display:none;" />
+        <div id="cover-placeholder" style="width:100%;height:100%;background:linear-gradient(135deg,#1a0a2e,#0d0818,#1a0020);display:flex;align-items:center;justify-content:center;">
+          <span style="color:rgba(255,255,255,.2);font-size:14px;">{% if is_own_profile %}Click to add cover photo{% endif %}</span>
+        </div>
+      {% endif %}
+      {% if is_own_profile %}
+      <div class="cover-edit-overlay">
+        <button class="cover-edit-btn" id="cover-edit-btn">📷 Edit Cover Photo</button>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ═══ AVATAR ═══ -->
+    <div class="avatar-section">
+      <div class="avatar-glow-wrap" id="avatar-glow-wrap">
+        <img class="avatar-large" id="avatar-img" src="{{ user.avatar_url or url_for('static', filename='VFlogo_clean.png') }}" alt="avatar" onerror="this.src='{{ url_for('static', filename='VFlogo_clean.png') }}';" />
+        {% if is_own_profile %}<div class="avatar-edit-badge" id="avatar-edit-btn" title="Edit avatar">✏️</div>{% endif %}
+      </div>
+      <div class="username-row">
+        <h1>{{ user.display_name or user.username }}{% if user.account_type == 'professional' %} <span style="display:inline-block;background:linear-gradient(135deg,#ff9a3d,#ff4800);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;vertical-align:middle;margin-left:6px;">PRO</span>{% endif %}</h1>
+        <div class="profile-meta">@{{ user.display_name or user.username }}</div>
+      </div>
+    </div>
+
+    <div class="profile-body">
+      <!-- Bio -->
+      <div class="bio-box">{{ user.bio or ('No bio yet. Click Edit Profile to add one!' if is_own_profile else '') }}</div>
+
+      <!-- Profile Music -->
+      {% if user.profile_music_title %}
+      <div class="profile-music-box">
+        <span style="font-size:24px;">🎵</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:900;font-size:14px;color:#ffc27a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ user.profile_music_title }}</div>
+          {% if user.profile_music_artist %}<div style="font-size:12px;color:rgba(255,255,255,.6);">{{ user.profile_music_artist }}</div>{% endif %}
+        </div>
+        {% if user.profile_music_preview %}
+        <button type="button" id="profile-play-btn" style="background:none;border:1px solid rgba(255,149,0,.5);border-radius:50%;width:40px;height:40px;color:#ff9500;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
+        <audio id="profile-music-audio" src="{{ user.profile_music_preview }}" preload="none"></audio>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Actions -->
+      <div class="profile-actions">
+        {% if is_own_profile %}
+        <a class="action-btn primary" href="{{ url_for('settings') }}">⚙️ Edit Profile &amp; Theme</a>
+        {% elif current_user %}
+          {% if friend_status == 'accepted' %}
+          <span class="action-btn" style="background:rgba(60,200,60,.15);border-color:rgba(60,200,60,.4);color:#6bff6b;">✅ Friends</span>
+          <button type="button" class="action-btn" style="background:rgba(255,180,60,.15);border-color:rgba(255,180,60,.4);color:#ffb43c;cursor:pointer;" onclick="openPauseModal('{{ user.username }}')">⏸ Pause Messages</button>
+          {% elif friend_status == 'pending_sent' %}
+          <span class="action-btn" style="background:rgba(255,180,60,.15);border-color:rgba(255,180,60,.4);color:#ffb43c;">⏳ Request Sent</span>
+          {% elif friend_status == 'pending_received' %}
+          <button type="button" class="action-btn" style="background:rgba(60,200,60,.15);border-color:rgba(60,200,60,.4);color:#6bff6b;cursor:pointer;" onclick="acceptFriendRequest({{ pending_request_id }})">✅ Accept Request</button>
+          {% else %}
+          <button type="button" class="action-btn" id="add-friend-btn" style="background:linear-gradient(180deg,#ff9a3d,#ff5a00);border-color:rgba(255,106,0,.5);color:#fff;cursor:pointer;font-weight:700;" onclick="sendFriendRequest('{{ user.username }}')">➕ Add Friend</button>
+          {% endif %}
+        <button type="button" class="action-btn" style="background:rgba(255,60,60,.15);border-color:rgba(255,60,60,.4);color:#ff6b6b;cursor:pointer;" onclick="openBlockModal('{{ user.username }}')">🚫 Block User</button>
+        {% endif %}
+        <a class="action-btn" href="{{ url_for('feed.feed_page') }}">📱 Back to Feed</a>
+      </div>
+
+      <!-- ═══ WALLPAPER CUSTOMIZATION PANEL (MySpace-style!) ═══ -->
+      {% if is_own_profile %}
+      <div class="wp-panel" id="wp-panel">
+        <div class="wp-panel-header" onclick="this.parentElement.classList.toggle('open')">
+          <h3>🎨 Customize Your Wallpaper</h3>
+          <span style="font-size:18px;transition:transform .2s;">▼</span>
+        </div>
+        <div class="wp-panel-body">
+          <form method="post" action="{{ url_for('settings') }}" enctype="multipart/form-data" id="wp-form">
+            <input type="hidden" name="action" value="save" />
+            <input type="hidden" name="_active_tab" value="settings-security" />
+            <input type="hidden" name="_form_type" value="wallpaper" />
+
+            <!-- Type selector -->
+            <div class="wp-section">
+              <h4>Background Type</h4>
+              <div class="wp-grid" id="wp-type-grid">
+                <div class="wp-swatch {% if wp.type == 'none' %}active{% endif %}" data-type="none" style="background:#111;">None</div>
+                <div class="wp-swatch {% if wp.type == 'color' %}active{% endif %}" data-type="color" style="background:linear-gradient(135deg,#ff6a00,#ff4800);">Solid</div>
+                <div class="wp-swatch {% if wp.type == 'gradient' %}active{% endif %}" data-type="gradient" style="background:linear-gradient(135deg,#ff00cc,#3333ff);">Gradient</div>
+                <div class="wp-swatch {% if wp.type == 'pattern' %}active{% endif %}" data-type="pattern" style="background:#1a1a2e;background-image:radial-gradient(rgba(255,255,255,.2) 1px, transparent 1px);background-size:10px 10px;">Pattern</div>
+                <div class="wp-swatch {% if wp.type == 'image' %}active{% endif %}" data-type="image" style="background:linear-gradient(135deg,#333,#111);">📷 Image</div>
+                <div class="wp-swatch {% if wp.type == 'street' %}active{% endif %}" data-type="street" style="background:linear-gradient(135deg,#1a0a00,#000);border:1px solid rgba(255,80,0,.3);">🔥 Street</div>
+              </div>
+              <input type="hidden" name="wallpaper_type" id="wp-type-input" value="{{ wp.type }}" />
+            </div>
+
+            <!-- ═══ STREET / GHETTO PRESETS ═══ -->
+            <div class="wp-section" id="wp-street-section" style="display:{% if wp.type == 'street' %}block{% else %}none{% endif %};">
+              <h4>🔥 Street Presets</h4>
+              <p style="font-size:11px;color:rgba(255,255,255,.4);margin:0 0 10px;">Gritty urban vibes — tap to preview</p>
+              <div class="wp-grid" id="wp-street-grid">
+                <div class="street-swatch" data-street="trap_night" style="background:linear-gradient(135deg,#0a001a,#1a003a,#330066);"><span>Trap Night</span></div>
+                <div class="street-swatch" data-street="hood_classic" style="background:linear-gradient(135deg,#1a1a1a,#2a2015,#0a0a0a);"><span>Hood Classic</span></div>
+                <div class="street-swatch" data-street="graffiti_wall" style="background:linear-gradient(135deg,#8b0000,#ff4500,#1a1a2e);"><span>Graffiti</span></div>
+                <div class="street-swatch" data-street="brick_city" style="background:linear-gradient(135deg,#4a2010,#6b3320,#3a1808);"><span>Brick City</span></div>
+                <div class="street-swatch" data-street="money_stacks" style="background:linear-gradient(135deg,#001a00,#003300,#001100);"><span>Money</span></div>
+                <div class="street-swatch" data-street="smoke_cloud" style="background:linear-gradient(135deg,#1a1a1a,#2a2a3a,#0a0a0a);"><span>Smoke</span></div>
+                <div class="street-swatch" data-street="concrete_jungle" style="background:linear-gradient(135deg,#2a2a2a,#3a3a3a,#1a1a1a);"><span>Concrete</span></div>
+                <div class="street-swatch" data-street="neon_streets" style="background:linear-gradient(135deg,#000,#0a001a);border:1px solid rgba(255,0,255,.3);"><span>Neon</span></div>
+                <div class="street-swatch" data-street="chain_link" style="background:linear-gradient(135deg,#1a1a1e,#2a2a30,#0a0a10);"><span>Chain Link</span></div>
+                <div class="street-swatch" data-street="mixtape_cover" style="background:linear-gradient(135deg,#1a0500,#000,#1a0800);"><span>Mixtape</span></div>
+                <div class="street-swatch" data-street="purple_lean" style="background:linear-gradient(135deg,#1a002a,#2a0040,#0a0015);"><span>Purple Lean</span></div>
+                <div class="street-swatch" data-street="gold_chains" style="background:linear-gradient(135deg,#1a1200,#2a1f00,#0a0800);"><span>Gold Chains</span></div>
+              </div>
+              <!-- ═══ HIP HOP / ARTSY PRESETS ═══ -->
+              <h4 style="margin-top:16px;">🎤 Hip Hop & Artsy</h4>
+              <p style="font-size:11px;color:rgba(255,255,255,.4);margin:0 0 10px;">Urban art, culture, and hip-hop vibes</p>
+              <div class="wp-grid" id="wp-hiphop-grid">
+                <div class="street-swatch" data-street="ski_mask" style="background:linear-gradient(135deg,#0a0a0a,#1a1a1a,#2a2a2a);border:1px solid rgba(255,255,255,.15);"><span>🎭 Ski Mask</span></div>
+                <div class="street-swatch" data-street="boombox" style="background:linear-gradient(135deg,#1a0a00,#2a1500,#3a2010);border:1px solid rgba(255,150,0,.2);"><span>📻 Boombox</span></div>
+                <div class="street-swatch" data-street="turntable" style="background:linear-gradient(135deg,#0a0a15,#1a1a25,#0a0a15);border:1px solid rgba(100,100,255,.2);"><span>🎧 Turntable</span></div>
+                <div class="street-swatch" data-street="crown_royal" style="background:linear-gradient(135deg,#1a0a00,#2a1500,#1a0a00);border:1px solid rgba(255,200,0,.3);"><span>👑 Crown</span></div>
+                <div class="street-swatch" data-street="bandana" style="background:linear-gradient(135deg,#1a0000,#3a0000,#1a0000);border:1px solid rgba(255,0,0,.25);"><span>🔴 Bandana</span></div>
+                <div class="street-swatch" data-street="lowrider" style="background:linear-gradient(135deg,#0a001a,#15002a,#0a001a);border:1px solid rgba(100,0,255,.25);"><span>🚗 Lowrider</span></div>
+                <div class="street-swatch" data-street="mic_drop" style="background:linear-gradient(180deg,#0a0a0a,#1a1020,#2a1535);border:1px solid rgba(255,100,200,.2);"><span>🎤 Mic Drop</span></div>
+                <div class="street-swatch" data-street="spray_can" style="background:linear-gradient(135deg,#0a1a0a,#001a00,#0a2a0a);border:1px solid rgba(0,255,100,.2);"><span>🎨 Spray Can</span></div>
+                <div class="street-swatch" data-street="vinyl_record" style="background:linear-gradient(135deg,#0a0a0a,#151515,#0a0a0a);border:1px solid rgba(255,255,255,.15);"><span>💿 Vinyl</span></div>
+                <div class="street-swatch" data-street="diamond_ice" style="background:linear-gradient(135deg,#0a0a1a,#151530,#0a0a1a);border:1px solid rgba(100,200,255,.3);"><span>💎 Ice</span></div>
+                <div class="street-swatch" data-street="hiphop_collage" style="background:linear-gradient(135deg,#1a0a1a,#2a152a,#1a0a1a);border:1px solid rgba(255,100,255,.2);"><span>🎵 Collage</span></div>
+                <div class="street-swatch" data-street="streetwear" style="background:linear-gradient(135deg,#1a1a1a,#2a2a2a,#1a1a1a);border:1px solid rgba(255,80,0,.25);"><span>👟 Streetwear</span></div>
+              </div>
+              <!-- ═══ THUGGED OUT WALLPAPERS ═══ -->
+              <h4 style="margin-top:16px;">💣 Thugged Out</h4>
+              <p style="font-size:11px;color:rgba(255,255,255,.4);margin:0 0 10px;">Ice cold, ski mask mode, hood art</p>
+              <div class="wp-grid" id="wp-thug-grid">
+                <div class="street-swatch" data-street="skimask_grillz" style="background:linear-gradient(180deg,#0a0a0a,#111,#1a1a1a);border:1px solid rgba(255,215,0,.3);"><span>🎭 Ski Mask & Grillz</span></div>
+                <div class="street-swatch" data-street="boondock_hood" style="background:linear-gradient(180deg,#0d0d0d,#1a0f08,#0a0a0a);border:1px solid rgba(200,120,50,.25);"><span>🧥 Boondock Hood</span></div>
+                <div class="street-swatch" data-street="graffiti_bomb" style="background:linear-gradient(135deg,#1a001a,#0a1a0a,#001a1a,#1a0a00);border:1px solid rgba(255,0,255,.2);"><span>🎨 Graffiti Bomb</span></div>
+                <div class="street-swatch" data-street="gold_grill_drip" style="background:linear-gradient(135deg,#1a1200,#2a1f00,#1a0a00);border:1px solid rgba(255,215,0,.35);"><span>🤑 Gold Grill Drip</span></div>
+                <div class="street-swatch" data-street="hood_angel" style="background:linear-gradient(180deg,#0a0a12,#121225,#0a0a12);border:1px solid rgba(180,180,255,.2);"><span>😇 Hood Angel</span></div>
+                <div class="street-swatch" data-street="trap_mansion" style="background:linear-gradient(135deg,#0a000a,#1a0020,#2a0030);border:1px solid rgba(160,0,255,.25);"><span>🏠 Trap Mansion</span></div>
+              </div>
+              <input type="hidden" name="wallpaper_street_preset" id="wp-street-input" value="" />
+            </div>
+
+            <!-- Colors -->
+            <div class="wp-section" id="wp-colors-section">
+              <h4>Colors</h4>
+              <div class="wp-color-row">
+                <label>Color 1</label>
+                <input type="color" name="wallpaper_color1" id="wp-color1" value="{{ wp.color1 }}" />
+              </div>
+              <div class="wp-color-row">
+                <label>Color 2</label>
+                <input type="color" name="wallpaper_color2" id="wp-color2" value="{{ wp.color2 }}" />
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                <button type="button" class="wp-preset" data-c1="#ff00cc" data-c2="#3333ff" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(135deg,#ff00cc,#3333ff);cursor:pointer;"></button>
+                <button type="button" class="wp-preset" data-c1="#ff6a00" data-c2="#ff0044" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(135deg,#ff6a00,#ff0044);cursor:pointer;"></button>
+                <button type="button" class="wp-preset" data-c1="#00ff88" data-c2="#0066ff" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(135deg,#00ff88,#0066ff);cursor:pointer;"></button>
+                <button type="button" class="wp-preset" data-c1="#ff0066" data-c2="#ffcc00" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(135deg,#ff0066,#ffcc00);cursor:pointer;"></button>
+                <button type="button" class="wp-preset" data-c1="#000000" data-c2="#434343" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(135deg,#000,#434343);cursor:pointer;"></button>
+                <button type="button" class="wp-preset" data-c1="#0a001a" data-c2="#2d0066" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(135deg,#0a001a,#2d0066);cursor:pointer;"></button>
+                <button type="button" class="wp-preset" data-c1="#1a0a00" data-c2="#ff4800" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(135deg,#1a0a00,#ff4800);cursor:pointer;"></button>
+                <button type="button" class="wp-preset" data-c1="#001100" data-c2="#00ff00" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(135deg,#001100,#00ff00);cursor:pointer;"></button>
+              </div>
+            </div>
+
+            <!-- Pattern -->
+            <div class="wp-section" id="wp-pattern-section" style="display:none;">
+              <h4>Pattern Overlay</h4>
+              <div class="wp-grid" id="wp-pattern-grid">
+                <div class="wp-swatch {% if wp.pattern == 'none' %}active{% endif %}" data-pattern="none" style="background:#222;">None</div>
+                <div class="wp-swatch pat-stars {% if wp.pattern == 'stars' %}active{% endif %}" data-pattern="stars" style="background:#111;">Stars</div>
+                <div class="wp-swatch pat-hearts {% if wp.pattern == 'hearts' %}active{% endif %}" data-pattern="hearts" style="background:#1a0011;">Hearts</div>
+                <div class="wp-swatch pat-diamonds {% if wp.pattern == 'diamonds' %}active{% endif %}" data-pattern="diamonds" style="background:#001122;">Diamond</div>
+                <div class="wp-swatch pat-dots {% if wp.pattern == 'dots' %}active{% endif %}" data-pattern="dots" style="background:#111;">Dots</div>
+                <div class="wp-swatch pat-grid {% if wp.pattern == 'grid' %}active{% endif %}" data-pattern="grid" style="background:#111;">Grid</div>
+                <div class="wp-swatch pat-tribal {% if wp.pattern == 'tribal' %}active{% endif %}" data-pattern="tribal" style="background:#1a0a00;">Tribal</div>
+                <div class="wp-swatch {% if wp.pattern == 'flames' %}active{% endif %}" data-pattern="flames" style="background:#110500;">🔥 Flames</div>
+                <div class="wp-swatch {% if wp.pattern == 'skulls' %}active{% endif %}" data-pattern="skulls" style="background:#0a0a0a;">💀 Skulls</div>
+              </div>
+              <input type="hidden" name="wallpaper_pattern" id="wp-pattern-input" value="{{ wp.pattern }}" />
+            </div>
+
+            <!-- Image upload -->
+            <div class="wp-section" id="wp-image-section" style="display:none;">
+              <h4>Background Image</h4>
+              <input type="file" name="wallpaper_image" accept="image/*" style="color:#ffd8b2;" />
+            </div>
+
+            <!-- Animation Effects -->
+            <div class="wp-section">
+              <h4>Animation Effects</h4>
+              <div class="wp-grid" id="wp-anim-grid">
+                <div class="wp-swatch {% if wp.animation == 'none' %}active{% endif %}" data-anim="none" style="background:#111;">None</div>
+                <div class="wp-swatch {% if wp.animation == 'glitter' %}active{% endif %}" data-anim="glitter" style="background:linear-gradient(135deg,#2a1a3a,#1a0a2a);">✨ Glitter</div>
+                <div class="wp-swatch {% if wp.animation == 'snow' %}active{% endif %}" data-anim="snow" style="background:linear-gradient(180deg,#112,#224);">❄️ Snow</div>
+                <div class="wp-swatch {% if wp.animation == 'fireflies' %}active{% endif %}" data-anim="fireflies" style="background:#0a1a0a;">🌟 Firefly</div>
+                <div class="wp-swatch {% if wp.animation == 'matrix' %}active{% endif %}" data-anim="matrix" style="background:#001100;">💻 Matrix</div>
+                <div class="wp-swatch {% if wp.animation == 'rain' %}active{% endif %}" data-anim="rain" style="background:#0a0a1a;">🌧️ Rain</div>
+                <div class="wp-swatch {% if wp.animation == 'stars' %}active{% endif %}" data-anim="stars" style="background:#050510;">⭐ Stars</div>
+                <div class="wp-swatch {% if wp.animation == 'fire' %}active{% endif %}" data-anim="fire" style="background:#1a0500;">🔥 Fire</div>
+                <div class="wp-swatch {% if wp.animation == 'pulse' %}active{% endif %}" data-anim="pulse" style="background:linear-gradient(135deg,#1a001a,#001a1a);">💜 Pulse</div>
+              </div>
+              <input type="hidden" name="wallpaper_animation" id="wp-anim-input" value="{{ wp.animation }}" />
+            </div>
+
+            <!-- ═══ MOTION EFFECTS (music-reactive) ═══ -->
+            <div class="wp-section">
+              <h4>🕺 Motion Effects</h4>
+              <p style="font-size:11px;color:rgba(255,255,255,.4);margin:0 0 10px;">Wallpaper moves and reacts to your music</p>
+              <div class="wp-grid" id="wp-motion-grid">
+                <div class="motion-swatch {% if wp.motion == 'none' %}active{% endif %}" data-motion="none" style="background:#111;"><span class="motion-icon">⛔</span>None</div>
+                <div class="motion-swatch {% if wp.motion == 'zoom_pulse' %}active{% endif %}" data-motion="zoom_pulse" style="background:linear-gradient(135deg,#1a002a,#2a0040);"><span class="motion-icon">🔍</span>Zoom</div>
+                <div class="motion-swatch {% if wp.motion == 'shake' %}active{% endif %}" data-motion="shake" style="background:linear-gradient(135deg,#2a0a00,#1a0500);"><span class="motion-icon">💥</span>Shake</div>
+                <div class="motion-swatch {% if wp.motion == 'bounce' %}active{% endif %}" data-motion="bounce" style="background:linear-gradient(135deg,#001a1a,#002a2a);"><span class="motion-icon">⬆️</span>Bounce</div>
+                <div class="motion-swatch {% if wp.motion == 'dance' %}active{% endif %}" data-motion="dance" style="background:linear-gradient(135deg,#1a0030,#300050);"><span class="motion-icon">🕺</span>Dance</div>
+                <div class="motion-swatch {% if wp.motion == 'sway' %}active{% endif %}" data-motion="sway" style="background:linear-gradient(135deg,#0a1a0a,#001100);"><span class="motion-icon">🌊</span>Sway</div>
+                <div class="motion-swatch {% if wp.motion == 'breathe' %}active{% endif %}" data-motion="breathe" style="background:linear-gradient(135deg,#0a0a1a,#0a0a2a);"><span class="motion-icon">💨</span>Breathe</div>
+                <div class="motion-swatch {% if wp.motion == 'earthquake' %}active{% endif %}" data-motion="earthquake" style="background:linear-gradient(135deg,#1a0a00,#2a1500);"><span class="motion-icon">🌋</span>Quake</div>
+              </div>
+              <input type="hidden" name="wallpaper_motion" id="wp-motion-input" value="{{ wp.motion }}" />
+            </div>
+
+            <!-- ═══ AI WALLPAPER GENERATOR ═══ -->
+            <div class="wp-section">
+              <h4>🤖 AI Wallpaper Creator</h4>
+              <p style="font-size:11px;color:rgba(255,255,255,.4);margin:0 0 10px;">Describe your vibe and we'll generate a custom wallpaper</p>
+              <div class="ai-gen-panel">
+                <div class="ai-style-chips" id="ai-style-chips">
+                  <span class="ai-chip active" data-style="street">🔥 Street</span>
+                  <span class="ai-chip" data-style="hiphop">🎤 Hip Hop</span>
+                  <span class="ai-chip" data-style="trapart">🎭 Trap Art</span>
+                  <span class="ai-chip" data-style="graffiti">🎨 Graffiti</span>
+                  <span class="ai-chip" data-style="skimask">🥷 Ski Mask</span>
+                  <span class="ai-chip" data-style="lowrider">🚗 Lowrider</span>
+                  <span class="ai-chip" data-style="neon">💜 Neon</span>
+                  <span class="ai-chip" data-style="cosmic">🌌 Cosmic</span>
+                  <span class="ai-chip" data-style="dark">🖤 Dark</span>
+                  <span class="ai-chip" data-style="abstract">🎭 Abstract</span>
+                  <span class="ai-chip" data-style="fire">🔥 Fire</span>
+                  <span class="ai-chip" data-style="gold">👑 Gold</span>
+                  <span class="ai-chip" data-style="vinyl">💿 Vinyl</span>
+                  <span class="ai-chip" data-style="boombox">📻 Boombox</span>
+                  <span class="ai-chip" data-style="nature">🌿 Nature</span>
+                  <span class="ai-chip" data-style="ocean">🌊 Ocean</span>
+                </div>
+                <div class="ai-gen-row">
+                  <input type="text" class="ai-gen-input" id="ai-prompt" placeholder='Try: "ski mask balaclava with gold grillz" or "lowrider at night" or "hip hop turntable vibes"' />
+                  <button type="button" class="ai-gen-btn" id="ai-generate-btn">🤖 Generate</button>
+                </div>
+                <div class="ai-preview-wrap" id="ai-preview-wrap">
+                  <canvas id="ai-preview-canvas" width="960" height="540"></canvas>
+                  <button type="button" class="ai-use-btn" id="ai-use-btn">✅ Use This Wallpaper</button>
+                </div>
+              </div>
+              <input type="hidden" name="wallpaper_image_data" id="wp-ai-image-data" value="" />
+            </div>
+
+            <!-- Glitter & Music Sync toggles -->
+            <div class="wp-section">
+              <h4>Extra Effects</h4>
+              <div class="wp-toggle-row">
+                <div>
+                  <div class="wp-toggle-label">✨ Glitter Overlay</div>
+                  <div class="wp-toggle-desc">Add sparkling glitter particles everywhere</div>
+                </div>
+                <input type="checkbox" class="mini-switch" name="wallpaper_glitter" id="wp-glitter" {% if wp.glitter %}checked{% endif %} />
+              </div>
+              <div class="wp-toggle-row">
+                <div>
+                  <div class="wp-toggle-label">🎵 Music Sync</div>
+                  <div class="wp-toggle-desc">Wallpaper pulses and reacts to your profile music</div>
+                </div>
+                <input type="checkbox" class="mini-switch" name="wallpaper_music_sync" id="wp-music-sync" {% if wp.music_sync %}checked{% endif %} />
+              </div>
+            </div>
+
+            <button type="submit" class="action-btn primary" style="width:100%;text-align:center;margin-top:10px;">💾 Save Wallpaper</button>
+          </form>
+        </div>
+      </div>
+
+      {% endif %}
+
+      <!-- Quick links -->
+      <div class="profile-links">
+        <a class="action-btn" href="{{ url_for('feed.feed_page') }}">📱 Feed</a>
+        <a class="action-btn" href="{{ url_for('search') }}">🔍 Search</a>
+        <a class="action-btn" href="{{ url_for('messenger') }}">💬 Messenger</a>
+        <a class="action-btn" href="{{ url_for('settings') }}">⚙️ Settings</a>
+      </div>
+
+      <!-- Retro 2011 Create Section -->
+      <div class="retro-create-section">
+        <div class="retro-create-box">
+          <h3>✏️ Create</h3>
+          <div class="retro-create-grid">
+            <a class="retro-create-btn primary-retro" href="{{ url_for('create_reel') }}">� Vibe Snap</a>
+            <a class="retro-create-btn" href="{{ url_for('create_post') }}">📝 Post</a>
+            <a class="retro-create-btn" href="{{ url_for('create_story') }}">📖 Story</a>
+            <a class="retro-create-btn" href="{{ url_for('create_live') }}">📡 Live</a>
+          </div>
+        </div>
+      </div>
+
+      {% if is_own_profile %}
+      <!-- 2011 mode toggle -->
+      <div class="profile-toggle">
+        <div>
+          <div style="font-weight:800;">2011 Facebook Mode</div>
+          <div class="profile-meta">Switch to the old basic social network look.</div>
+        </div>
+        <label class="retro-switch" for="profile-retro-toggle" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#ffd8b2;">
+          <input id="profile-retro-toggle" type="checkbox" />
+        </label>
+      </div>
+      {% endif %}
+
+      {% if is_own_profile %}
+      <!-- Edit profile form -->
+      <div class="profile-edit-section">
+        <h3 style="margin:0 0 10px;font-size:16px;">✏️ Quick Edit Profile</h3>
+        <form method="post" action="{{ url_for('settings') }}" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="save" />
+          <input type="hidden" name="_form_type" value="profile" />
+          <div class="profile-field">
+            <label for="display_name">Display Name</label>
+            <input id="display_name" name="display_name" type="text" value="{{ user.display_name or user.username }}" />
+          </div>
+          <div class="profile-field">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio">{{ user.bio }}</textarea>
+          </div>
+          <div class="profile-field">
+            <label for="profile_avatar">Profile Picture</label>
+            <input id="profile_avatar" name="profile_avatar" type="file" accept="image/*" />
+            <input type="hidden" id="avatar_crop_data" name="avatar_crop_data" />
+          </div>
+          <div class="profile-field">
+            <label for="profile_background">Cover Photo</label>
+            <input id="profile_background" name="profile_background" type="file" accept="image/*" />
+            <input type="hidden" id="cover_crop_data" name="cover_crop_data" />
+          </div>
+          <div style="margin-top:14px;">
+            <button class="action-btn primary" type="submit" style="width:100%;text-align:center;">💾 Save Profile</button>
+          </div>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- ── VybeFlow Dark Toast system ── -->
+<style>
+.vf-toast-container{position:fixed;top:20px;right:20px;z-index:999999;display:flex;flex-direction:column;gap:10px;pointer-events:none;}
+.vf-toast{pointer-events:auto;min-width:260px;max-width:380px;padding:14px 20px;border-radius:14px;background:rgba(22,14,40,.95);border:1px solid rgba(145,85,255,.25);color:#fff;font-size:14px;font-family:inherit;box-shadow:0 8px 32px rgba(0,0,0,.45);backdrop-filter:blur(12px);animation:vfToastIn .3s ease-out;line-height:1.45;word-break:break-word;}
+.vf-toast.vf-toast-error{border-color:rgba(255,80,80,.35);background:rgba(40,14,14,.95);}
+.vf-toast.vf-toast-success{border-color:rgba(100,255,180,.3);background:rgba(14,30,20,.95);}
+.vf-toast.vf-toast-out{animation:vfToastOut .25s ease-in forwards;}
+@keyframes vfToastIn{from{opacity:0;transform:translateX(40px) scale(.95);}to{opacity:1;transform:translateX(0) scale(1);}}
+@keyframes vfToastOut{from{opacity:1;transform:translateX(0) scale(1);}to{opacity:0;transform:translateX(40px) scale(.9);}}
+</style>
+<script>
+(function(){
+  var tc=document.createElement('div');tc.className='vf-toast-container';document.body.appendChild(tc);
+  window.vfToast=function(msg,type){
+    var t=document.createElement('div');
+    t.className='vf-toast'+(type==='error'?' vf-toast-error':type==='success'?' vf-toast-success':'');
+    t.textContent=msg;tc.appendChild(t);
+    setTimeout(function(){t.classList.add('vf-toast-out');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},300);},3500);
+  };
+})();
+</script>
+
+<script>
+(function(){
+  /* ═══════════════════════════════════════
+     1. IMAGE CROP EDITOR (zoom, pan, preview)
+     Shared by avatar + cover photo
+     ═══════════════════════════════════════ */
+  var modal = document.getElementById('crop-modal');
+  var viewport = document.getElementById('crop-viewport');
+  var cropImg = document.getElementById('crop-img');
+  var cropZoom = document.getElementById('crop-zoom');
+  var cropPanX = document.getElementById('crop-pan-x');
+  var cropPanY = document.getElementById('crop-pan-y');
+  var cropTitle = document.getElementById('crop-title');
+  var cropCancel = document.getElementById('crop-cancel');
+  var cropSave = document.getElementById('crop-save');
+  var currentCropMode = 'avatar';
+  var cropResolve = null;
+
+  function updateCropTransform(){
+    if(!cropImg.naturalWidth) return;
+    var z = parseFloat(cropZoom.value)||1;
+    var vw = viewport.offsetWidth, vh = viewport.offsetHeight;
+    var baseScale = Math.max(vw/cropImg.naturalWidth, vh/cropImg.naturalHeight);
+    var scale = baseScale * z;
+    var sw = cropImg.naturalWidth*scale, sh = cropImg.naturalHeight*scale;
+    var maxX = Math.max(0, sw-vw), maxY = Math.max(0, sh-vh);
+    var px = -(maxX * (parseFloat(cropPanX.value)/100));
+    var py = -(maxY * (parseFloat(cropPanY.value)/100));
+    cropImg.style.width = sw+'px'; cropImg.style.height = sh+'px';
+    cropImg.style.left = px+'px'; cropImg.style.top = py+'px';
+  }
+
+  [cropZoom, cropPanX, cropPanY].forEach(function(el){
+    if(el) el.addEventListener('input', updateCropTransform);
+  });
+
+  /* Touch / mouse drag on viewport */
+  var dragging=false, dragStartX, dragStartY, dragStartPanX, dragStartPanY;
+  if(viewport){
+    viewport.addEventListener('pointerdown',function(e){
+      dragging=true; dragStartX=e.clientX; dragStartY=e.clientY;
+      dragStartPanX=parseFloat(cropPanX.value); dragStartPanY=parseFloat(cropPanY.value);
+      viewport.setPointerCapture(e.pointerId);
+    });
+    viewport.addEventListener('pointermove',function(e){
+      if(!dragging) return;
+      var dx = e.clientX - dragStartX, dy = e.clientY - dragStartY;
+      var sensitivity = 0.2;
+      cropPanX.value = Math.max(0,Math.min(100, dragStartPanX - dx*sensitivity));
+      cropPanY.value = Math.max(0,Math.min(100, dragStartPanY - dy*sensitivity));
+      updateCropTransform();
+    });
+    viewport.addEventListener('pointerup',function(){ dragging=false; });
+    viewport.addEventListener('pointercancel',function(){ dragging=false; });
+    /* Scroll to zoom */
+    viewport.addEventListener('wheel',function(e){
+      e.preventDefault();
+      var cur = parseFloat(cropZoom.value)||1;
+      cropZoom.value = Math.max(1, Math.min(4, cur - e.deltaY*0.002));
+      updateCropTransform();
+    },{passive:false});
+  }
+
+  function openCropModal(src, mode){
+    currentCropMode = mode;
+    cropTitle.textContent = mode==='avatar' ? 'Crop Profile Picture' : 'Crop Cover Photo';
+    viewport.classList.toggle('cover-mode', mode==='cover');
+    cropZoom.value=1; cropPanX.value=50; cropPanY.value=50;
+    cropImg.onload = function(){ updateCropTransform(); };
+    cropImg.src = src;
+    modal.classList.add('open');
+    return new Promise(function(resolve){ cropResolve=resolve; });
+  }
+
+  if(cropCancel) cropCancel.addEventListener('click',function(){
+    modal.classList.remove('open'); if(cropResolve) cropResolve(null);
+  });
+
+  if(cropSave) cropSave.addEventListener('click',function(){
+    var z = parseFloat(cropZoom.value)||1;
+    var vw = viewport.offsetWidth, vh = viewport.offsetHeight;
+    var baseScale = Math.max(vw/cropImg.naturalWidth, vh/cropImg.naturalHeight);
+    var scale = baseScale * z;
+    var sw = cropImg.naturalWidth*scale, sh = cropImg.naturalHeight*scale;
+    var maxX = Math.max(0, sw-vw), maxY = Math.max(0, sh-vh);
+    var px = maxX * (parseFloat(cropPanX.value)/100) / scale;
+    var py = maxY * (parseFloat(cropPanY.value)/100) / scale;
+    var outW = currentCropMode==='avatar' ? 400 : 1200;
+    var outH = currentCropMode==='avatar' ? 400 : 450;
+    var canvas = document.createElement('canvas');
+    canvas.width=outW; canvas.height=outH;
+    var ctx = canvas.getContext('2d');
+    var srcW = vw/scale, srcH = vh/scale;
+    ctx.drawImage(cropImg, px, py, srcW, srcH, 0, 0, outW, outH);
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    modal.classList.remove('open');
+    if(cropResolve) cropResolve(dataUrl);
+  });
+
+  /* ═══ Avatar edit button ═══ */
+  var avatarEditBtn = document.getElementById('avatar-edit-btn');
+  var avatarImg = document.getElementById('avatar-img');
+  var avatarCropInput = document.getElementById('avatar_crop_data');
+  var avatarFileInput = document.getElementById('profile_avatar');
+
+  if(avatarEditBtn){
+    avatarEditBtn.addEventListener('click',function(){
+      var src = avatarImg.src;
+      if(src && !src.endsWith('VFlogo_clean.png')){
+        openCropModal(src,'avatar').then(function(data){
+          if(data && avatarCropInput){ avatarCropInput.value=data; avatarImg.src=data; }
+        });
+      } else {
+        if(avatarFileInput) avatarFileInput.click();
+      }
+    });
+  }
+
+  if(avatarFileInput){
+    avatarFileInput.addEventListener('change',function(){
+      var file = this.files && this.files[0];
+      if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e){
+        openCropModal(e.target.result,'avatar').then(function(data){
+          if(data && avatarCropInput){ avatarCropInput.value=data; avatarImg.src=data; }
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ═══ Cover photo edit button ═══ */
+  var coverEditBtn = document.getElementById('cover-edit-btn');
+  var coverImg = document.getElementById('cover-img');
+  var coverCropInput = document.getElementById('cover_crop_data');
+  var coverFileInput = document.getElementById('profile_background');
+
+  if(coverEditBtn){
+    coverEditBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var src = coverImg.src;
+      if(src && coverImg.style.display !== 'none'){
+        openCropModal(src,'cover').then(function(data){
+          if(data && coverCropInput){ coverCropInput.value=data; coverImg.src=data; coverImg.style.display=''; }
+        });
+      } else {
+        if(coverFileInput) coverFileInput.click();
+      }
+    });
+  }
+
+  var coverWrap = document.getElementById('cover-photo-wrap');
+  if(coverWrap){
+    coverWrap.addEventListener('click', function(){
+      if(coverImg.style.display==='none' || !coverImg.src){
+        if(coverFileInput) coverFileInput.click();
+      }
+    });
+  }
+
+  if(coverFileInput){
+    coverFileInput.addEventListener('change',function(){
+      var file = this.files && this.files[0];
+      if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e){
+        openCropModal(e.target.result,'cover').then(function(data){
+          if(data && coverCropInput){
+            coverCropInput.value=data; coverImg.src=data; coverImg.style.display='';
+            var ph = document.getElementById('cover-placeholder');
+            if(ph) ph.style.display='none';
+          }
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ═══════════════════════════════════════
+     2. WALLPAPER SYSTEM
+     ═══════════════════════════════════════ */
+  var wpConfig = {
+    type: '{{ wp.type }}',
+    color1: '{{ wp.color1 }}',
+    color2: '{{ wp.color2 }}',
+    pattern: '{{ wp.pattern }}',
+    animation: '{{ wp.animation }}',
+    motion: '{{ wp.motion }}',
+    glitter: {{ 'true' if wp.glitter else 'false' }},
+    musicSync: {{ 'true' if wp.music_sync else 'false' }},
+    imageUrl: '{{ wp.image_url }}',
+    streetPreset: ''
+  };
+
+  var wpCanvas = document.getElementById('wallpaper-canvas');
+  var wpCtx = wpCanvas ? wpCanvas.getContext('2d') : null;
+  var wpBgLayer = document.getElementById('wp-bg-layer');
+  var wpParticles = [];
+  var wpRaf = null;
+  var musicAnalyser = null, musicDataArray = null, musicLevel = 0;
+
+  function resizeWpCanvas(){
+    if(!wpCanvas) return;
+    wpCanvas.width = window.innerWidth; wpCanvas.height = window.innerHeight;
+  }
+  resizeWpCanvas();
+  window.addEventListener('resize', resizeWpCanvas);
+
+  function applyWallpaperBackground(){
+    if(!wpBgLayer) return;
+    if(wpConfig.type==='color'){
+      wpBgLayer.style.background = wpConfig.color1;
+    } else if(wpConfig.type==='gradient'){
+      wpBgLayer.style.background = 'linear-gradient(135deg,'+wpConfig.color1+','+wpConfig.color2+')';
+    } else if(wpConfig.type==='pattern'){
+      wpBgLayer.style.background = 'linear-gradient(135deg,'+wpConfig.color1+','+wpConfig.color2+')';
+    } else if(wpConfig.type==='image' && wpConfig.imageUrl){
+      wpBgLayer.style.background = 'url('+wpConfig.imageUrl+') center/cover no-repeat';
+    } else if(wpConfig.type==='street'){
+      applyStreetPreset(wpConfig.streetPreset || 'trap_night');
+    } else {
+      wpBgLayer.style.background = '';
+    }
+  }
+
+  function initWpParticles(){
+    wpParticles = [];
+    var count = 80;
+    var anim = wpConfig.animation;
+    if(anim==='none' && !wpConfig.glitter) return;
+    if(wpConfig.glitter) count += 60;
+    for(var i=0;i<count;i++){
+      wpParticles.push({
+        x: Math.random()*window.innerWidth,
+        y: Math.random()*window.innerHeight,
+        vx: (Math.random()-0.5)*(anim==='snow'?1:anim==='rain'?0.3:anim==='matrix'?0:1.5),
+        vy: anim==='snow'?0.5+Math.random():anim==='rain'?4+Math.random()*6:anim==='matrix'?2+Math.random()*4:anim==='fire'?-(0.5+Math.random()*2):(Math.random()-0.5)*1.5,
+        r: anim==='glitter'||i>=80 ? 1+Math.random()*2.5 : 1+Math.random()*2,
+        life: Math.random()*200+100,
+        maxLife: 200+Math.random()*100,
+        hue: Math.random()*360,
+        char: anim==='matrix' ? String.fromCharCode(0x30A0+Math.floor(Math.random()*96)) : '',
+        alpha: 0.3+Math.random()*0.7,
+        isGlitter: i>=80 || (wpConfig.glitter && wpConfig.animation==='none'),
+        twinkle: Math.random()*Math.PI*2
+      });
+    }
+  }
+
+  function renderWallpaper(){
+    wpRaf = requestAnimationFrame(renderWallpaper);
+    if(!wpCtx||!wpCanvas) return;
+    var W=wpCanvas.width, H=wpCanvas.height;
+    wpCtx.clearRect(0,0,W,H);
+    var anim = wpConfig.animation;
+
+    /* ═══ Street texture overlay ═══ */
+    if(wpConfig.type==='street' && wpConfig._streetTexture){
+      wpCtx.drawImage(wpConfig._streetTexture, 0, 0, W, H);
+    }
+
+    /* ═══ Motion effects ═══ */
+    if(wpConfig.motion!=='none') applyMotionEffect();
+
+    /* Pattern overlay */
+    if(wpConfig.type==='pattern' && wpConfig.pattern!=='none'){
+      wpCtx.save();
+      wpCtx.globalAlpha=0.12;
+      var pat = wpConfig.pattern;
+      if(pat==='dots'){
+        for(var dy=0;dy<H;dy+=20)for(var dx=0;dx<W;dx+=20){
+          wpCtx.fillStyle='#fff'; wpCtx.beginPath(); wpCtx.arc(dx,dy,1.5,0,Math.PI*2); wpCtx.fill();
+        }
+      } else if(pat==='grid'){
+        wpCtx.strokeStyle='rgba(255,255,255,.15)'; wpCtx.lineWidth=0.5;
+        for(var gy=0;gy<H;gy+=30){wpCtx.beginPath();wpCtx.moveTo(0,gy);wpCtx.lineTo(W,gy);wpCtx.stroke();}
+        for(var gx=0;gx<W;gx+=30){wpCtx.beginPath();wpCtx.moveTo(gx,0);wpCtx.lineTo(gx,H);wpCtx.stroke();}
+      } else if(pat==='stars'){
+        for(var si=0;si<60;si++){
+          var sx=((si*137)%W), sy=((si*97)%H);
+          wpCtx.fillStyle='#fff'; wpCtx.globalAlpha=0.1+Math.sin(Date.now()*0.001+si)*0.08;
+          wpCtx.beginPath(); wpCtx.arc(sx,sy,1+si%3,0,Math.PI*2); wpCtx.fill();
+        }
+      } else if(pat==='hearts'){
+        wpCtx.font='24px sans-serif'; wpCtx.globalAlpha=0.08;
+        for(var hi=0;hi<30;hi++){wpCtx.fillText('\u2665',((hi*143)%W),((hi*117)%H));}
+      } else if(pat==='diamonds'){
+        wpCtx.font='20px sans-serif'; wpCtx.globalAlpha=0.08;
+        for(var di=0;di<30;di++){wpCtx.fillText('\u25C6',((di*157)%W),((di*103)%H));}
+      } else if(pat==='skulls'){
+        wpCtx.font='28px sans-serif'; wpCtx.globalAlpha=0.06;
+        for(var ki=0;ki<20;ki++){wpCtx.fillText('\uD83D\uDC80',((ki*163)%W),((ki*127)%H));}
+      } else if(pat==='flames'){
+        wpCtx.font='28px sans-serif'; wpCtx.globalAlpha=0.06;
+        for(var fi=0;fi<20;fi++){wpCtx.fillText('\uD83D\uDD25',((fi*151)%W),((fi*113)%H));}
+      } else if(pat==='tribal'){
+        wpCtx.font='22px sans-serif'; wpCtx.globalAlpha=0.06;
+        for(var ti=0;ti<25;ti++){wpCtx.fillText('\u16DF\u16D2',((ti*139)%W),((ti*109)%H));}
+      }
+      wpCtx.restore();
+    }
+
+    /* Music sync pulse */
+    if(wpConfig.musicSync && musicLevel>0){
+      wpCtx.save();
+      var pulse = musicLevel/255;
+      wpCtx.fillStyle='rgba(255,106,0,'+(pulse*0.15)+')';
+      wpCtx.fillRect(0,0,W,H);
+      var edgeGrad = wpCtx.createRadialGradient(W/2,H/2,W*0.2,W/2,H/2,W*0.7);
+      edgeGrad.addColorStop(0,'transparent');
+      edgeGrad.addColorStop(1,'rgba(255,106,0,'+(pulse*0.2)+')');
+      wpCtx.fillStyle=edgeGrad; wpCtx.fillRect(0,0,W,H);
+      wpCtx.restore();
+    }
+
+    /* Particles */
+    if(wpParticles.length===0) return;
+    wpParticles.forEach(function(p){
+      p.x += p.vx + (wpConfig.musicSync ? musicLevel*0.01*(Math.random()-0.5) : 0);
+      p.y += p.vy;
+      p.life--;
+      p.twinkle+=0.05;
+
+      if(p.y<-10) p.y=H+10;
+      if(p.y>H+10) p.y=-10;
+      if(p.x<-10) p.x=W+10;
+      if(p.x>W+10) p.x=-10;
+      if(p.life<=0){ p.life=p.maxLife; p.x=Math.random()*W; p.y=anim==='fire'?H:anim==='rain'||anim==='snow'?-10:Math.random()*H; }
+
+      wpCtx.save();
+      var a = p.alpha * (p.isGlitter ? (0.3+Math.abs(Math.sin(p.twinkle))*0.7) : 1);
+      wpCtx.globalAlpha = a;
+
+      if(anim==='matrix' && !p.isGlitter){
+        wpCtx.fillStyle='#00ff00'; wpCtx.font='14px monospace';
+        wpCtx.fillText(p.char, p.x, p.y);
+        if(Math.random()<0.01) p.char=String.fromCharCode(0x30A0+Math.floor(Math.random()*96));
+      } else if(anim==='fire' && !p.isGlitter){
+        var firePct = 1-((H-p.y)/H);
+        wpCtx.fillStyle='hsl('+(10+firePct*30)+',100%,'+(40+firePct*30)+'%)';
+        wpCtx.beginPath(); wpCtx.arc(p.x,p.y,p.r*(1+firePct),0,Math.PI*2); wpCtx.fill();
+      } else if(anim==='pulse' && !p.isGlitter){
+        var pulseSz = p.r + Math.sin(Date.now()*0.003+p.hue)*2;
+        wpCtx.fillStyle='hsl('+p.hue+',80%,60%)';
+        wpCtx.beginPath(); wpCtx.arc(p.x,p.y,Math.max(0.5,pulseSz),0,Math.PI*2); wpCtx.fill();
+      } else if(p.isGlitter){
+        var twinkleAlpha = Math.abs(Math.sin(p.twinkle));
+        wpCtx.globalAlpha = twinkleAlpha * 0.9;
+        wpCtx.fillStyle = 'hsl('+(p.hue+Date.now()*0.02)%360+',90%,75%)';
+        var gr = p.r * (1 + twinkleAlpha*0.5) + (wpConfig.musicSync?musicLevel*0.01:0);
+        wpCtx.beginPath();
+        for(var s=0;s<4;s++){
+          var sa=s*Math.PI/2+p.twinkle*0.5;
+          wpCtx.moveTo(p.x,p.y);
+          wpCtx.lineTo(p.x+Math.cos(sa)*gr*2,p.y+Math.sin(sa)*gr*2);
+        }
+        wpCtx.lineWidth=1; wpCtx.strokeStyle=wpCtx.fillStyle; wpCtx.stroke();
+        wpCtx.beginPath(); wpCtx.arc(p.x,p.y,gr*0.5,0,Math.PI*2); wpCtx.fill();
+      } else {
+        if(anim==='rain'){
+          wpCtx.strokeStyle='rgba(150,180,255,.4)'; wpCtx.lineWidth=1;
+          wpCtx.beginPath(); wpCtx.moveTo(p.x,p.y); wpCtx.lineTo(p.x+p.vx*2,p.y+p.vy*2); wpCtx.stroke();
+        } else if(anim==='fireflies'){
+          var glow = wpCtx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*4);
+          glow.addColorStop(0,'rgba(255,255,100,.6)'); glow.addColorStop(1,'transparent');
+          wpCtx.fillStyle=glow; wpCtx.fillRect(p.x-p.r*4,p.y-p.r*4,p.r*8,p.r*8);
+          wpCtx.fillStyle='#ffff66'; wpCtx.beginPath(); wpCtx.arc(p.x,p.y,p.r*0.5,0,Math.PI*2); wpCtx.fill();
+          p.vx += (Math.random()-0.5)*0.3; p.vy += (Math.random()-0.5)*0.3;
+          p.vx *= 0.98; p.vy *= 0.98;
+        } else if(anim==='stars'){
+          wpCtx.fillStyle='rgba(255,255,255,'+(0.2+Math.sin(p.twinkle)*0.3)+')';
+          wpCtx.beginPath(); wpCtx.arc(p.x,p.y,p.r,0,Math.PI*2); wpCtx.fill();
+        } else {
+          wpCtx.fillStyle='rgba(255,255,255,.6)';
+          wpCtx.beginPath(); wpCtx.arc(p.x,p.y,p.r,0,Math.PI*2); wpCtx.fill();
+        }
+      }
+      wpCtx.restore();
+    });
+  }
+
+  applyWallpaperBackground();
+  initWpParticles();
+  if(wpConfig.animation!=='none' || wpConfig.glitter || wpConfig.motion!=='none') renderWallpaper();
+  else if(wpConfig.type==='pattern' && wpConfig.pattern!=='none'){ renderWallpaper(); }
+  else if(wpConfig.type==='street'){ renderWallpaper(); }
+
+  /* ═══ Wallpaper panel interactivity ═══ */
+  document.querySelectorAll('#wp-type-grid .wp-swatch').forEach(function(s){
+    s.addEventListener('click',function(){
+      document.querySelectorAll('#wp-type-grid .wp-swatch').forEach(function(x){x.classList.remove('active');});
+      s.classList.add('active');
+      var t = s.dataset.type;
+      document.getElementById('wp-type-input').value = t;
+      wpConfig.type = t;
+      document.getElementById('wp-pattern-section').style.display = t==='pattern'?'':'none';
+      document.getElementById('wp-image-section').style.display = t==='image'?'':'none';
+      document.getElementById('wp-colors-section').style.display = (t==='none'||t==='image'||t==='street')?'none':'';
+      document.getElementById('wp-street-section').style.display = t==='street'?'':'none';
+      applyWallpaperBackground();
+    });
+  });
+  (function(){
+    var t=wpConfig.type;
+    document.getElementById('wp-pattern-section').style.display=t==='pattern'?'':'none';
+    document.getElementById('wp-image-section').style.display=t==='image'?'':'none';
+    document.getElementById('wp-colors-section').style.display=(t==='none'||t==='image'||t==='street')?'none':'';
+    document.getElementById('wp-street-section').style.display=t==='street'?'':'none';
+  })();
+
+  document.querySelectorAll('#wp-pattern-grid .wp-swatch').forEach(function(s){
+    s.addEventListener('click',function(){
+      document.querySelectorAll('#wp-pattern-grid .wp-swatch').forEach(function(x){x.classList.remove('active');});
+      s.classList.add('active');
+      document.getElementById('wp-pattern-input').value = s.dataset.pattern;
+      wpConfig.pattern = s.dataset.pattern;
+      applyWallpaperBackground(); initWpParticles();
+      if(!wpRaf) renderWallpaper();
+    });
+  });
+
+  document.querySelectorAll('#wp-anim-grid .wp-swatch').forEach(function(s){
+    s.addEventListener('click',function(){
+      document.querySelectorAll('#wp-anim-grid .wp-swatch').forEach(function(x){x.classList.remove('active');});
+      s.classList.add('active');
+      document.getElementById('wp-anim-input').value = s.dataset.anim;
+      wpConfig.animation = s.dataset.anim;
+      initWpParticles();
+      if(wpConfig.animation!=='none'||wpConfig.glitter){ if(!wpRaf) renderWallpaper(); }
+    });
+  });
+
+  document.getElementById('wp-color1').addEventListener('input',function(){ wpConfig.color1=this.value; applyWallpaperBackground(); });
+  document.getElementById('wp-color2').addEventListener('input',function(){ wpConfig.color2=this.value; applyWallpaperBackground(); });
+
+  document.querySelectorAll('.wp-preset').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      document.getElementById('wp-color1').value=btn.dataset.c1; wpConfig.color1=btn.dataset.c1;
+      document.getElementById('wp-color2').value=btn.dataset.c2; wpConfig.color2=btn.dataset.c2;
+      applyWallpaperBackground();
+    });
+  });
+
+  document.getElementById('wp-glitter').addEventListener('change',function(){
+    wpConfig.glitter=this.checked; initWpParticles();
+    if(wpConfig.animation!=='none'||wpConfig.glitter){ if(!wpRaf) renderWallpaper(); }
+  });
+
+  document.getElementById('wp-music-sync').addEventListener('change',function(){
+    wpConfig.musicSync=this.checked;
+  });
+
+  /* ═══ Street + Hip-Hop Preset Grid Interactivity ═══ */
+  function bindStreetSwatches(selector){
+    document.querySelectorAll(selector+' .street-swatch').forEach(function(s){
+      s.addEventListener('click',function(){
+        /* Deactivate all swatches in BOTH grids */
+        document.querySelectorAll('#wp-street-grid .street-swatch, #wp-hiphop-grid .street-swatch, #wp-thug-grid .street-swatch').forEach(function(x){x.classList.remove('active');});
+        s.classList.add('active');
+        var preset = s.dataset.street;
+        wpConfig.streetPreset = preset;
+        document.getElementById('wp-street-input').value = preset;
+        applyStreetPreset(preset);
+        initWpParticles(); if(!wpRaf) renderWallpaper();
+      });
+    });
+  }
+  bindStreetSwatches('#wp-street-grid');
+  bindStreetSwatches('#wp-hiphop-grid');
+  bindStreetSwatches('#wp-thug-grid');
+
+  /* ═══ SWATCH CANVAS PREVIEWS — draw mini illustrations on each swatch ═══ */
+  (function drawSwatchPreviews(){
+    var tiledPresets=['skimask_grillz','boondock_hood','graffiti_bomb','gold_grill_drip','hood_angel','trap_mansion','lowrider','ski_mask'];
+    document.querySelectorAll('#wp-hiphop-grid .street-swatch, #wp-thug-grid .street-swatch').forEach(function(sw){
+      var preset=sw.dataset.street;
+      if(tiledPresets.indexOf(preset)===-1) return;
+      var c=document.createElement('canvas'); c.width=100; c.height=100;
+      c.style.cssText='position:absolute;inset:0;width:100%;height:100%;border-radius:8px;pointer-events:none;';
+      sw.insertBefore(c,sw.firstChild);
+      var tc=c.getContext('2d');
+      if(preset==='skimask_grillz'){
+        tc.fillStyle='#080808'; tc.fillRect(0,0,100,100);
+        /* Mini ski mask head */
+        tc.fillStyle='#111'; tc.beginPath(); tc.ellipse(50,38,20,24,0,0,Math.PI*2); tc.fill();
+        tc.fillStyle='#4a2f1a'; tc.beginPath(); tc.ellipse(42,35,7,4,0,0,Math.PI*2); tc.fill();
+        tc.beginPath(); tc.ellipse(58,35,7,4,0,0,Math.PI*2); tc.fill();
+        tc.fillStyle='#fff'; tc.beginPath(); tc.arc(42,35,3,0,Math.PI*2); tc.fill();
+        tc.beginPath(); tc.arc(58,35,3,0,Math.PI*2); tc.fill();
+        tc.fillStyle='#1a0a00'; tc.beginPath(); tc.arc(43,35,2,0,Math.PI*2); tc.fill();
+        tc.beginPath(); tc.arc(59,35,2,0,Math.PI*2); tc.fill();
+        tc.fillStyle='rgba(255,215,0,.9)';
+        for(var t=0;t<6;t++) tc.fillRect(39+t*4,47,3,5);
+        tc.strokeStyle='rgba(255,215,0,.7)'; tc.lineWidth=2;
+        tc.beginPath(); tc.quadraticCurveTo(50,78,65,62); tc.moveTo(35,62); tc.quadraticCurveTo(50,78,65,62); tc.stroke();
+        tc.fillStyle='#1a1a1a'; tc.fillRect(30,70,40,30);
+      } else if(preset==='boondock_hood'){
+        tc.fillStyle='#0a0704'; tc.fillRect(0,0,100,100);
+        tc.fillStyle='#2a1a10';
+        tc.beginPath(); tc.moveTo(50,12); tc.bezierCurveTo(20,25,15,50,18,70);
+        tc.lineTo(82,70); tc.bezierCurveTo(85,50,80,25,50,12); tc.closePath(); tc.fill();
+        tc.fillStyle='#0a0500'; tc.beginPath(); tc.ellipse(50,48,18,22,0,0,Math.PI*2); tc.fill();
+        var eg=tc.createRadialGradient(42,45,1,42,45,8);
+        eg.addColorStop(0,'rgba(255,120,0,.9)'); eg.addColorStop(1,'transparent');
+        tc.fillStyle=eg; tc.fillRect(34,37,16,16);
+        tc.fillStyle='rgba(255,140,20,.9)'; tc.beginPath(); tc.arc(42,45,3,0,Math.PI*2); tc.fill();
+        var eg2=tc.createRadialGradient(58,45,1,58,45,8);
+        eg2.addColorStop(0,'rgba(255,120,0,.9)'); eg2.addColorStop(1,'transparent');
+        tc.fillStyle=eg2; tc.fillRect(50,37,16,16);
+        tc.fillStyle='rgba(255,140,20,.9)'; tc.beginPath(); tc.arc(58,45,3,0,Math.PI*2); tc.fill();
+        tc.fillStyle='#1a1410'; tc.fillRect(25,70,50,30);
+      } else if(preset==='graffiti_bomb'){
+        tc.fillStyle='#1a1018'; tc.fillRect(0,0,100,100);
+        tc.strokeStyle='rgba(80,40,60,.3)'; tc.lineWidth=0.5;
+        for(var by=0;by<100;by+=8){ for(var bx=(Math.floor(by/8)%2)*15-15;bx<110;bx+=30)tc.strokeRect(bx,by,28,7); }
+        tc.font='bold 24px Impact'; tc.save(); tc.translate(8,45); tc.rotate(-0.1);
+        tc.strokeStyle='rgba(255,0,255,.8)'; tc.lineWidth=2; tc.strokeText('VF',0,0);
+        var g=tc.createLinearGradient(0,-15,0,5); g.addColorStop(0,'#ff00ff'); g.addColorStop(1,'#00ffff');
+        tc.fillStyle=g; tc.fillText('VF',0,0); tc.restore();
+        tc.fillStyle='rgba(255,215,0,.7)';
+        tc.beginPath(); tc.moveTo(60,12); tc.lineTo(65,5); tc.lineTo(70,12); tc.lineTo(75,5); tc.lineTo(80,12); tc.lineTo(78,18); tc.lineTo(62,18); tc.closePath(); tc.fill();
+        tc.fillStyle='rgba(255,80,0,.5)'; tc.font='bold 16px Impact'; tc.fillText('DRIP',40,80);
+      } else if(preset==='gold_grill_drip'){
+        tc.fillStyle='#0a0800'; tc.fillRect(0,0,100,100);
+        tc.fillStyle='#1a0800'; tc.beginPath(); tc.ellipse(50,40,28,15,0,0,Math.PI*2); tc.fill();
+        for(var t=0;t<8;t++){ tc.fillStyle='rgba(255,200,0,.9)'; tc.fillRect(27+t*6,33,5,6); tc.fillRect(27+t*6,41,5,6); }
+        tc.fillStyle='rgba(200,230,255,.8)'; tc.beginPath(); tc.moveTo(50,36); tc.lineTo(52,34); tc.lineTo(54,36); tc.lineTo(52,38); tc.closePath(); tc.fill();
+        tc.fillStyle='rgba(255,200,0,.4)';
+        for(var d=0;d<5;d++){ tc.fillRect(30+d*8,47,2,15+Math.random()*20); }
+        tc.strokeStyle='rgba(255,215,0,.6)'; tc.lineWidth=2;
+        tc.beginPath(); for(var cx=0;cx<100;cx+=10) tc.ellipse(cx,22,4,6,0,0,Math.PI*2); tc.stroke();
+        tc.fillStyle='rgba(255,215,0,.5)'; tc.font='bold 18px serif'; tc.fillText('$',8,85); tc.fillText('$',78,75);
+      } else if(preset==='hood_angel'){
+        tc.fillStyle='#060610'; tc.fillRect(0,0,100,100);
+        var rg=tc.createLinearGradient(50,0,50,60); rg.addColorStop(0,'rgba(180,180,255,.12)'); rg.addColorStop(1,'transparent');
+        tc.fillStyle=rg; tc.beginPath(); tc.moveTo(40,0); tc.lineTo(25,60); tc.lineTo(75,60); tc.lineTo(60,0); tc.closePath(); tc.fill();
+        tc.strokeStyle='rgba(255,215,0,.7)'; tc.lineWidth=2; tc.beginPath(); tc.ellipse(50,25,14,4,0,0,Math.PI*2); tc.stroke();
+        tc.fillStyle='#3a2010'; tc.beginPath(); tc.ellipse(50,38,10,12,0,0,Math.PI*2); tc.fill();
+        tc.fillStyle='#f0f0f0'; tc.beginPath(); tc.ellipse(50,32,12,7,0,Math.PI,Math.PI*2); tc.fill();
+        tc.fillStyle='rgba(200,200,255,.35)';
+        tc.beginPath(); tc.moveTo(30,52); tc.bezierCurveTo(10,40,0,38,2,50); tc.bezierCurveTo(5,55,15,55,30,52); tc.fill();
+        tc.beginPath(); tc.moveTo(70,52); tc.bezierCurveTo(90,40,100,38,98,50); tc.bezierCurveTo(95,55,85,55,70,52); tc.fill();
+        tc.fillStyle='#e8e8e8'; tc.beginPath(); tc.moveTo(35,55); tc.bezierCurveTo(35,50,45,46,50,45);
+        tc.bezierCurveTo(55,46,65,50,65,55); tc.lineTo(65,100); tc.lineTo(35,100); tc.closePath(); tc.fill();
+      } else if(preset==='trap_mansion'){
+        tc.fillStyle='#08001a'; tc.fillRect(0,0,100,100);
+        tc.fillStyle='rgba(200,180,255,.25)'; tc.beginPath(); tc.arc(82,14,8,0,Math.PI*2); tc.fill();
+        tc.fillStyle='#0a0005'; tc.fillRect(0,75,100,25);
+        tc.fillStyle='#1a0030'; tc.fillRect(25,40,50,35);
+        tc.fillStyle='#200040'; tc.beginPath(); tc.moveTo(20,40); tc.lineTo(50,18); tc.lineTo(80,40); tc.closePath(); tc.fill();
+        tc.fillStyle='rgba(160,0,255,.6)'; tc.fillRect(33,48,10,10); tc.fillRect(57,48,10,10);
+        tc.fillRect(33,62,10,10); tc.fillRect(57,62,10,10);
+        tc.fillStyle='rgba(100,0,180,.7)'; tc.fillRect(44,63,12,12);
+        tc.fillStyle='#050005'; tc.beginPath(); tc.arc(15,68,5,0,Math.PI*2); tc.fill();
+        tc.fillRect(12,73,6,12); tc.fillRect(12,85,3,7); tc.fillRect(15,85,3,7);
+        tc.fillStyle='rgba(0,200,0,.5)'; tc.font='8px sans-serif'; tc.fillText('\ud83d\udcb0',8,30);
+      } else if(preset==='lowrider'){
+        /* === GANGSTA LOWRIDER SCENE === */
+        /* Night sky */
+        var skyGrad=tc.createLinearGradient(0,0,0,50);
+        skyGrad.addColorStop(0,'#020010'); skyGrad.addColorStop(0.5,'#0a0028'); skyGrad.addColorStop(1,'#150040');
+        tc.fillStyle=skyGrad; tc.fillRect(0,0,100,55);
+        /* Stars */
+        tc.fillStyle='rgba(255,255,255,.7)';
+        [[12,8],[30,5],[55,12],[78,6],[90,15],[42,3],[65,18],[22,20],[88,22]].forEach(function(s){
+          tc.beginPath(); tc.arc(s[0],s[1],0.6+Math.random()*0.4,0,Math.PI*2); tc.fill();
+        });
+        /* Moon glow */
+        var moonG=tc.createRadialGradient(82,10,2,82,10,18);
+        moonG.addColorStop(0,'rgba(200,180,255,.5)'); moonG.addColorStop(0.5,'rgba(120,80,200,.15)'); moonG.addColorStop(1,'transparent');
+        tc.fillStyle=moonG; tc.fillRect(64,0,36,30);
+        tc.fillStyle='rgba(220,200,255,.85)'; tc.beginPath(); tc.arc(82,10,3,0,Math.PI*2); tc.fill();
+        /* City skyline silhouette */
+        tc.fillStyle='#08001a';
+        tc.fillRect(0,30,8,25); tc.fillRect(10,35,6,20); tc.fillRect(18,28,5,27);
+        tc.fillRect(25,33,7,22); tc.fillRect(34,26,4,29); tc.fillRect(40,31,8,24);
+        tc.fillRect(50,34,6,21); tc.fillRect(58,29,5,26); tc.fillRect(65,36,7,19);
+        tc.fillRect(74,32,4,23); tc.fillRect(80,38,6,17); tc.fillRect(88,34,5,21);
+        tc.fillRect(95,30,5,25);
+        /* Building windows (tiny glowing dots) */
+        tc.fillStyle='rgba(255,200,80,.5)';
+        [[3,34],[5,38],[13,39],[21,32],[28,37],[37,30],[43,35],[46,40],[53,38],[61,33],[68,40],[77,36],[83,42],[91,38]].forEach(function(w){
+          tc.fillRect(w[0],w[1],1.5,1.5);
+        });
+        /* Street / ground */
+        var roadGrad=tc.createLinearGradient(0,55,0,100);
+        roadGrad.addColorStop(0,'#0a0a18'); roadGrad.addColorStop(0.3,'#121225'); roadGrad.addColorStop(1,'#060612');
+        tc.fillStyle=roadGrad; tc.fillRect(0,55,100,45);
+        /* Road line */
+        tc.setLineDash([4,3]); tc.strokeStyle='rgba(255,220,100,.25)'; tc.lineWidth=0.8;
+        tc.beginPath(); tc.moveTo(0,70); tc.lineTo(100,70); tc.stroke(); tc.setLineDash([]);
+        /* == LOWRIDER CAR (on hydraulics - front lifted) == */
+        /* Body - main shape */
+        tc.fillStyle='#3a0090';
+        tc.beginPath();
+        tc.moveTo(10,65); tc.lineTo(14,56); tc.lineTo(22,50); tc.lineTo(38,47);
+        tc.lineTo(65,47); tc.lineTo(78,50); tc.lineTo(84,55); tc.lineTo(88,62); tc.lineTo(90,65);
+        tc.closePath(); tc.fill();
+        /* Chrome trim line */
+        tc.strokeStyle='rgba(200,180,255,.6)'; tc.lineWidth=0.8;
+        tc.beginPath(); tc.moveTo(10,65); tc.lineTo(90,65); tc.stroke();
+        /* Car body panel (darker underside) */
+        tc.fillStyle='#2a0070'; tc.fillRect(12,65,76,4);
+        /* Windows */
+        tc.fillStyle='rgba(100,140,255,.25)';
+        tc.beginPath(); tc.moveTo(28,52); tc.lineTo(32,49); tc.lineTo(48,48); tc.lineTo(48,52); tc.closePath(); tc.fill();
+        tc.beginPath(); tc.moveTo(50,48); tc.lineTo(68,48); tc.lineTo(72,52); tc.lineTo(50,52); tc.closePath(); tc.fill();
+        /* Chrome window frame */
+        tc.strokeStyle='rgba(200,200,255,.35)'; tc.lineWidth=0.5;
+        tc.beginPath(); tc.moveTo(28,52); tc.lineTo(32,49); tc.lineTo(48,48); tc.lineTo(48,52); tc.closePath(); tc.stroke();
+        tc.beginPath(); tc.moveTo(50,48); tc.lineTo(68,48); tc.lineTo(72,52); tc.lineTo(50,52); tc.closePath(); tc.stroke();
+        /* Hydraulic struts (front lifted higher) */
+        tc.strokeStyle='rgba(180,180,200,.5)'; tc.lineWidth=1;
+        tc.beginPath(); tc.moveTo(25,69); tc.lineTo(25,74); tc.stroke();
+        tc.beginPath(); tc.moveTo(75,69); tc.lineTo(75,72); tc.stroke();
+        /* Wheels with chrome rims */
+        tc.fillStyle='#0a0a0a'; tc.beginPath(); tc.arc(28,75,5.5,0,Math.PI*2); tc.fill();
+        tc.beginPath(); tc.arc(74,73,5.5,0,Math.PI*2); tc.fill();
+        /* Chrome rims (wire spokes) */
+        tc.strokeStyle='rgba(200,200,255,.6)'; tc.lineWidth=0.4;
+        for(var ri=0;ri<6;ri++){
+          var a=ri*Math.PI/3;
+          tc.beginPath(); tc.moveTo(28+Math.cos(a)*2,75+Math.sin(a)*2); tc.lineTo(28+Math.cos(a)*5,75+Math.sin(a)*5); tc.stroke();
+          tc.beginPath(); tc.moveTo(74+Math.cos(a)*2,73+Math.sin(a)*2); tc.lineTo(74+Math.cos(a)*5,73+Math.sin(a)*5); tc.stroke();
+        }
+        tc.fillStyle='rgba(200,200,255,.5)'; tc.beginPath(); tc.arc(28,75,1.5,0,Math.PI*2); tc.fill();
+        tc.beginPath(); tc.arc(74,73,1.5,0,Math.PI*2); tc.fill();
+        /* Rim outer ring */
+        tc.strokeStyle='rgba(200,200,255,.4)'; tc.lineWidth=0.6;
+        tc.beginPath(); tc.arc(28,75,5.5,0,Math.PI*2); tc.stroke();
+        tc.beginPath(); tc.arc(74,73,5.5,0,Math.PI*2); tc.stroke();
+        /* Headlights (bright glow) */
+        var hlG=tc.createRadialGradient(89,63,1,89,63,8);
+        hlG.addColorStop(0,'rgba(255,255,200,.7)'); hlG.addColorStop(0.4,'rgba(255,255,150,.2)'); hlG.addColorStop(1,'transparent');
+        tc.fillStyle=hlG; tc.fillRect(81,55,18,16);
+        tc.fillStyle='rgba(255,255,200,.8)'; tc.fillRect(87,62,4,3);
+        /* Tail lights */
+        var tlG=tc.createRadialGradient(11,63,1,11,63,6);
+        tlG.addColorStop(0,'rgba(255,0,50,.7)'); tlG.addColorStop(0.4,'rgba(255,0,0,.15)'); tlG.addColorStop(1,'transparent');
+        tc.fillStyle=tlG; tc.fillRect(5,58,12,10);
+        tc.fillStyle='rgba(255,0,50,.7)'; tc.fillRect(10,62,3,3);
+        /* Ground neon reflection (purple underglow) */
+        var ugG=tc.createLinearGradient(20,69,20,82);
+        ugG.addColorStop(0,'rgba(120,0,255,.25)'); ugG.addColorStop(1,'transparent');
+        tc.fillStyle=ugG; tc.fillRect(15,69,70,13);
+        /* Side neon strip */
+        tc.strokeStyle='rgba(160,0,255,.5)'; tc.lineWidth=0.8;
+        tc.beginPath(); tc.moveTo(18,68); tc.lineTo(82,68); tc.stroke();
+        /* Smoke/exhaust from rear */
+        tc.fillStyle='rgba(180,180,200,.06)';
+        tc.beginPath(); tc.arc(6,66,4,0,Math.PI*2); tc.fill();
+        tc.beginPath(); tc.arc(2,64,5,0,Math.PI*2); tc.fill();
+        /* Gold chain / bling on mirror */
+        tc.fillStyle='rgba(255,215,0,.5)'; tc.fillRect(49,50,1,3);
+        tc.beginPath(); tc.arc(49,54,1,0,Math.PI*2); tc.fill();
+      } else if(preset==='ski_mask'){
+        tc.fillStyle='#0a0a0a'; tc.fillRect(0,0,100,100);
+        tc.fillStyle='#151515'; tc.beginPath(); tc.ellipse(50,42,18,22,0,0,Math.PI*2); tc.fill();
+        tc.fillStyle='rgba(255,255,255,.15)'; tc.fillRect(36,36,10,5); tc.fillRect(54,36,10,5);
+        tc.fillStyle='rgba(255,255,255,.1)'; tc.fillRect(40,52,20,6);
+        tc.fillStyle='#1a1a1a'; tc.fillRect(35,65,30,35);
+      }
+    });
+  })();
+
+  /* ═══ STREET PRESET RENDERER ═══ */
+  function applyStreetPreset(preset){
+    if(!wpBgLayer) return;
+    var presets = {
+      trap_night:       { bg:'linear-gradient(135deg,#0a001a 0%,#1a003a 40%,#330066 70%,#0a001a 100%)', c1:'#0a001a', c2:'#330066' },
+      hood_classic:     { bg:'linear-gradient(180deg,#0a0a0a 0%,#1a1a1a 30%,#2a2015 60%,#0a0a0a 100%)', c1:'#1a1a1a', c2:'#2a2015' },
+      graffiti_wall:    { bg:'linear-gradient(135deg,#1a0000 0%,#8b0000 25%,#ff4500 50%,#1a1a2e 75%,#0a0a15 100%)', c1:'#8b0000', c2:'#1a1a2e' },
+      brick_city:       { bg:'linear-gradient(180deg,#3a1808 0%,#4a2010 20%,#6b3320 50%,#4a2010 80%,#3a1808 100%)', c1:'#4a2010', c2:'#6b3320' },
+      money_stacks:     { bg:'linear-gradient(135deg,#000a00 0%,#001a00 30%,#003300 60%,#001100 100%)', c1:'#001a00', c2:'#003300' },
+      smoke_cloud:      { bg:'linear-gradient(180deg,#0a0a0a 0%,#1a1a1a 25%,#2a2a3a 50%,#1a1a1a 75%,#0a0a0a 100%)', c1:'#1a1a1a', c2:'#2a2a3a' },
+      concrete_jungle:  { bg:'linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 30%,#3a3a3a 50%,#2a2a2a 70%,#1a1a1a 100%)', c1:'#2a2a2a', c2:'#3a3a3a' },
+      neon_streets:     { bg:'linear-gradient(135deg,#000000 0%,#0a001a 30%,#110022 50%,#0a001a 70%,#000000 100%)', c1:'#0a001a', c2:'#110022' },
+      chain_link:       { bg:'linear-gradient(135deg,#0a0a10 0%,#1a1a1e 30%,#2a2a30 50%,#1a1a1e 70%,#0a0a10 100%)', c1:'#1a1a1e', c2:'#2a2a30' },
+      mixtape_cover:    { bg:'linear-gradient(180deg,#000000 0%,#1a0500 25%,#2a0a00 50%,#1a0800 75%,#000000 100%)', c1:'#1a0500', c2:'#2a0a00' },
+      purple_lean:      { bg:'linear-gradient(135deg,#0a0015 0%,#1a002a 30%,#2a0040 60%,#0a0015 100%)', c1:'#1a002a', c2:'#2a0040' },
+      gold_chains:      { bg:'linear-gradient(135deg,#0a0800 0%,#1a1200 30%,#2a1f00 60%,#0a0800 100%)', c1:'#1a1200', c2:'#2a1f00' },
+      ski_mask:         { bg:'linear-gradient(180deg,#0a0a0a 0%,#1a1a1a 30%,#2a2a2a 50%,#1a1a1a 70%,#0a0a0a 100%)', c1:'#0a0a0a', c2:'#2a2a2a' },
+      boombox:          { bg:'linear-gradient(135deg,#1a0a00 0%,#2a1500 30%,#3a2010 50%,#2a1500 70%,#1a0a00 100%)', c1:'#2a1500', c2:'#3a2010' },
+      turntable:        { bg:'linear-gradient(135deg,#0a0a15 0%,#1a1a25 30%,#252540 50%,#1a1a25 70%,#0a0a15 100%)', c1:'#0a0a15', c2:'#252540' },
+      crown_royal:      { bg:'linear-gradient(135deg,#1a0a00 0%,#2a1500 25%,#3a2800 50%,#2a1500 75%,#1a0a00 100%)', c1:'#2a1500', c2:'#3a2800' },
+      bandana:          { bg:'linear-gradient(135deg,#1a0000 0%,#3a0000 30%,#5a0000 50%,#3a0000 70%,#1a0000 100%)', c1:'#3a0000', c2:'#5a0000' },
+      lowrider:         { bg:'linear-gradient(180deg,#020012 0%,#08001e 20%,#150035 40%,#1a0045 55%,#10002a 75%,#050015 100%)', c1:'#08001e', c2:'#1a0045' },
+      mic_drop:         { bg:'linear-gradient(180deg,#0a0a0a 0%,#1a1020 30%,#2a1535 50%,#1a1020 70%,#0a0a0a 100%)', c1:'#1a1020', c2:'#2a1535' },
+      spray_can:        { bg:'linear-gradient(135deg,#0a1a0a 0%,#001a00 30%,#002a00 50%,#001a00 70%,#0a1a0a 100%)', c1:'#001a00', c2:'#002a00' },
+      vinyl_record:     { bg:'linear-gradient(135deg,#0a0a0a 0%,#151515 30%,#1a1a1a 50%,#151515 70%,#0a0a0a 100%)', c1:'#0a0a0a', c2:'#1a1a1a' },
+      diamond_ice:      { bg:'linear-gradient(135deg,#0a0a1a 0%,#151530 30%,#1a1a40 50%,#151530 70%,#0a0a1a 100%)', c1:'#151530', c2:'#1a1a40' },
+      hiphop_collage:   { bg:'linear-gradient(135deg,#1a0a1a 0%,#2a152a 30%,#351a35 50%,#2a152a 70%,#1a0a1a 100%)', c1:'#2a152a', c2:'#351a35' },
+      streetwear:       { bg:'linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 30%,#333333 50%,#2a2a2a 70%,#1a1a1a 100%)', c1:'#1a1a1a', c2:'#333333' },
+      skimask_grillz:   { bg:'linear-gradient(180deg,#050505 0%,#0a0a0a 25%,#151515 50%,#0a0a0a 75%,#050505 100%)', c1:'#0a0a0a', c2:'#151515' },
+      boondock_hood:    { bg:'linear-gradient(180deg,#080604 0%,#1a0f08 30%,#2a1a10 50%,#1a0f08 70%,#080604 100%)', c1:'#1a0f08', c2:'#2a1a10' },
+      graffiti_bomb:    { bg:'linear-gradient(135deg,#1a001a 0%,#0a1a0a 25%,#001a1a 50%,#1a0a00 75%,#1a001a 100%)', c1:'#0a1a0a', c2:'#1a001a' },
+      gold_grill_drip:  { bg:'linear-gradient(180deg,#0a0800 0%,#1a1200 25%,#2a1f00 50%,#1a1200 75%,#0a0800 100%)', c1:'#1a1200', c2:'#2a1f00' },
+      hood_angel:       { bg:'linear-gradient(180deg,#06060e 0%,#0a0a18 25%,#121228 50%,#0a0a18 75%,#06060e 100%)', c1:'#0a0a18', c2:'#121228' },
+      trap_mansion:     { bg:'linear-gradient(135deg,#0a000a 0%,#150015 25%,#200028 50%,#150015 75%,#0a000a 100%)', c1:'#150015', c2:'#200028' }
+    };
+    var p = presets[preset] || presets.trap_night;
+    wpBgLayer.style.background = p.bg;
+    wpConfig.color1 = p.c1; wpConfig.color2 = p.c2;
+    /* Draw street overlay on canvas */
+    drawStreetOverlay(preset);
+  }
+
+  function drawStreetOverlay(preset){
+    if(!wpCtx||!wpCanvas) return;
+    var W=wpCanvas.width, H=wpCanvas.height;
+    /* We'll draw a one-time texture layer, the animation loop will clear+redraw particles over it */
+    var offscreen = document.createElement('canvas');
+    offscreen.width=W; offscreen.height=H;
+    var ctx = offscreen.getContext('2d');
+
+    if(preset==='brick_city'){
+      /* Brick pattern */
+      ctx.fillStyle='#4a2010';
+      for(var by=0;by<H;by+=24){
+        var off=(Math.floor(by/24)%2)*30;
+        for(var bx=-30+off;bx<W+30;bx+=62){
+          ctx.fillStyle='hsl('+(8+Math.random()*8)+','+(40+Math.random()*20)+'%,'+(18+Math.random()*12)+'%)';
+          ctx.fillRect(bx,by,58,20);
+          ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.strokeRect(bx,by,58,20);
+        }
+      }
+    } else if(preset==='chain_link'){
+      ctx.strokeStyle='rgba(180,180,200,.15)'; ctx.lineWidth=1;
+      for(var cy=0;cy<H;cy+=16){
+        for(var cx=0;cx<W;cx+=16){
+          ctx.beginPath();
+          ctx.moveTo(cx,cy); ctx.lineTo(cx+8,cy+8); ctx.lineTo(cx+16,cy);
+          ctx.moveTo(cx+8,cy+8); ctx.lineTo(cx+8,cy+16);
+          ctx.stroke();
+        }
+      }
+    } else if(preset==='graffiti_wall'){
+      var tags = ['VYBE','FLOW','HOOD','REAL','100','STREET','DRIP','ICE','GANG','TRAP','LIT','NO CAP'];
+      ctx.globalAlpha=0.06;
+      for(var gi=0;gi<18;gi++){
+        ctx.save();
+        var gx=Math.random()*W, gy=Math.random()*H;
+        ctx.translate(gx,gy); ctx.rotate((Math.random()-0.5)*0.5);
+        ctx.font='bold '+(28+Math.random()*40)+'px Impact, sans-serif';
+        ctx.fillStyle='hsl('+(Math.random()*360)+',80%,60%)';
+        ctx.fillText(tags[Math.floor(Math.random()*tags.length)],0,0);
+        ctx.restore();
+      }
+    } else if(preset==='money_stacks'){
+      ctx.globalAlpha=0.05; ctx.font='bold 36px sans-serif';
+      for(var mi=0;mi<30;mi++){
+        ctx.fillStyle='#00ff44';
+        ctx.fillText('$',Math.random()*W,Math.random()*H);
+      }
+      ctx.globalAlpha=0.03; ctx.font='bold 60px sans-serif';
+      for(var mi2=0;mi2<8;mi2++){
+        ctx.fillText('💰',Math.random()*W,Math.random()*H);
+      }
+    } else if(preset==='smoke_cloud'){
+      for(var si=0;si<12;si++){
+        var sx=Math.random()*W, sy=Math.random()*H, sr=80+Math.random()*150;
+        var sg=ctx.createRadialGradient(sx,sy,0,sx,sy,sr);
+        sg.addColorStop(0,'rgba(200,200,220,.04)');
+        sg.addColorStop(1,'transparent');
+        ctx.fillStyle=sg; ctx.fillRect(sx-sr,sy-sr,sr*2,sr*2);
+      }
+    } else if(preset==='neon_streets'){
+      ctx.globalAlpha=0.08;
+      var neonColors=['#ff00ff','#00ffff','#ff0066','#6600ff','#00ff66'];
+      for(var ni=0;ni<6;ni++){
+        ctx.strokeStyle=neonColors[ni%neonColors.length];
+        ctx.lineWidth=2; ctx.shadowColor=neonColors[ni%neonColors.length]; ctx.shadowBlur=20;
+        ctx.beginPath();
+        ctx.moveTo(Math.random()*W,Math.random()*H);
+        ctx.quadraticCurveTo(Math.random()*W,Math.random()*H,Math.random()*W,Math.random()*H);
+        ctx.stroke();
+      }
+      ctx.shadowBlur=0;
+    } else if(preset==='concrete_jungle'){
+      for(var ci=0;ci<200;ci++){
+        ctx.fillStyle='rgba('+(Math.random()>0.5?255:0)+','+(Math.random()>0.5?255:0)+','+(Math.random()>0.5?255:0)+',0.01)';
+        ctx.fillRect(Math.random()*W,Math.random()*H,1+Math.random()*3,1+Math.random()*3);
+      }
+      /* Cracks */
+      ctx.strokeStyle='rgba(100,100,100,.06)'; ctx.lineWidth=0.5;
+      for(var ck=0;ck<8;ck++){
+        ctx.beginPath();
+        var ckx=Math.random()*W, cky=Math.random()*H;
+        ctx.moveTo(ckx,cky);
+        for(var cs=0;cs<5;cs++){
+          ckx+=(Math.random()-0.5)*80; cky+=Math.random()*60;
+          ctx.lineTo(ckx,cky);
+        }
+        ctx.stroke();
+      }
+    } else if(preset==='mixtape_cover'){
+      /* Grungy fire accents at bottom */
+      for(var fi=0;fi<200;fi++){
+        var fx=Math.random()*W, fy=H-Math.random()*H*0.4;
+        var fg=ctx.createRadialGradient(fx,fy,0,fx,fy,10+Math.random()*30);
+        fg.addColorStop(0,'rgba(255,80,0,.03)'); fg.addColorStop(1,'transparent');
+        ctx.fillStyle=fg; ctx.fillRect(fx-40,fy-40,80,80);
+      }
+      ctx.globalAlpha=0.04; ctx.font='bold 80px Impact, sans-serif';
+      ctx.fillStyle='#ff4400'; ctx.fillText('🔥',W*0.3,H*0.7);
+      ctx.fillText('💀',W*0.6,H*0.5);
+    } else if(preset==='trap_night'){
+      /* Purple atmospheric glow */
+      var tg=ctx.createRadialGradient(W*0.5,H*0.4,50,W*0.5,H*0.4,W*0.5);
+      tg.addColorStop(0,'rgba(100,0,200,.06)'); tg.addColorStop(1,'transparent');
+      ctx.fillStyle=tg; ctx.fillRect(0,0,W,H);
+    } else if(preset==='hood_classic'){
+      ctx.globalAlpha=0.03; ctx.font='bold 48px Impact, sans-serif';
+      ctx.fillStyle='#ffa500';
+      ctx.fillText('KEEP IT REAL',W*0.15,H*0.35);
+      ctx.font='bold 28px Impact, sans-serif';
+      ctx.fillText('100',W*0.6,H*0.65);
+    } else if(preset==='purple_lean'){
+      for(var pl=0;pl<8;pl++){
+        var plg=ctx.createRadialGradient(Math.random()*W,Math.random()*H,0,Math.random()*W,Math.random()*H,100+Math.random()*200);
+        plg.addColorStop(0,'rgba(130,0,200,.04)'); plg.addColorStop(1,'transparent');
+        ctx.fillStyle=plg; ctx.fillRect(0,0,W,H);
+      }
+    } else if(preset==='gold_chains'){
+      ctx.globalAlpha=0.04; ctx.font='bold 32px sans-serif';
+      for(var gc=0;gc<15;gc++){
+        ctx.fillStyle='hsl('+(40+Math.random()*15)+',80%,'+(50+Math.random()*20)+'%)';
+        ctx.fillText('⛓️',Math.random()*W,Math.random()*H);
+      }
+      ctx.font='bold 48px sans-serif'; ctx.fillText('👑',W*0.45,H*0.25);
+    } else if(preset==='ski_mask'){
+      /* Ski mask / balaclava art - dark moody with masked figure silhouettes */
+      ctx.globalAlpha=0.12;
+      /* Draw stylized balaclava/ski mask silhouettes */
+      for(var sm=0;sm<3;sm++){
+        var smx=W*(0.2+sm*0.3), smy=H*0.35;
+        var smScale=0.6+Math.random()*0.4;
+        ctx.save(); ctx.translate(smx,smy); ctx.scale(smScale,smScale);
+        /* Head shape */
+        ctx.fillStyle='#1a1a1a'; ctx.beginPath();
+        ctx.ellipse(0,-20,55,70,0,0,Math.PI*2); ctx.fill();
+        /* Mask */
+        ctx.fillStyle='#2a2a2a'; ctx.beginPath();
+        ctx.ellipse(0,-15,50,65,0,0,Math.PI*2); ctx.fill();
+        /* Eye holes */
+        ctx.fillStyle='#000'; ctx.globalAlpha=0.3;
+        ctx.beginPath(); ctx.ellipse(-18,-30,12,8,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(18,-30,12,8,0,0,Math.PI*2); ctx.fill();
+        /* Menacing eyes glow */
+        ctx.fillStyle='rgba(255,200,100,.15)';
+        ctx.beginPath(); ctx.ellipse(-18,-30,8,5,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(18,-30,8,5,0,0,Math.PI*2); ctx.fill();
+        /* Gold grillz mouth area */
+        ctx.fillStyle='rgba(255,200,0,.08)';
+        ctx.fillRect(-22,5,44,12); ctx.globalAlpha=0.12;
+        ctx.restore();
+      }
+      /* Grunge streaks */
+      ctx.strokeStyle='rgba(255,255,255,.03)'; ctx.lineWidth=2;
+      for(var gs=0;gs<20;gs++){
+        ctx.beginPath(); ctx.moveTo(Math.random()*W,0);
+        ctx.lineTo(Math.random()*W,H); ctx.stroke();
+      }
+      /* Atmospheric glow */
+      var smGlow=ctx.createRadialGradient(W*0.5,H*0.3,30,W*0.5,H*0.3,W*0.4);
+      smGlow.addColorStop(0,'rgba(255,255,255,.03)'); smGlow.addColorStop(1,'transparent');
+      ctx.fillStyle=smGlow; ctx.fillRect(0,0,W,H);
+    } else if(preset==='boombox'){
+      /* Retro boombox / hip-hop culture */
+      ctx.globalAlpha=0.08;
+      /* Boombox body */
+      ctx.fillStyle='#3a2a1a'; ctx.fillRect(W*0.2,H*0.3,W*0.6,H*0.35);
+      ctx.strokeStyle='rgba(255,150,0,.15)'; ctx.lineWidth=3;
+      ctx.strokeRect(W*0.2,H*0.3,W*0.6,H*0.35);
+      /* Speaker circles */
+      ctx.fillStyle='#1a1a1a';
+      ctx.beginPath(); ctx.arc(W*0.35,H*0.48,W*0.08,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(W*0.65,H*0.48,W*0.08,0,Math.PI*2); ctx.fill();
+      /* Speaker rings */
+      ctx.strokeStyle='rgba(255,150,0,.1)'; ctx.lineWidth=2;
+      for(var br=1;br<4;br++){
+        ctx.beginPath(); ctx.arc(W*0.35,H*0.48,W*0.02*br,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(W*0.65,H*0.48,W*0.02*br,0,Math.PI*2); ctx.stroke();
+      }
+      /* Sound waves */
+      ctx.strokeStyle='rgba(255,150,0,.06)'; ctx.lineWidth=1.5;
+      for(var sw=0;sw<8;sw++){
+        ctx.beginPath(); ctx.arc(W*0.35,H*0.48,W*0.1+sw*15,Math.PI*1.2,Math.PI*1.8); ctx.stroke();
+        ctx.beginPath(); ctx.arc(W*0.65,H*0.48,W*0.1+sw*15,Math.PI*1.2,Math.PI*1.8); ctx.stroke();
+      }
+      /* Music notes */
+      ctx.globalAlpha=0.05; ctx.font='bold 40px sans-serif';
+      var notes=['♫','♪','🎵','🎶'];
+      for(var mn=0;mn<20;mn++) ctx.fillText(notes[mn%4],Math.random()*W,Math.random()*H);
+    } else if(preset==='turntable'){
+      /* DJ turntable / vinyl */
+      ctx.globalAlpha=0.1;
+      /* Turntable base */
+      ctx.fillStyle='#151520'; ctx.fillRect(W*0.15,H*0.25,W*0.7,H*0.5);
+      /* Vinyl record */
+      ctx.fillStyle='#0a0a0a'; ctx.beginPath(); ctx.arc(W*0.5,H*0.5,W*0.2,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(100,100,180,.08)'; ctx.lineWidth=0.5;
+      for(var vr=0;vr<20;vr++){
+        ctx.beginPath(); ctx.arc(W*0.5,H*0.5,W*0.02+vr*(W*0.009),0,Math.PI*2); ctx.stroke();
+      }
+      /* Center label */
+      ctx.fillStyle='rgba(255,100,0,.08)'; ctx.beginPath(); ctx.arc(W*0.5,H*0.5,W*0.04,0,Math.PI*2); ctx.fill();
+      /* Tonearm */
+      ctx.strokeStyle='rgba(200,200,200,.06)'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(W*0.78,H*0.28); ctx.lineTo(W*0.6,H*0.42); ctx.stroke();
+      /* Equalizer bars */
+      ctx.globalAlpha=0.06;
+      for(var eq=0;eq<20;eq++){
+        var eqH=20+Math.random()*60; var eqX=W*0.1+eq*(W*0.04);
+        ctx.fillStyle='hsl('+(180+eq*8)+',70%,50%)';
+        ctx.fillRect(eqX,H*0.85-eqH,W*0.025,eqH);
+      }
+    } else if(preset==='crown_royal'){
+      /* Crown and royalty theme */
+      ctx.globalAlpha=0.06;
+      /* Large crown */
+      ctx.fillStyle='rgba(255,200,0,.1)';
+      ctx.beginPath(); ctx.moveTo(W*0.3,H*0.45); ctx.lineTo(W*0.35,H*0.25);
+      ctx.lineTo(W*0.42,H*0.38); ctx.lineTo(W*0.5,H*0.2);
+      ctx.lineTo(W*0.58,H*0.38); ctx.lineTo(W*0.65,H*0.25);
+      ctx.lineTo(W*0.7,H*0.45); ctx.closePath(); ctx.fill();
+      ctx.fillRect(W*0.3,H*0.45,W*0.4,H*0.06);
+      /* Crown gems */
+      ctx.fillStyle='rgba(255,0,0,.06)'; ctx.beginPath(); ctx.arc(W*0.5,H*0.32,8,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(0,100,255,.06)'; ctx.beginPath(); ctx.arc(W*0.4,H*0.38,6,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(0,200,0,.06)'; ctx.beginPath(); ctx.arc(W*0.6,H*0.38,6,0,Math.PI*2); ctx.fill();
+      /* Gold shimmer */
+      for(var cr=0;cr<40;cr++){
+        ctx.fillStyle='rgba(255,200,0,'+(0.01+Math.random()*0.03)+')';
+        ctx.beginPath(); ctx.arc(Math.random()*W,Math.random()*H,2+Math.random()*8,0,Math.PI*2); ctx.fill();
+      }
+      ctx.font='bold 50px sans-serif'; ctx.globalAlpha=0.04;
+      ctx.fillText('👑',W*0.45,H*0.7); ctx.fillText('💎',W*0.3,H*0.75); ctx.fillText('💎',W*0.62,H*0.75);
+    } else if(preset==='bandana'){
+      /* Red bandana / paisley pattern */
+      ctx.globalAlpha=0.06;
+      /* Paisley pattern elements */
+      for(var bp=0;bp<40;bp++){
+        var bpx=Math.random()*W, bpy=Math.random()*H;
+        ctx.save(); ctx.translate(bpx,bpy); ctx.rotate(Math.random()*Math.PI*2);
+        ctx.strokeStyle='rgba(255,50,50,.08)'; ctx.lineWidth=1.5;
+        /* Teardrop/paisley shape */
+        ctx.beginPath(); ctx.moveTo(0,-15); ctx.quadraticCurveTo(12,-8,10,5);
+        ctx.quadraticCurveTo(5,18,0,20); ctx.quadraticCurveTo(-5,18,-10,5);
+        ctx.quadraticCurveTo(-12,-8,0,-15); ctx.stroke();
+        /* Inner dot */
+        ctx.fillStyle='rgba(255,100,100,.04)'; ctx.beginPath(); ctx.arc(0,3,3,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+      /* Cross-hatch pattern */
+      ctx.strokeStyle='rgba(255,50,50,.03)'; ctx.lineWidth=0.5;
+      for(var ch=0;ch<H;ch+=20){ ctx.beginPath(); ctx.moveTo(0,ch); ctx.lineTo(W,ch); ctx.stroke(); }
+      for(var cv=0;cv<W;cv+=20){ ctx.beginPath(); ctx.moveTo(cv,0); ctx.lineTo(cv,H); ctx.stroke(); }
+    } else if(preset==='lowrider'){
+      /* ═══ GANGSTA LOWRIDER — detailed night scene with bouncing 64 ═══ */
+      var tile=document.createElement('canvas'); tile.width=360; tile.height=280;
+      var tc=tile.getContext('2d');
+      /* Night sky gradient */
+      var skyG=tc.createLinearGradient(0,0,0,140);
+      skyG.addColorStop(0,'#020012'); skyG.addColorStop(0.4,'#08001e'); skyG.addColorStop(0.7,'#120030'); skyG.addColorStop(1,'#1a0045');
+      tc.fillStyle=skyG; tc.fillRect(0,0,360,150);
+      /* Stars */
+      tc.fillStyle='rgba(255,255,255,.7)';
+      [[15,12],[45,8],[82,18],[120,6],[155,22],[190,10],[230,15],[270,5],[310,20],[340,12],[60,35],[145,30],[215,38],[285,28],[35,50],[175,45],[330,42]].forEach(function(s){ tc.beginPath(); tc.arc(s[0],s[1],0.5+Math.random()*0.6,0,Math.PI*2); tc.fill(); });
+      /* Moon with purple glow */
+      var moonGlow=tc.createRadialGradient(305,25,4,305,25,40);
+      moonGlow.addColorStop(0,'rgba(200,180,255,.4)'); moonGlow.addColorStop(0.3,'rgba(120,80,200,.12)'); moonGlow.addColorStop(1,'transparent');
+      tc.fillStyle=moonGlow; tc.fillRect(265,0,80,65);
+      tc.fillStyle='rgba(220,210,255,.8)'; tc.beginPath(); tc.arc(305,25,6,0,Math.PI*2); tc.fill();
+      /* City skyline */
+      tc.fillStyle='#06001a';
+      [[0,75,20],[22,65,14],[38,80,12],[52,60,10],[64,72,16],[82,55,8],[92,68,14],[108,58,12],[122,75,10],[134,62,18],
+       [154,70,12],[168,56,10],[180,65,16],[198,72,8],[208,60,14],[224,55,10],[236,68,12],[250,74,14],[266,58,10],
+       [278,66,16],[296,72,8],[306,65,14],[322,70,10],[334,60,16],[352,68,8]].forEach(function(b){
+        tc.fillRect(b[0],b[1],b[2],150-b[1]);
+      });
+      /* Window lights */
+      tc.fillStyle='rgba(255,200,80,.4)';
+      [[8,80],[30,70],[55,66],[70,78],[88,60],[100,72],[115,62],[140,68],[160,74],[175,60],[195,76],[215,60],
+       [240,72],[258,62],[285,70],[310,68],[340,64]].forEach(function(w){ tc.fillRect(w[0],w[1],2,2); });
+      /* Street */
+      var roadG=tc.createLinearGradient(0,150,0,280);
+      roadG.addColorStop(0,'#0c0c1e'); roadG.addColorStop(0.3,'#10102a'); roadG.addColorStop(1,'#060615');
+      tc.fillStyle=roadG; tc.fillRect(0,150,360,130);
+      tc.setLineDash([14,8]); tc.strokeStyle='rgba(255,220,100,.2)'; tc.lineWidth=1.5;
+      tc.beginPath(); tc.moveTo(0,195); tc.lineTo(360,195); tc.stroke(); tc.setLineDash([]);
+      /* Street lamp */
+      tc.fillStyle='rgba(60,60,80,.5)'; tc.fillRect(20,90,3,62);
+      tc.fillStyle='rgba(80,80,100,.4)'; tc.fillRect(15,88,14,4);
+      var lampGlow=tc.createRadialGradient(22,88,2,22,88,35);
+      lampGlow.addColorStop(0,'rgba(255,200,100,.15)'); lampGlow.addColorStop(1,'transparent');
+      tc.fillStyle=lampGlow; tc.fillRect(0,60,50,65);
+      /* Car body (64 Impala, front lifted on hydraulics) */
+      var carX=80, carY=155;
+      var shadowG2=tc.createRadialGradient(carX+100,carY+50,10,carX+100,carY+50,100);
+      shadowG2.addColorStop(0,'rgba(0,0,0,.4)'); shadowG2.addColorStop(1,'transparent');
+      tc.fillStyle=shadowG2; tc.fillRect(carX-20,carY+30,240,60);
+      tc.fillStyle='#4a00a0';
+      tc.beginPath();
+      tc.moveTo(carX-5,carY+25); tc.lineTo(carX+5,carY+5); tc.lineTo(carX+20,carY-10);
+      tc.lineTo(carX+50,carY-18); tc.lineTo(carX+105,carY-20); tc.lineTo(carX+155,carY-18);
+      tc.lineTo(carX+175,carY-8); tc.lineTo(carX+190,carY+5); tc.lineTo(carX+200,carY+20);
+      tc.lineTo(carX+205,carY+28); tc.closePath(); tc.fill();
+      tc.fillStyle='#3a0080'; tc.fillRect(carX-8,carY+25,216,12);
+      tc.strokeStyle='rgba(200,200,255,.55)'; tc.lineWidth=1.5;
+      tc.beginPath(); tc.moveTo(carX-5,carY+25); tc.lineTo(carX+205,carY+25); tc.stroke();
+      /* Windows */
+      tc.fillStyle='rgba(80,120,255,.22)';
+      tc.beginPath(); tc.moveTo(carX+30,carY); tc.lineTo(carX+37,carY-12); tc.lineTo(carX+80,carY-15); tc.lineTo(carX+80,carY); tc.closePath(); tc.fill();
+      tc.beginPath(); tc.moveTo(carX+85,carY-15); tc.lineTo(carX+140,carY-15); tc.lineTo(carX+160,carY-5); tc.lineTo(carX+165,carY); tc.lineTo(carX+85,carY); tc.closePath(); tc.fill();
+      tc.strokeStyle='rgba(200,200,255,.3)'; tc.lineWidth=0.8;
+      tc.beginPath(); tc.moveTo(carX+30,carY); tc.lineTo(carX+37,carY-12); tc.lineTo(carX+80,carY-15); tc.lineTo(carX+80,carY); tc.closePath(); tc.stroke();
+      tc.beginPath(); tc.moveTo(carX+85,carY-15); tc.lineTo(carX+140,carY-15); tc.lineTo(carX+160,carY-5); tc.lineTo(carX+165,carY); tc.lineTo(carX+85,carY); tc.closePath(); tc.stroke();
+      tc.fillStyle='#3a0080'; tc.fillRect(carX+80,carY-15,5,15);
+      /* Headlights */
+      var hlGr=tc.createRadialGradient(carX+198,carY+28,3,carX+198,carY+28,25);
+      hlGr.addColorStop(0,'rgba(255,255,200,.6)'); hlGr.addColorStop(0.3,'rgba(255,255,150,.15)'); hlGr.addColorStop(1,'transparent');
+      tc.fillStyle=hlGr; tc.fillRect(carX+180,carY+10,40,35);
+      tc.fillStyle='rgba(255,255,200,.8)'; tc.fillRect(carX+196,carY+26,8,6);
+      /* Tail lights */
+      var tlGr=tc.createRadialGradient(carX-2,carY+28,2,carX-2,carY+28,15);
+      tlGr.addColorStop(0,'rgba(255,0,50,.6)'); tlGr.addColorStop(0.4,'rgba(255,0,0,.1)'); tlGr.addColorStop(1,'transparent');
+      tc.fillStyle=tlGr; tc.fillRect(carX-15,carY+18,20,20);
+      tc.fillStyle='rgba(255,0,50,.7)'; tc.fillRect(carX-4,carY+26,5,5);
+      /* Hydraulic struts */
+      tc.strokeStyle='rgba(180,180,220,.5)'; tc.lineWidth=2;
+      tc.beginPath(); tc.moveTo(carX+35,carY+37); tc.lineTo(carX+35,carY+55); tc.stroke();
+      tc.beginPath(); tc.moveTo(carX+170,carY+37); tc.lineTo(carX+170,carY+48); tc.stroke();
+      /* Wheels with chrome wire rims */
+      [[carX+40,carY+55],[carX+170,carY+48]].forEach(function(wh){
+        var wx=wh[0], wy=wh[1];
+        tc.fillStyle='#0a0a0a'; tc.beginPath(); tc.arc(wx,wy,14,0,Math.PI*2); tc.fill();
+        tc.strokeStyle='rgba(200,200,255,.55)'; tc.lineWidth=1.5;
+        tc.beginPath(); tc.arc(wx,wy,14,0,Math.PI*2); tc.stroke();
+        tc.strokeStyle='rgba(200,200,255,.4)'; tc.lineWidth=0.6;
+        for(var sp=0;sp<8;sp++){ var a=sp*Math.PI/4; tc.beginPath(); tc.moveTo(wx+Math.cos(a)*3,wy+Math.sin(a)*3); tc.lineTo(wx+Math.cos(a)*12,wy+Math.sin(a)*12); tc.stroke(); }
+        tc.fillStyle='rgba(200,200,255,.5)'; tc.beginPath(); tc.arc(wx,wy,3,0,Math.PI*2); tc.fill();
+      });
+      /* Purple neon underglow */
+      var ugGlow=tc.createLinearGradient(carX,carY+37,carX,carY+65);
+      ugGlow.addColorStop(0,'rgba(130,0,255,.3)'); ugGlow.addColorStop(1,'transparent');
+      tc.fillStyle=ugGlow; tc.fillRect(carX-10,carY+37,225,28);
+      tc.strokeStyle='rgba(160,0,255,.45)'; tc.lineWidth=1.2;
+      tc.beginPath(); tc.moveTo(carX,carY+36); tc.lineTo(carX+200,carY+36); tc.stroke();
+      /* Ground neon reflection */
+      var reflGlow=tc.createRadialGradient(carX+100,carY+55,5,carX+100,carY+55,80);
+      reflGlow.addColorStop(0,'rgba(120,0,255,.12)'); reflGlow.addColorStop(1,'transparent');
+      tc.fillStyle=reflGlow; tc.fillRect(carX-10,carY+40,230,50);
+      /* Bounce arrows */
+      tc.fillStyle='rgba(160,100,255,.25)';
+      tc.beginPath(); tc.moveTo(carX+90,carY-30); tc.lineTo(carX+100,carY-42); tc.lineTo(carX+110,carY-30); tc.closePath(); tc.fill();
+      tc.beginPath(); tc.moveTo(carX+90,carY-38); tc.lineTo(carX+100,carY-50); tc.lineTo(carX+110,carY-38); tc.closePath(); tc.fill();
+      /* Ground sparks */
+      tc.fillStyle='rgba(255,200,50,.4)';
+      for(var sk=0;sk<8;sk++){ tc.beginPath(); tc.arc(carX+20+Math.random()*170,carY+52+Math.random()*8,1+Math.random()*1.5,0,Math.PI*2); tc.fill(); }
+      /* Smoke exhaust */
+      tc.globalAlpha=0.06; tc.fillStyle='rgba(180,180,200,1)';
+      tc.beginPath(); tc.arc(carX-12,carY+30,8,0,Math.PI*2); tc.fill();
+      tc.beginPath(); tc.arc(carX-22,carY+26,10,0,Math.PI*2); tc.fill();
+      tc.globalAlpha=1;
+      /* Gold chain on mirror */
+      tc.fillStyle='rgba(255,215,0,.5)'; tc.fillRect(carX+82,carY-3,1.5,6);
+      tc.beginPath(); tc.arc(carX+83,carY+4,2,0,Math.PI*2); tc.fill();
+      /* Graffiti text */
+      tc.globalAlpha=0.05; tc.font='bold 22px Impact, sans-serif';
+      tc.fillStyle='#ff00ff'; tc.fillText('VYBE',240,100);
+      tc.fillStyle='#00ffcc'; tc.fillText('FLOW',10,120);
+      tc.font='bold 16px Impact, sans-serif';
+      tc.fillStyle='#ff6600'; tc.fillText('NO LACKING',120,80);
+      tc.globalAlpha=1;
+      /* Tile */
+      var pat=ctx.createPattern(tile,'repeat'); ctx.fillStyle=pat; ctx.globalAlpha=0.92; ctx.fillRect(0,0,W,H);
+    } else if(preset==='mic_drop'){
+      /* Microphone and stage lights */
+      ctx.globalAlpha=0.08;
+      /* Spotlight cones from top */
+      var spotColors=['rgba(255,100,200,.04)','rgba(100,100,255,.04)','rgba(255,200,0,.04)'];
+      for(var sp=0;sp<3;sp++){
+        var spx=W*(0.25+sp*0.25);
+        var spGrad=ctx.createRadialGradient(spx,0,10,spx,H*0.6,W*0.15);
+        spGrad.addColorStop(0,spotColors[sp]); spGrad.addColorStop(1,'transparent');
+        ctx.fillStyle=spGrad; ctx.beginPath();
+        ctx.moveTo(spx-5,0); ctx.lineTo(spx-W*0.12,H*0.7); ctx.lineTo(spx+W*0.12,H*0.7); ctx.lineTo(spx+5,0); ctx.closePath(); ctx.fill();
+      }
+      /* Microphone */
+      ctx.fillStyle='rgba(200,200,200,.06)'; ctx.fillRect(W*0.49,H*0.3,W*0.02,H*0.35);
+      ctx.fillStyle='rgba(150,150,150,.08)'; ctx.beginPath(); ctx.arc(W*0.5,H*0.3,W*0.03,0,Math.PI*2); ctx.fill();
+      /* Stage particles */
+      for(var stg=0;stg<50;stg++){
+        ctx.fillStyle='rgba(255,200,100,'+(0.02+Math.random()*0.03)+')';
+        ctx.beginPath(); ctx.arc(Math.random()*W,Math.random()*H*0.3,1+Math.random()*2,0,Math.PI*2); ctx.fill();
+      }
+    } else if(preset==='spray_can'){
+      /* Spray paint drips and splatters */
+      ctx.globalAlpha=0.1;
+      var sprayColors=['#ff0044','#00ff66','#ffcc00','#00ccff','#ff6600','#cc00ff'];
+      for(var sc=0;sc<30;sc++){
+        var scx=Math.random()*W, scy=Math.random()*H;
+        var scCol=sprayColors[Math.floor(Math.random()*sprayColors.length)];
+        /* Spray circle */
+        var scGrad=ctx.createRadialGradient(scx,scy,0,scx,scy,20+Math.random()*50);
+        scGrad.addColorStop(0,scCol+'11'); scGrad.addColorStop(0.5,scCol+'06'); scGrad.addColorStop(1,'transparent');
+        ctx.fillStyle=scGrad; ctx.fillRect(scx-60,scy-60,120,120);
+        /* Drip */
+        ctx.fillStyle=scCol+'08'; ctx.fillRect(scx-1,scy,3,20+Math.random()*80);
+      }
+      /* Splatter */
+      for(var spl=0;spl<100;spl++){
+        ctx.fillStyle=sprayColors[Math.floor(Math.random()*sprayColors.length)]+'0a';
+        ctx.beginPath(); ctx.arc(Math.random()*W,Math.random()*H,1+Math.random()*4,0,Math.PI*2); ctx.fill();
+      }
+    } else if(preset==='vinyl_record'){
+      /* Vinyl record grooves */
+      ctx.globalAlpha=0.1;
+      /* Vinyl disc */
+      ctx.fillStyle='#0a0a0a'; ctx.beginPath(); ctx.arc(W*0.5,H*0.5,Math.min(W,H)*0.38,0,Math.PI*2); ctx.fill();
+      /* Grooves */
+      ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=0.5;
+      for(var vg=0;vg<50;vg++){
+        ctx.beginPath(); ctx.arc(W*0.5,H*0.5,30+vg*(Math.min(W,H)*0.007),0,Math.PI*2); ctx.stroke();
+      }
+      /* Center label */
+      ctx.fillStyle='rgba(255,100,0,.1)'; ctx.beginPath(); ctx.arc(W*0.5,H*0.5,Math.min(W,H)*0.06,0,Math.PI*2); ctx.fill();
+      /* Light reflection */
+      ctx.strokeStyle='rgba(255,255,255,.03)'; ctx.lineWidth=40;
+      ctx.beginPath(); ctx.arc(W*0.5,H*0.5,Math.min(W,H)*0.25,Math.PI*0.8,Math.PI*1.2); ctx.stroke();
+    } else if(preset==='diamond_ice'){
+      /* Diamond/ice bling */
+      ctx.globalAlpha=0.08;
+      for(var di=0;di<30;di++){
+        var dix=Math.random()*W, diy=Math.random()*H, dis=10+Math.random()*30;
+        ctx.save(); ctx.translate(dix,diy); ctx.rotate(Math.random()*Math.PI);
+        /* Diamond shape */
+        ctx.fillStyle='rgba(150,200,255,.06)'; ctx.beginPath();
+        ctx.moveTo(0,-dis); ctx.lineTo(dis*0.6,0); ctx.lineTo(0,dis*0.4);
+        ctx.lineTo(-dis*0.6,0); ctx.closePath(); ctx.fill();
+        /* Sparkle */
+        ctx.strokeStyle='rgba(200,230,255,.08)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(-dis*0.8,0); ctx.lineTo(dis*0.8,0); ctx.moveTo(0,-dis*0.8); ctx.lineTo(0,dis*0.8); ctx.stroke();
+        ctx.restore();
+      }
+      /* Ice shimmer */
+      for(var ic=0;ic<60;ic++){
+        ctx.fillStyle='rgba(200,230,255,'+(0.02+Math.random()*0.04)+')';
+        ctx.beginPath(); ctx.arc(Math.random()*W,Math.random()*H,0.5+Math.random()*2,0,Math.PI*2); ctx.fill();
+      }
+    } else if(preset==='hiphop_collage'){
+      /* Hip-hop culture collage */
+      ctx.globalAlpha=0.06;
+      var hhEmoji=['🎤','🎧','👑','💰','🔥','💎','📻','🎵','👟','💿','🏆','⛓️'];
+      for(var hh=0;hh<25;hh++){
+        ctx.save(); ctx.translate(Math.random()*W,Math.random()*H);
+        ctx.rotate((Math.random()-0.5)*0.5);
+        ctx.font='bold '+(30+Math.random()*50)+'px sans-serif';
+        ctx.fillText(hhEmoji[Math.floor(Math.random()*hhEmoji.length)],0,0);
+        ctx.restore();
+      }
+      /* Culture words */
+      var hhWords=['VYBE','FLOW','BARS','BEATS','RAP','HUSTLE','GRIND','FLEX'];
+      ctx.globalAlpha=0.04;
+      for(var hw=0;hw<12;hw++){
+        ctx.save(); ctx.translate(Math.random()*W,Math.random()*H);
+        ctx.rotate((Math.random()-0.5)*0.3);
+        ctx.font='bold '+(20+Math.random()*30)+'px Impact, sans-serif';
+        ctx.fillStyle='hsl('+(Math.random()*360)+',70%,60%)';
+        ctx.fillText(hhWords[Math.floor(Math.random()*hhWords.length)],0,0);
+        ctx.restore();
+      }
+    } else if(preset==='streetwear'){
+      /* Streetwear / sneaker culture */
+      ctx.globalAlpha=0.05;
+      /* Brand-style geometric shapes */
+      for(var sw=0;sw<15;sw++){
+        ctx.save(); ctx.translate(Math.random()*W,Math.random()*H);
+        ctx.rotate(Math.random()*Math.PI*2);
+        ctx.strokeStyle='rgba(255,80,0,.08)'; ctx.lineWidth=2;
+        /* Geometric triangles */
+        var swSz=30+Math.random()*60;
+        ctx.beginPath(); ctx.moveTo(0,-swSz); ctx.lineTo(swSz*0.87,swSz*0.5);
+        ctx.lineTo(-swSz*0.87,swSz*0.5); ctx.closePath(); ctx.stroke();
+        ctx.restore();
+      }
+      /* Sneaker silhouettes */
+      ctx.globalAlpha=0.04; ctx.font='bold 50px sans-serif';
+      for(var sn=0;sn<8;sn++) ctx.fillText('👟',Math.random()*W,Math.random()*H);
+      /* Cross lines pattern */
+      ctx.strokeStyle='rgba(255,80,0,.03)'; ctx.lineWidth=1; ctx.globalAlpha=0.06;
+      for(var cl=0;cl<12;cl++){
+        ctx.beginPath(); ctx.moveTo(Math.random()*W,0); ctx.lineTo(Math.random()*W,H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,Math.random()*H); ctx.lineTo(W,Math.random()*H); ctx.stroke();
+      }
+    } else if(preset==='skimask_grillz'){
+      /* ═══ SKI MASK THUG — tiled cartoon black man with ski mask + gold grillz ═══ */
+      var tile=document.createElement('canvas'); tile.width=220; tile.height=280;
+      var tc=tile.getContext('2d');
+      /* Dark background per tile */
+      tc.fillStyle='#080808'; tc.fillRect(0,0,220,280);
+      /* Shoulders / hoodie */
+      tc.fillStyle='#1a1a1a';
+      tc.beginPath(); tc.moveTo(50,200); tc.bezierCurveTo(50,175,70,160,110,155);
+      tc.bezierCurveTo(150,160,170,175,170,200); tc.lineTo(170,280); tc.lineTo(50,280); tc.closePath(); tc.fill();
+      /* Hoodie strings */
+      tc.strokeStyle='rgba(200,200,200,.3)'; tc.lineWidth=1.5;
+      tc.beginPath(); tc.moveTo(95,168); tc.lineTo(88,210); tc.stroke();
+      tc.beginPath(); tc.moveTo(125,168); tc.lineTo(132,210); tc.stroke();
+      /* Gold chain on chest */
+      tc.strokeStyle='rgba(255,215,0,.7)'; tc.lineWidth=3;
+      tc.beginPath(); tc.moveTo(75,175); tc.quadraticCurveTo(110,210,145,175); tc.stroke();
+      /* Chain pendant */
+      tc.fillStyle='rgba(255,215,0,.8)';
+      tc.beginPath(); tc.arc(110,205,8,0,Math.PI*2); tc.fill();
+      tc.fillStyle='rgba(255,255,255,.3)'; tc.font='bold 9px sans-serif'; tc.textAlign='center';
+      tc.fillText('VF',110,208);
+      /* Head shape — brown skin */
+      tc.fillStyle='#4a2f1a';
+      tc.beginPath(); tc.ellipse(110,110,44,54,0,0,Math.PI*2); tc.fill();
+      /* Ski mask — covers the head */
+      tc.fillStyle='#111';
+      tc.beginPath(); tc.ellipse(110,105,46,50,0,0,Math.PI*2); tc.fill();
+      /* Mask texture lines */
+      tc.strokeStyle='rgba(50,50,50,.5)'; tc.lineWidth=0.5;
+      for(var ml=0;ml<8;ml++){
+        tc.beginPath(); tc.moveTo(64,80+ml*8); tc.lineTo(156,80+ml*8); tc.stroke();
+      }
+      /* Mask rolled-up edge at forehead */
+      tc.fillStyle='#1a1a1a';
+      tc.beginPath(); tc.ellipse(110,62,40,8,0,0,Math.PI*2); tc.fill();
+      /* Eye openings — showing brown skin + eyes */
+      tc.fillStyle='#4a2f1a';
+      tc.beginPath(); tc.ellipse(90,98,16,9,0,0,Math.PI*2); tc.fill();
+      tc.beginPath(); tc.ellipse(130,98,16,9,0,0,Math.PI*2); tc.fill();
+      /* Eyeballs */
+      tc.fillStyle='#fff';
+      tc.beginPath(); tc.ellipse(90,98,10,7,0,0,Math.PI*2); tc.fill();
+      tc.beginPath(); tc.ellipse(130,98,10,7,0,0,Math.PI*2); tc.fill();
+      /* Pupils — looking menacing */
+      tc.fillStyle='#1a0a00';
+      tc.beginPath(); tc.arc(92,98,5,0,Math.PI*2); tc.fill();
+      tc.beginPath(); tc.arc(132,98,5,0,Math.PI*2); tc.fill();
+      /* Eye glint */
+      tc.fillStyle='rgba(255,255,255,.7)';
+      tc.beginPath(); tc.arc(94,96,1.5,0,Math.PI*2); tc.fill();
+      tc.beginPath(); tc.arc(134,96,1.5,0,Math.PI*2); tc.fill();
+      /* Eyebrows — angry expression */
+      tc.strokeStyle='#222'; tc.lineWidth=3;
+      tc.beginPath(); tc.moveTo(74,90); tc.lineTo(100,86); tc.stroke();
+      tc.beginPath(); tc.moveTo(146,90); tc.lineTo(120,86); tc.stroke();
+      /* Mouth opening — showing GOLD GRILLZ */
+      tc.fillStyle='#2a1008';
+      tc.beginPath(); tc.ellipse(110,130,22,10,-0.02,0,Math.PI*2); tc.fill();
+      /* Gold grillz — top row */
+      tc.fillStyle='rgba(255,215,0,.9)';
+      for(var gt=0;gt<8;gt++){
+        var gx=88+gt*5.5;
+        tc.beginPath(); tc.roundRect(gx,122,4.5,7,1); tc.fill();
+      }
+      /* Gold grillz — bottom row */
+      for(var gb=0;gb<8;gb++){
+        var gbx=88+gb*5.5;
+        tc.beginPath(); tc.roundRect(gbx,131,4.5,7,1); tc.fill();
+      }
+      /* Diamond on front tooth */
+      tc.fillStyle='rgba(200,230,255,.8)';
+      tc.beginPath(); tc.moveTo(110,126); tc.lineTo(112,124); tc.lineTo(114,126); tc.lineTo(112,128); tc.closePath(); tc.fill();
+      /* Gold sparkle flashes */
+      tc.fillStyle='rgba(255,255,200,.6)';
+      for(var sp=0;sp<5;sp++){
+        var spx=75+Math.random()*70, spy=118+Math.random()*25;
+        tc.beginPath();
+        tc.moveTo(spx,spy-3); tc.lineTo(spx+1,spy); tc.lineTo(spx,spy+3); tc.lineTo(spx-1,spy); tc.closePath(); tc.fill();
+      }
+      /* Glow from grillz */
+      var grillGlow=tc.createRadialGradient(110,128,5,110,128,40);
+      grillGlow.addColorStop(0,'rgba(255,200,0,.15)'); grillGlow.addColorStop(1,'transparent');
+      tc.fillStyle=grillGlow; tc.fillRect(60,90,100,90);
+      /* Tile it */
+      var pat=ctx.createPattern(tile,'repeat'); ctx.fillStyle=pat; ctx.globalAlpha=0.85; ctx.fillRect(0,0,W,H);
+    } else if(preset==='boondock_hood'){
+      /* ═══ BOONDOCK HOOD — tiled cartoon hooded thug figure ═══ */
+      var tile=document.createElement('canvas'); tile.width=200; tile.height=280;
+      var tc=tile.getContext('2d');
+      tc.fillStyle='#0a0704'; tc.fillRect(0,0,200,280);
+      /* Hoodie body */
+      tc.fillStyle='#1a1410';
+      tc.beginPath(); tc.moveTo(40,175); tc.lineTo(40,280); tc.lineTo(160,280); tc.lineTo(160,175);
+      tc.bezierCurveTo(155,165,135,155,100,150); tc.bezierCurveTo(65,155,45,165,40,175); tc.closePath(); tc.fill();
+      /* Hoodie pouch pocket */
+      tc.strokeStyle='rgba(60,40,20,.4)'; tc.lineWidth=1;
+      tc.beginPath(); tc.moveTo(65,220); tc.quadraticCurveTo(100,240,135,220); tc.stroke();
+      /* Hood — large pointed hood */
+      tc.fillStyle='#2a1a10';
+      tc.beginPath(); tc.moveTo(100,30);
+      tc.bezierCurveTo(45,50,35,90,38,145); tc.lineTo(45,155);
+      tc.bezierCurveTo(50,158,60,155,70,148);
+      tc.lineTo(130,148);
+      tc.bezierCurveTo(140,155,150,158,155,155); tc.lineTo(162,145);
+      tc.bezierCurveTo(165,90,155,50,100,30); tc.closePath(); tc.fill();
+      /* Hood shadow inside */
+      tc.fillStyle='#0a0500';
+      tc.beginPath(); tc.ellipse(100,110,38,42,0,0,Math.PI*2); tc.fill();
+      /* Dark face (deep shadow) */
+      tc.fillStyle='#150a02';
+      tc.beginPath(); tc.ellipse(100,112,32,36,0,0,Math.PI*2); tc.fill();
+      /* Glowing orange eyes — menacing */
+      var eyeGlow=tc.createRadialGradient(84,105,2,84,105,12);
+      eyeGlow.addColorStop(0,'rgba(255,120,0,.9)'); eyeGlow.addColorStop(0.4,'rgba(255,80,0,.4)'); eyeGlow.addColorStop(1,'transparent');
+      tc.fillStyle=eyeGlow; tc.fillRect(72,93,24,24);
+      tc.fillStyle='rgba(255,140,20,.9)'; tc.beginPath(); tc.arc(84,105,4,0,Math.PI*2); tc.fill();
+      var eyeGlow2=tc.createRadialGradient(116,105,2,116,105,12);
+      eyeGlow2.addColorStop(0,'rgba(255,120,0,.9)'); eyeGlow2.addColorStop(0.4,'rgba(255,80,0,.4)'); eyeGlow2.addColorStop(1,'transparent');
+      tc.fillStyle=eyeGlow2; tc.fillRect(104,93,24,24);
+      tc.fillStyle='rgba(255,140,20,.9)'; tc.beginPath(); tc.arc(116,105,4,0,Math.PI*2); tc.fill();
+      /* Eye pupils */
+      tc.fillStyle='#000'; tc.beginPath(); tc.arc(85,105,2,0,Math.PI*2); tc.fill();
+      tc.beginPath(); tc.arc(117,105,2,0,Math.PI*2); tc.fill();
+      /* Subtle mouth / jaw line */
+      tc.strokeStyle='rgba(255,80,0,.15)'; tc.lineWidth=1;
+      tc.beginPath(); tc.moveTo(85,128); tc.quadraticCurveTo(100,135,115,128); tc.stroke();
+      /* Hood texture — cross-stitch lines */
+      tc.strokeStyle='rgba(80,50,25,.2)'; tc.lineWidth=0.5;
+      for(var hl=0;hl<12;hl++){
+        var hy=50+hl*10;
+        tc.beginPath(); tc.moveTo(45,hy); tc.quadraticCurveTo(100,hy-5,155,hy); tc.stroke();
+      }
+      /* Fog / atmosphere at bottom */
+      var fogGrad=tc.createLinearGradient(0,240,0,280);
+      fogGrad.addColorStop(0,'transparent'); fogGrad.addColorStop(1,'rgba(30,20,10,.5)');
+      tc.fillStyle=fogGrad; tc.fillRect(0,240,200,40);
+      /* Tile it */
+      var pat=ctx.createPattern(tile,'repeat'); ctx.fillStyle=pat; ctx.globalAlpha=0.85; ctx.fillRect(0,0,W,H);
+    } else if(preset==='graffiti_bomb'){
+      /* ═══ GRAFFITI BOMB — tiled wild-style graffiti art ═══ */
+      var tile=document.createElement('canvas'); tile.width=300; tile.height=260;
+      var tc=tile.getContext('2d');
+      /* Brick wall background */
+      tc.fillStyle='#1a1018'; tc.fillRect(0,0,300,260);
+      /* Bricks */
+      tc.strokeStyle='rgba(80,40,60,.3)'; tc.lineWidth=1;
+      for(var by=0;by<260;by+=16){
+        var off=(Math.floor(by/16)%2)*30;
+        for(var bx=-30+off;bx<310;bx+=60){
+          tc.strokeRect(bx,by,58,14);
+        }
+      }
+      /* Big "VYBE" graffiti bubble letters */
+      tc.save(); tc.translate(30,60); tc.rotate(-0.08);
+      tc.font='bold 72px Impact, sans-serif';
+      /* Shadow */
+      tc.fillStyle='rgba(0,0,0,.5)'; tc.fillText('VYBE',4,4);
+      /* Outline */
+      tc.strokeStyle='rgba(255,0,255,.8)'; tc.lineWidth=4; tc.strokeText('VYBE',0,0);
+      /* Fill with gradient */
+      var tg=tc.createLinearGradient(0,-40,0,10);
+      tg.addColorStop(0,'#ff00ff'); tg.addColorStop(0.5,'#00ffff'); tg.addColorStop(1,'#ffff00');
+      tc.fillStyle=tg; tc.fillText('VYBE',0,0);
+      /* Inner highlight */
+      tc.strokeStyle='rgba(255,255,255,.3)'; tc.lineWidth=1; tc.strokeText('VYBE',0,0);
+      tc.restore();
+      /* "FLOW" smaller */
+      tc.save(); tc.translate(100,175); tc.rotate(0.12);
+      tc.font='bold 48px Impact, sans-serif';
+      tc.fillStyle='rgba(0,0,0,.4)'; tc.fillText('FLOW',3,3);
+      tc.strokeStyle='rgba(255,80,0,.7)'; tc.lineWidth=3; tc.strokeText('FLOW',0,0);
+      var tg2=tc.createLinearGradient(0,-30,0,5);
+      tg2.addColorStop(0,'#ff6a00'); tg2.addColorStop(1,'#ff0044');
+      tc.fillStyle=tg2; tc.fillText('FLOW',0,0);
+      tc.restore();
+      /* Crown above VYBE */
+      tc.fillStyle='rgba(255,215,0,.8)';
+      tc.beginPath(); tc.moveTo(40,-5+30); tc.lineTo(50,-20+30); tc.lineTo(60,-5+30); tc.lineTo(70,-18+30);
+      tc.lineTo(80,-5+30); tc.lineTo(90,-20+30); tc.lineTo(100,-5+30);
+      tc.lineTo(98,8+30); tc.lineTo(42,8+30); tc.closePath(); tc.fill();
+      /* Stars */
+      tc.fillStyle='rgba(255,255,0,.6)'; tc.font='22px sans-serif';
+      tc.fillText('\u2605',240,40); tc.fillText('\u2605',10,180); tc.fillText('\u2605',260,200);
+      /* Spray drips */
+      var dripColors=['rgba(255,0,255,.5)','rgba(0,255,255,.5)','rgba(255,255,0,.4)','rgba(255,80,0,.5)','rgba(0,255,0,.4)'];
+      for(var dr=0;dr<15;dr++){
+        var dx=20+Math.random()*260,dy=Math.random()*200;
+        tc.fillStyle=dripColors[Math.floor(Math.random()*dripColors.length)];
+        tc.beginPath(); tc.arc(dx,dy,2+Math.random()*3,0,Math.PI*2); tc.fill();
+        tc.fillRect(dx-1,dy,2,10+Math.random()*30);
+      }
+      /* Splatter dots */
+      for(var sp=0;sp<25;sp++){
+        tc.fillStyle=dripColors[Math.floor(Math.random()*dripColors.length)];
+        tc.globalAlpha=0.3+Math.random()*0.4;
+        tc.beginPath(); tc.arc(Math.random()*300,Math.random()*260,1+Math.random()*4,0,Math.PI*2); tc.fill();
+      }
+      tc.globalAlpha=1;
+      /* Tile it */
+      var pat=ctx.createPattern(tile,'repeat'); ctx.fillStyle=pat; ctx.globalAlpha=0.85; ctx.fillRect(0,0,W,H);
+    } else if(preset==='gold_grill_drip'){
+      /* ═══ GOLD GRILL DRIP — tiled gold teeth, chains, diamonds ═══ */
+      var tile=document.createElement('canvas'); tile.width=220; tile.height=220;
+      var tc=tile.getContext('2d');
+      tc.fillStyle='#0a0800'; tc.fillRect(0,0,220,220);
+      /* Big mouth / grillz center piece */
+      tc.fillStyle='#1a0800';
+      tc.beginPath(); tc.ellipse(110,90,55,30,0,0,Math.PI*2); tc.fill();
+      /* Lips */
+      tc.fillStyle='#3a1005';
+      tc.beginPath(); tc.ellipse(110,88,48,22,0,0,Math.PI); tc.fill();
+      tc.beginPath(); tc.ellipse(110,92,48,22,0,Math.PI,Math.PI*2); tc.fill();
+      /* Top grillz row */
+      for(var t=0;t<10;t++){
+        var gx=68+t*9;
+        tc.fillStyle='rgba(255,200,0,.9)';
+        tc.beginPath(); tc.roundRect(gx,78,7.5,13,2); tc.fill();
+        tc.strokeStyle='rgba(255,240,150,.5)'; tc.lineWidth=0.5;
+        tc.beginPath(); tc.roundRect(gx,78,7.5,13,2); tc.stroke();
+      }
+      /* Bottom grillz row */
+      for(var b=0;b<10;b++){
+        var bx=68+b*9;
+        tc.fillStyle='rgba(255,190,0,.85)';
+        tc.beginPath(); tc.roundRect(bx,93,7.5,13,2); tc.fill();
+      }
+      /* Diamonds on select teeth */
+      tc.fillStyle='rgba(200,230,255,.9)';
+      [77,95,113,131].forEach(function(dx){
+        tc.beginPath(); tc.moveTo(dx,84); tc.lineTo(dx+3,81); tc.lineTo(dx+6,84); tc.lineTo(dx+3,87); tc.closePath(); tc.fill();
+      });
+      /* Gold drips running down */
+      tc.fillStyle='rgba(255,200,0,.5)';
+      for(var d=0;d<8;d++){
+        var dx=72+d*11, dlen=20+Math.random()*60;
+        tc.fillRect(dx,106,3,dlen);
+        tc.beginPath(); tc.arc(dx+1.5,106+dlen,3,0,Math.PI*2); tc.fill();
+      }
+      /* Chain links across */
+      tc.strokeStyle='rgba(255,215,0,.6)'; tc.lineWidth=3;
+      tc.beginPath();
+      for(var cx=0;cx<220;cx+=18){
+        tc.ellipse(cx,55,7,10,0,0,Math.PI*2);
+      }
+      tc.stroke();
+      /* Dollar signs */
+      tc.fillStyle='rgba(255,215,0,.5)'; tc.font='bold 28px serif';
+      tc.fillText('$',15,50); tc.fillText('$',185,200); tc.fillText('$',20,200); tc.fillText('$',175,40);
+      /* Gold sparkles */
+      tc.fillStyle='rgba(255,255,200,.7)';
+      for(var s=0;s<12;s++){
+        var sx=Math.random()*220,sy=Math.random()*220;
+        tc.beginPath(); tc.moveTo(sx,sy-4); tc.lineTo(sx+1.5,sy); tc.lineTo(sx,sy+4); tc.lineTo(sx-1.5,sy); tc.closePath(); tc.fill();
+      }
+      /* Tile it */
+      var pat=ctx.createPattern(tile,'repeat'); ctx.fillStyle=pat; ctx.globalAlpha=0.85; ctx.fillRect(0,0,W,H);
+    } else if(preset==='hood_angel'){
+      /* ═══ HOOD ANGEL — tiled figure with wings, halo, memorial style ═══ */
+      var tile=document.createElement('canvas'); tile.width=240; tile.height=280;
+      var tc=tile.getContext('2d');
+      tc.fillStyle='#060610'; tc.fillRect(0,0,240,280);
+      /* Soft light rays from above */
+      var rayGrad=tc.createLinearGradient(120,0,120,150);
+      rayGrad.addColorStop(0,'rgba(180,180,255,.15)'); rayGrad.addColorStop(1,'transparent');
+      tc.fillStyle=rayGrad;
+      tc.beginPath(); tc.moveTo(100,0); tc.lineTo(60,150); tc.lineTo(180,150); tc.lineTo(140,0); tc.closePath(); tc.fill();
+      /* Halo — golden ring */
+      tc.strokeStyle='rgba(255,215,0,.7)'; tc.lineWidth=3;
+      tc.beginPath(); tc.ellipse(120,60,28,8,0,0,Math.PI*2); tc.stroke();
+      tc.strokeStyle='rgba(255,240,150,.3)'; tc.lineWidth=1;
+      tc.beginPath(); tc.ellipse(120,60,32,10,0,0,Math.PI*2); tc.stroke();
+      /* Halo glow */
+      var haloGlow=tc.createRadialGradient(120,60,5,120,60,35);
+      haloGlow.addColorStop(0,'rgba(255,215,0,.2)'); haloGlow.addColorStop(1,'transparent');
+      tc.fillStyle=haloGlow; tc.fillRect(85,45,70,30);
+      /* Head */
+      tc.fillStyle='#3a2010';
+      tc.beginPath(); tc.ellipse(120,95,25,30,0,0,Math.PI*2); tc.fill();
+      /* Hood/durag */
+      tc.fillStyle='#f0f0f0';
+      tc.beginPath(); tc.ellipse(120,82,28,18,0,Math.PI,Math.PI*2); tc.fill();
+      /* Eyes closed (peaceful) */
+      tc.strokeStyle='#1a0a00'; tc.lineWidth=2;
+      tc.beginPath(); tc.arc(111,92,6,0,Math.PI); tc.stroke();
+      tc.beginPath(); tc.arc(129,92,6,0,Math.PI); tc.stroke();
+      /* Body / hoodie */
+      tc.fillStyle='#e8e8e8';
+      tc.beginPath(); tc.moveTo(70,140); tc.bezierCurveTo(70,130,95,120,120,118);
+      tc.bezierCurveTo(145,120,170,130,170,140); tc.lineTo(170,280); tc.lineTo(70,280); tc.closePath(); tc.fill();
+      /* Praying hands */
+      tc.fillStyle='#3a2010';
+      tc.beginPath(); tc.moveTo(112,175); tc.lineTo(108,155); tc.lineTo(120,145); tc.lineTo(132,155); tc.lineTo(128,175); tc.closePath(); tc.fill();
+      /* Wing left */
+      tc.fillStyle='rgba(200,200,255,.4)';
+      tc.beginPath(); tc.moveTo(70,130);
+      tc.bezierCurveTo(30,100,0,90,5,120);
+      tc.bezierCurveTo(10,140,25,145,35,140);
+      tc.bezierCurveTo(15,135,10,130,10,120);
+      tc.bezierCurveTo(15,100,35,105,55,120);
+      tc.bezierCurveTo(30,110,20,115,15,125);
+      tc.bezierCurveTo(25,115,40,115,70,130); tc.fill();
+      /* Wing right */
+      tc.beginPath(); tc.moveTo(170,130);
+      tc.bezierCurveTo(210,100,240,90,235,120);
+      tc.bezierCurveTo(230,140,215,145,205,140);
+      tc.bezierCurveTo(225,135,230,130,230,120);
+      tc.bezierCurveTo(225,100,205,105,185,120);
+      tc.bezierCurveTo(210,110,220,115,225,125);
+      tc.bezierCurveTo(215,115,200,115,170,130); tc.fill();
+      /* Wing feather lines */
+      tc.strokeStyle='rgba(150,150,220,.3)'; tc.lineWidth=0.5;
+      for(var f=0;f<6;f++){
+        tc.beginPath(); tc.moveTo(70,130-f*3); tc.quadraticCurveTo(40,115-f*5,10+f*5,120-f*3); tc.stroke();
+        tc.beginPath(); tc.moveTo(170,130-f*3); tc.quadraticCurveTo(200,115-f*5,230-f*5,120-f*3); tc.stroke();
+      }
+      /* Doves */
+      tc.fillStyle='rgba(200,200,255,.5)'; tc.font='18px sans-serif';
+      tc.fillText('\ud83d\udd4a',20,40); tc.fillText('\ud83d\udd4a',195,50);
+      /* Stars around */
+      tc.fillStyle='rgba(200,200,255,.4)';
+      for(var s=0;s<8;s++){
+        var sx=Math.random()*240,sy=Math.random()*60;
+        tc.beginPath(); tc.arc(sx,sy,1+Math.random()*2,0,Math.PI*2); tc.fill();
+      }
+      /* Tile it */
+      var pat=ctx.createPattern(tile,'repeat'); ctx.fillStyle=pat; ctx.globalAlpha=0.8; ctx.fillRect(0,0,W,H);
+    } else if(preset==='trap_mansion'){
+      /* ═══ TRAP MANSION — tiled purple trap house with figures ═══ */
+      var tile=document.createElement('canvas'); tile.width=260; tile.height=260;
+      var tc=tile.getContext('2d');
+      /* Night sky */
+      var skyGrad=tc.createLinearGradient(0,0,0,260);
+      skyGrad.addColorStop(0,'#08001a'); skyGrad.addColorStop(0.5,'#150025'); skyGrad.addColorStop(1,'#0a000a');
+      tc.fillStyle=skyGrad; tc.fillRect(0,0,260,260);
+      /* Moon */
+      tc.fillStyle='rgba(200,180,255,.3)'; tc.beginPath(); tc.arc(200,35,18,0,Math.PI*2); tc.fill();
+      var moonGlow=tc.createRadialGradient(200,35,10,200,35,50);
+      moonGlow.addColorStop(0,'rgba(160,100,255,.15)'); moonGlow.addColorStop(1,'transparent');
+      tc.fillStyle=moonGlow; tc.fillRect(150,0,100,85);
+      /* Stars */
+      tc.fillStyle='rgba(200,200,255,.5)';
+      [30,15, 80,25, 150,20, 45,45, 120,10, 230,50].forEach(function(v,i,a){
+        if(i%2===0) { tc.beginPath(); tc.arc(a[i],a[i+1],1,0,Math.PI*2); tc.fill(); }
+      });
+      /* Ground */
+      tc.fillStyle='#0a0005'; tc.fillRect(0,195,260,65);
+      /* TRAP HOUSE — main building */
+      tc.fillStyle='#1a0030';
+      tc.fillRect(60,100,140,95);
+      /* Roof */
+      tc.fillStyle='#200040';
+      tc.beginPath(); tc.moveTo(50,100); tc.lineTo(130,50); tc.lineTo(210,100); tc.closePath(); tc.fill();
+      /* Roof trim */
+      tc.strokeStyle='rgba(160,0,255,.5)'; tc.lineWidth=2;
+      tc.beginPath(); tc.moveTo(50,100); tc.lineTo(130,50); tc.lineTo(210,100); tc.stroke();
+      /* Windows with purple glow */
+      var winPositions=[[80,115],[140,115],[80,150],[140,150]];
+      winPositions.forEach(function(wp){
+        /* Window glow */
+        var wg=tc.createRadialGradient(wp[0]+12,wp[1]+12,2,wp[0]+12,wp[1]+12,25);
+        wg.addColorStop(0,'rgba(160,0,255,.3)'); wg.addColorStop(1,'transparent');
+        tc.fillStyle=wg; tc.fillRect(wp[0]-10,wp[1]-10,44,44);
+        /* Window frame */
+        tc.fillStyle='rgba(160,0,255,.6)'; tc.fillRect(wp[0],wp[1],24,24);
+        tc.strokeStyle='rgba(80,0,130,.8)'; tc.lineWidth=2;
+        tc.strokeRect(wp[0],wp[1],24,24);
+        /* Window cross */
+        tc.strokeStyle='rgba(80,0,130,.6)'; tc.lineWidth=1;
+        tc.beginPath(); tc.moveTo(wp[0]+12,wp[1]); tc.lineTo(wp[0]+12,wp[1]+24); tc.stroke();
+        tc.beginPath(); tc.moveTo(wp[0],wp[1]+12); tc.lineTo(wp[0]+24,wp[1]+12); tc.stroke();
+      });
+      /* Door */
+      tc.fillStyle='rgba(100,0,180,.7)'; tc.fillRect(115,160,30,35);
+      tc.fillStyle='rgba(255,215,0,.5)'; tc.beginPath(); tc.arc(140,178,2,0,Math.PI*2); tc.fill();
+      /* Smoke from chimney */
+      tc.fillStyle='#200040'; tc.fillRect(165,70,15,30);
+      tc.fillStyle='rgba(100,0,160,.25)';
+      for(var sm=0;sm<5;sm++){
+        tc.beginPath(); tc.arc(172+Math.random()*8,65-sm*12,6+Math.random()*8,0,Math.PI*2); tc.fill();
+      }
+      /* Figure silhouette in front of house */
+      tc.fillStyle='#050005';
+      /* Head */
+      tc.beginPath(); tc.arc(40,170,10,0,Math.PI*2); tc.fill();
+      /* Body */
+      tc.fillRect(33,180,14,30);
+      /* Legs */
+      tc.fillRect(33,210,5,15); tc.fillRect(42,210,5,15);
+      /* Second figure */
+      tc.beginPath(); tc.arc(230,175,9,0,Math.PI*2); tc.fill();
+      tc.fillRect(223,184,14,26); tc.fillRect(223,210,5,15); tc.fillRect(232,210,5,15);
+      /* Money floating */
+      tc.fillStyle='rgba(0,200,0,.5)'; tc.font='14px sans-serif';
+      tc.fillText('\ud83d\udcb0',20,60); tc.fillText('\ud83d\udcb0',220,90); tc.fillText('\ud83d\udcb5',40,100);
+      /* Purple ground glow */
+      var gndGlow=tc.createRadialGradient(130,195,10,130,195,120);
+      gndGlow.addColorStop(0,'rgba(120,0,200,.2)'); gndGlow.addColorStop(1,'transparent');
+      tc.fillStyle=gndGlow; tc.fillRect(0,150,260,110);
+      /* Tile it */
+      var pat=ctx.createPattern(tile,'repeat'); ctx.fillStyle=pat; ctx.globalAlpha=0.85; ctx.fillRect(0,0,W,H);
+    }
+    /* Store texture so we can composite later */
+    wpConfig._streetTexture = offscreen;
+  }
+
+  /* ═══ Motion Effects Grid Interactivity ═══ */
+  document.querySelectorAll('#wp-motion-grid .motion-swatch').forEach(function(s){
+    s.addEventListener('click',function(){
+      document.querySelectorAll('#wp-motion-grid .motion-swatch').forEach(function(x){x.classList.remove('active');});
+      s.classList.add('active');
+      var m = s.dataset.motion;
+      wpConfig.motion = m;
+      document.getElementById('wp-motion-input').value = m;
+      if(m==='none') resetMotionTransform();
+    });
+  });
+
+  var motionFrame = null;
+  function resetMotionTransform(){
+    if(wpBgLayer){ wpBgLayer.style.transform=''; wpBgLayer.style.transformOrigin='center center'; }
+    if(wpCanvas){ wpCanvas.style.transform=''; wpCanvas.style.transformOrigin='center center'; }
+  }
+
+  function applyMotionEffect(){
+    if(wpConfig.motion==='none') return;
+    var level = wpConfig.musicSync ? musicLevel/255 : 0.3+Math.sin(Date.now()*0.002)*0.2;
+    var t = Date.now()*0.001;
+    var tx='', ty='', sc='', ro='';
+    var m = wpConfig.motion;
+
+    if(m==='zoom_pulse'){
+      var z = 1 + level*0.06 + Math.sin(t*2)*0.01;
+      sc = 'scale('+z.toFixed(4)+')';
+    } else if(m==='shake'){
+      var intensity = level*6;
+      var sx = (Math.random()-0.5)*intensity;
+      var sy = (Math.random()-0.5)*intensity;
+      tx = 'translate('+sx.toFixed(2)+'px,'+sy.toFixed(2)+'px)';
+    } else if(m==='bounce'){
+      var bounceY = -Math.abs(Math.sin(t*3))*level*12;
+      tx = 'translateY('+bounceY.toFixed(2)+'px)';
+    } else if(m==='dance'){
+      var dScale = 1 + level*0.04;
+      var dRot = Math.sin(t*4)*level*3;
+      var dX = Math.sin(t*3)*level*8;
+      var dY = Math.cos(t*2.5)*level*5;
+      sc = 'scale('+dScale.toFixed(4)+')';
+      ro = 'rotate('+dRot.toFixed(2)+'deg)';
+      tx = 'translate('+dX.toFixed(2)+'px,'+dY.toFixed(2)+'px)';
+    } else if(m==='sway'){
+      var swayRot = Math.sin(t*1.5)*level*4;
+      var swayX = Math.sin(t*1.2)*level*10;
+      ro = 'rotate('+swayRot.toFixed(2)+'deg)';
+      tx = 'translateX('+swayX.toFixed(2)+'px)';
+    } else if(m==='breathe'){
+      var breath = 1 + Math.sin(t*0.8)*0.03 + level*0.02;
+      sc = 'scale('+breath.toFixed(4)+')';
+    } else if(m==='earthquake'){
+      var qIntensity = level*12+2;
+      var qx = (Math.random()-0.5)*qIntensity;
+      var qy = (Math.random()-0.5)*qIntensity;
+      var qr = (Math.random()-0.5)*level*5;
+      tx = 'translate('+qx.toFixed(2)+'px,'+qy.toFixed(2)+'px)';
+      ro = 'rotate('+qr.toFixed(2)+'deg)';
+    }
+
+    var transform = [tx,sc,ro].filter(Boolean).join(' ');
+    if(wpBgLayer) wpBgLayer.style.transform = transform;
+    if(wpCanvas) wpCanvas.style.transform = transform;
+  }
+
+  /* ═══════════════════════════════════════
+     AI WALLPAPER GENERATOR (procedural canvas art from text prompts)
+     ═══════════════════════════════════════ */
+  var aiStyle = 'street';
+  var aiPreviewCanvas = document.getElementById('ai-preview-canvas');
+  var aiPreviewCtx = aiPreviewCanvas ? aiPreviewCanvas.getContext('2d') : null;
+  var aiPreviewWrap = document.getElementById('ai-preview-wrap');
+
+  document.querySelectorAll('#ai-style-chips .ai-chip').forEach(function(chip){
+    chip.addEventListener('click',function(){
+      document.querySelectorAll('#ai-style-chips .ai-chip').forEach(function(x){x.classList.remove('active');});
+      chip.classList.add('active');
+      aiStyle = chip.dataset.style;
+    });
+  });
+
+  var aiGenerateBtn = document.getElementById('ai-generate-btn');
+  var aiUseBtn = document.getElementById('ai-use-btn');
+  var aiPromptInput = document.getElementById('ai-prompt');
+
+  if(aiGenerateBtn) aiGenerateBtn.addEventListener('click',function(){
+    var prompt = (aiPromptInput.value||'').trim() || 'dark vibes';
+    aiGenerateBtn.classList.add('generating');
+    aiGenerateBtn.textContent = '⏳ Creating...';
+    setTimeout(function(){
+      generateAIWallpaper(prompt, aiStyle);
+      aiPreviewWrap.classList.add('has-preview');
+      aiGenerateBtn.classList.remove('generating');
+      aiGenerateBtn.textContent = '🤖 Generate';
+    }, 600);
+  });
+
+  if(aiUseBtn) aiUseBtn.addEventListener('click',function(){
+    if(!aiPreviewCanvas) return;
+    var dataUrl = aiPreviewCanvas.toDataURL('image/jpeg', 0.92);
+    document.getElementById('wp-ai-image-data').value = dataUrl;
+    /* Switch type to image and apply */
+    wpConfig.type = 'image'; wpConfig.imageUrl = dataUrl;
+    document.getElementById('wp-type-input').value = 'image';
+    document.querySelectorAll('#wp-type-grid .wp-swatch').forEach(function(x){x.classList.remove('active');});
+    document.querySelector('#wp-type-grid .wp-swatch[data-type="image"]').classList.add('active');
+    wpBgLayer.style.background = 'url('+dataUrl+') center/cover no-repeat';
+  });
+
+  function generateAIWallpaper(prompt, style){
+    if(!aiPreviewCtx) return;
+    var W=aiPreviewCanvas.width, H=aiPreviewCanvas.height;
+    aiPreviewCtx.clearRect(0,0,W,H);
+    var words = prompt.toLowerCase().split(/\s+/);
+
+    /* Color palettes by style */
+    var palettes = {
+      street:   ['#0a0a0a','#1a0a00','#2a1500','#ff4400','#ff8800','#1a1a1a'],
+      hiphop:   ['#0a0a0a','#1a1020','#2a1535','#ff3366','#ffaa00','#9933ff','#00ccff'],
+      trapart:  ['#0a0a0a','#15001a','#2a0033','#ff0066','#ff6600','#aa00ff','#00ffcc'],
+      skimask:  ['#000000','#0a0a0a','#1a1a1a','#2a2a2a','#3a3a3a','#ffd700','#ff4400'],
+      lowrider: ['#0a001a','#15002a','#200040','#8833ff','#cc66ff','#ff00cc','#00ccff'],
+      graffiti: ['#ff0055','#00ccff','#ff6600','#aa00ff','#ffcc00','#00ff66','#1a1a2e'],
+      neon:     ['#000000','#0a001a','#ff00ff','#00ffff','#ff0066','#6600ff'],
+      cosmic:   ['#000011','#000033','#1a0044','#3300aa','#6600ff','#ff00cc','#ffffff'],
+      dark:     ['#000000','#0a0a0a','#111111','#1a1a1a','#2a0000','#330000'],
+      nature:   ['#001100','#002200','#003300','#004400','#00aa00','#88cc44'],
+      abstract: ['#1a0033','#330066','#ff0066','#00ccff','#ffcc00','#ff6600'],
+      fire:     ['#000000','#1a0500','#2a0a00','#ff2200','#ff6600','#ffaa00','#ffcc44'],
+      ocean:    ['#000011','#001133','#003366','#005599','#0088cc','#00bbff','#aaeeff'],
+      gold:     ['#0a0800','#1a1200','#2a1f00','#aa8800','#ccaa00','#ffcc00','#ffe066'],
+      vinyl:    ['#0a0a0a','#151515','#1a1a1a','#ff6600','#ff3300','#ffffff','#333333'],
+      boombox:  ['#1a0a00','#2a1500','#3a2010','#ff9900','#ff6600','#ffcc00','#1a1a1a']
+    };
+    var pal = palettes[style] || palettes.street;
+
+    /* Detect keywords */
+    var hasFire  = words.some(function(w){return /fire|flame|burn|hot/.test(w);});
+    var hasSkull = words.some(function(w){return /skull|death|dark|dead/.test(w);});
+    var hasNeon  = words.some(function(w){return /neon|glow|light|bright|city/.test(w);});
+    var hasMoney = words.some(function(w){return /money|cash|dollar|rich|stack|gold|drip/.test(w);});
+    var hasSmoke = words.some(function(w){return /smoke|cloud|fog|haze|mist/.test(w);});
+    var hasTrap  = words.some(function(w){return /trap|hood|street|gang|thug|ghetto/.test(w);});
+    var hasSpace = words.some(function(w){return /space|star|galaxy|cosmic|universe|planet/.test(w);});
+    var hasWater = words.some(function(w){return /water|ocean|wave|sea|rain|blue/.test(w);});
+    var hasNature= words.some(function(w){return /nature|tree|forest|leaf|green|plant/.test(w);});
+    var hasLove  = words.some(function(w){return /love|heart|pink|rose/.test(w);});
+    var hasMask  = words.some(function(w){return /mask|ski|balaclava|face|covered|anonymous/.test(w);});
+    var hasHipHop= words.some(function(w){return /hiphop|hip-hop|rap|rapper|mc|emcee|bars|verse|cypher/.test(w);});
+    var hasCar   = words.some(function(w){return /car|lowrider|ride|whip|hydraulic|bounce/.test(w);});
+    var hasVinyl = words.some(function(w){return /vinyl|record|dj|turntable|spin|scratch/.test(w);});
+    var hasBoombox= words.some(function(w){return /boombox|speaker|bass|boom|ghettoblaster/.test(w);});
+    var hasGrillz= words.some(function(w){return /grill|grillz|teeth|gold|ice|bling|chain|jewelry/.test(w);});
+
+    /* Base gradient */
+    var bgGrad = aiPreviewCtx.createLinearGradient(0,0,W,H);
+    bgGrad.addColorStop(0, pal[0]);
+    bgGrad.addColorStop(0.5, pal[Math.floor(pal.length/2)]);
+    bgGrad.addColorStop(1, pal[1] || pal[0]);
+    aiPreviewCtx.fillStyle = bgGrad;
+    aiPreviewCtx.fillRect(0,0,W,H);
+
+    /* Abstract shapes layer */
+    for(var i=0;i<20;i++){
+      var cx=Math.random()*W, cy=Math.random()*H, cr=30+Math.random()*120;
+      var rg=aiPreviewCtx.createRadialGradient(cx,cy,0,cx,cy,cr);
+      rg.addColorStop(0, pal[2+Math.floor(Math.random()*(pal.length-2))]+'33');
+      rg.addColorStop(1, 'transparent');
+      aiPreviewCtx.fillStyle=rg; aiPreviewCtx.fillRect(cx-cr,cy-cr,cr*2,cr*2);
+    }
+
+    /* Noise texture */
+    aiPreviewCtx.globalAlpha=0.04;
+    for(var ni=0;ni<500;ni++){
+      aiPreviewCtx.fillStyle=Math.random()>0.5?'#fff':'#000';
+      aiPreviewCtx.fillRect(Math.random()*W,Math.random()*H,1+Math.random()*2,1+Math.random()*2);
+    }
+    aiPreviewCtx.globalAlpha=1;
+
+    /* Style-specific + keyword-specific elements */
+    if(hasFire || style==='fire'){
+      for(var fi=0;fi<150;fi++){
+        var fx=Math.random()*W, fy=H-Math.random()*H*0.5;
+        var fr=5+Math.random()*25;
+        var fg=aiPreviewCtx.createRadialGradient(fx,fy,0,fx,fy,fr);
+        fg.addColorStop(0,'rgba(255,100,0,.15)'); fg.addColorStop(0.5,'rgba(255,50,0,.08)'); fg.addColorStop(1,'transparent');
+        aiPreviewCtx.fillStyle=fg; aiPreviewCtx.fillRect(fx-fr,fy-fr,fr*2,fr*2);
+      }
+      aiPreviewCtx.globalAlpha=0.06; aiPreviewCtx.font='bold 80px sans-serif';
+      aiPreviewCtx.fillStyle='#ff4400';
+      for(var ffi=0;ffi<5;ffi++) aiPreviewCtx.fillText('🔥',Math.random()*W,H*0.5+Math.random()*H*0.4);
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasSkull){
+      aiPreviewCtx.globalAlpha=0.05; aiPreviewCtx.font='bold 60px sans-serif';
+      for(var ski=0;ski<8;ski++) aiPreviewCtx.fillText('💀',Math.random()*W,Math.random()*H);
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasNeon || style==='neon'){
+      var neonCols=['#ff00ff','#00ffff','#ff0066','#6600ff','#00ff66'];
+      aiPreviewCtx.globalAlpha=0.2;
+      for(var nli=0;nli<8;nli++){
+        aiPreviewCtx.strokeStyle=neonCols[nli%neonCols.length];
+        aiPreviewCtx.lineWidth=2; aiPreviewCtx.shadowColor=neonCols[nli%neonCols.length]; aiPreviewCtx.shadowBlur=30;
+        aiPreviewCtx.beginPath();
+        aiPreviewCtx.moveTo(Math.random()*W,Math.random()*H);
+        for(var ns=0;ns<3;ns++) aiPreviewCtx.quadraticCurveTo(Math.random()*W,Math.random()*H,Math.random()*W,Math.random()*H);
+        aiPreviewCtx.stroke();
+      }
+      aiPreviewCtx.shadowBlur=0; aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasMoney){
+      aiPreviewCtx.globalAlpha=0.08; aiPreviewCtx.font='bold 50px sans-serif';
+      aiPreviewCtx.fillStyle='#00ff44';
+      for(var mi=0;mi<20;mi++) aiPreviewCtx.fillText('$',Math.random()*W,Math.random()*H);
+      aiPreviewCtx.font='bold 40px sans-serif';
+      for(var mi2=0;mi2<6;mi2++) aiPreviewCtx.fillText('💰',Math.random()*W,Math.random()*H);
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasSmoke){
+      for(var smi=0;smi<15;smi++){
+        var smx=Math.random()*W, smy=Math.random()*H, smr=60+Math.random()*120;
+        var smg=aiPreviewCtx.createRadialGradient(smx,smy,0,smx,smy,smr);
+        smg.addColorStop(0,'rgba(180,180,200,.06)'); smg.addColorStop(1,'transparent');
+        aiPreviewCtx.fillStyle=smg; aiPreviewCtx.fillRect(smx-smr,smy-smr,smr*2,smr*2);
+      }
+    }
+
+    if(hasTrap || style==='street'){
+      /* Graffiti text fragments */
+      var tags=['VYBE','REAL','100','NO CAP','TRAP','LIT','DRIP','ICE','STREET'];
+      aiPreviewCtx.globalAlpha=0.06;
+      for(var tgi=0;tgi<12;tgi++){
+        aiPreviewCtx.save();
+        aiPreviewCtx.translate(Math.random()*W,Math.random()*H);
+        aiPreviewCtx.rotate((Math.random()-0.5)*0.4);
+        aiPreviewCtx.font='bold '+(24+Math.random()*36)+'px Impact, sans-serif';
+        aiPreviewCtx.fillStyle='hsl('+(Math.random()*60)+',80%,50%)';
+        aiPreviewCtx.fillText(tags[Math.floor(Math.random()*tags.length)],0,0);
+        aiPreviewCtx.restore();
+      }
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(style==='graffiti'){
+      var gTags=['VYBE','FLOW','DRIP','ICE','💯','STREET','FRESH','SAUCE'];
+      aiPreviewCtx.globalAlpha=0.12;
+      for(var ggi=0;ggi<20;ggi++){
+        aiPreviewCtx.save();
+        aiPreviewCtx.translate(Math.random()*W,Math.random()*H);
+        aiPreviewCtx.rotate((Math.random()-0.5)*0.6);
+        aiPreviewCtx.font='bold '+(30+Math.random()*50)+'px Impact, sans-serif';
+        aiPreviewCtx.fillStyle=pal[2+Math.floor(Math.random()*(pal.length-2))];
+        aiPreviewCtx.fillText(gTags[Math.floor(Math.random()*gTags.length)],0,0);
+        aiPreviewCtx.restore();
+      }
+      /* Drip lines */
+      for(var dri=0;dri<15;dri++){
+        aiPreviewCtx.strokeStyle=pal[2+Math.floor(Math.random()*(pal.length-2))];
+        aiPreviewCtx.lineWidth=1+Math.random()*3; aiPreviewCtx.globalAlpha=0.08;
+        var drx=Math.random()*W;
+        aiPreviewCtx.beginPath(); aiPreviewCtx.moveTo(drx,Math.random()*H*0.5);
+        aiPreviewCtx.lineTo(drx+(Math.random()-0.5)*10, H*0.5+Math.random()*H*0.5);
+        aiPreviewCtx.stroke();
+      }
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasSpace || style==='cosmic'){
+      /* Stars */
+      for(var sti=0;sti<200;sti++){
+        aiPreviewCtx.fillStyle='rgba(255,255,255,'+(0.1+Math.random()*0.6)+')';
+        aiPreviewCtx.beginPath(); aiPreviewCtx.arc(Math.random()*W,Math.random()*H,0.5+Math.random()*1.5,0,Math.PI*2); aiPreviewCtx.fill();
+      }
+      /* Nebula */
+      for(var nbi=0;nbi<5;nbi++){
+        var nbx=Math.random()*W, nby=Math.random()*H, nbr=80+Math.random()*200;
+        var nbg=aiPreviewCtx.createRadialGradient(nbx,nby,0,nbx,nby,nbr);
+        nbg.addColorStop(0,pal[3+Math.floor(Math.random()*2)]+'22'); nbg.addColorStop(1,'transparent');
+        aiPreviewCtx.fillStyle=nbg; aiPreviewCtx.fillRect(nbx-nbr,nby-nbr,nbr*2,nbr*2);
+      }
+    }
+
+    if(hasWater || style==='ocean'){
+      for(var wvi=0;wvi<10;wvi++){
+        aiPreviewCtx.strokeStyle=pal[3+Math.floor(Math.random()*(pal.length-3))]+'44';
+        aiPreviewCtx.lineWidth=1+Math.random()*2;
+        aiPreviewCtx.beginPath();
+        var wy=Math.random()*H;
+        aiPreviewCtx.moveTo(0,wy);
+        for(var wx=0;wx<W;wx+=30) aiPreviewCtx.quadraticCurveTo(wx+15,wy+(Math.random()-0.5)*20,wx+30,wy);
+        aiPreviewCtx.stroke();
+      }
+    }
+
+    if(hasNature || style==='nature'){
+      aiPreviewCtx.globalAlpha=0.06; aiPreviewCtx.font='bold 40px sans-serif';
+      var natureEmoji=['🌿','🍃','🌳','🌲','🌴'];
+      for(var nai=0;nai<15;nai++) aiPreviewCtx.fillText(natureEmoji[Math.floor(Math.random()*natureEmoji.length)],Math.random()*W,Math.random()*H);
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasLove){
+      aiPreviewCtx.globalAlpha=0.06; aiPreviewCtx.font='bold 40px sans-serif';
+      for(var lvi=0;lvi<12;lvi++) aiPreviewCtx.fillText('❤️',Math.random()*W,Math.random()*H);
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    /* ═══ HIP-HOP KEYWORD-DRIVEN ART ═══ */
+    if(hasMask){
+      /* Ski mask / balaclava figures from keywords */
+      aiPreviewCtx.globalAlpha=0.12;
+      for(var mk=0;mk<4;mk++){
+        var mkx=W*(0.15+mk*0.22), mky=H*0.4;
+        aiPreviewCtx.save(); aiPreviewCtx.translate(mkx,mky);
+        aiPreviewCtx.fillStyle='#1a1a1a'; aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(0,-10,40,52,0,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.fillStyle='#222'; aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(0,-5,36,46,0,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.fillStyle='#000'; aiPreviewCtx.globalAlpha=0.3;
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(-12,-15,10,6,0,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(12,-15,10,6,0,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.fillStyle='rgba(255,200,100,.15)';
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(-12,-15,6,4,0,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(12,-15,6,4,0,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.globalAlpha=0.12; aiPreviewCtx.restore();
+      }
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasHipHop){
+      /* Hip-hop culture elements from keywords */
+      var hhIcons=['🎤','👑','🔥','💎','📻','🎧','⛓️','👟','💿','🎵'];
+      aiPreviewCtx.globalAlpha=0.07; aiPreviewCtx.font='bold 44px sans-serif';
+      for(var hhi=0;hhi<18;hhi++) aiPreviewCtx.fillText(hhIcons[Math.floor(Math.random()*hhIcons.length)],Math.random()*W,Math.random()*H);
+      /* Equalizer */
+      aiPreviewCtx.globalAlpha=0.08;
+      for(var hq=0;hq<25;hq++){
+        var hqH=15+Math.random()*50; aiPreviewCtx.fillStyle='hsl('+(280+hq*3)+',70%,50%)';
+        aiPreviewCtx.fillRect(hq*(W/25),H-hqH-10,W/30,hqH);
+      }
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasCar){
+      /* Car / lowrider from keywords */
+      aiPreviewCtx.globalAlpha=0.1;
+      for(var lc=0;lc<2;lc++){
+        var lcx=W*(0.3+lc*0.35), lcy=H*0.65;
+        aiPreviewCtx.fillStyle='rgba(100,0,200,.08)';
+        aiPreviewCtx.beginPath(); aiPreviewCtx.moveTo(lcx-70,lcy); aiPreviewCtx.lineTo(lcx-50,lcy-25);
+        aiPreviewCtx.lineTo(lcx-15,lcy-35); aiPreviewCtx.lineTo(lcx+15,lcy-35);
+        aiPreviewCtx.lineTo(lcx+50,lcy-25); aiPreviewCtx.lineTo(lcx+70,lcy); aiPreviewCtx.closePath(); aiPreviewCtx.fill();
+        aiPreviewCtx.fillRect(lcx-75,lcy-3,150,16);
+        aiPreviewCtx.fillStyle='rgba(255,255,255,.05)';
+        aiPreviewCtx.beginPath(); aiPreviewCtx.arc(lcx-40,lcy+12,10,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.beginPath(); aiPreviewCtx.arc(lcx+40,lcy+12,10,0,Math.PI*2); aiPreviewCtx.fill();
+      }
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasVinyl){
+      /* Vinyl / DJ from keywords */
+      aiPreviewCtx.globalAlpha=0.1;
+      aiPreviewCtx.fillStyle='#0a0a0a'; aiPreviewCtx.beginPath(); aiPreviewCtx.arc(W*0.5,H*0.45,120,0,Math.PI*2); aiPreviewCtx.fill();
+      aiPreviewCtx.strokeStyle='rgba(255,255,255,.04)'; aiPreviewCtx.lineWidth=0.5;
+      for(var vk=0;vk<30;vk++){aiPreviewCtx.beginPath();aiPreviewCtx.arc(W*0.5,H*0.45,15+vk*3.5,0,Math.PI*2);aiPreviewCtx.stroke();}
+      aiPreviewCtx.fillStyle='rgba(255,100,0,.1)'; aiPreviewCtx.beginPath(); aiPreviewCtx.arc(W*0.5,H*0.45,18,0,Math.PI*2); aiPreviewCtx.fill();
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasBoombox){
+      /* Boombox from keywords */
+      aiPreviewCtx.globalAlpha=0.1;
+      var bkW=W*0.5, bkH=H*0.25, bkX=(W-bkW)/2, bkY=H*0.38;
+      aiPreviewCtx.fillStyle='#2a1a0a'; aiPreviewCtx.fillRect(bkX,bkY,bkW,bkH);
+      aiPreviewCtx.strokeStyle='rgba(255,150,0,.1)'; aiPreviewCtx.lineWidth=2; aiPreviewCtx.strokeRect(bkX,bkY,bkW,bkH);
+      aiPreviewCtx.fillStyle='#151510';
+      aiPreviewCtx.beginPath(); aiPreviewCtx.arc(bkX+bkW*0.25,bkY+bkH*0.5,bkW*0.1,0,Math.PI*2); aiPreviewCtx.fill();
+      aiPreviewCtx.beginPath(); aiPreviewCtx.arc(bkX+bkW*0.75,bkY+bkH*0.5,bkW*0.1,0,Math.PI*2); aiPreviewCtx.fill();
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(hasGrillz){
+      /* Gold grillz / bling from keywords */
+      aiPreviewCtx.globalAlpha=0.08;
+      for(var gb=0;gb<20;gb++){
+        var gbx=Math.random()*W, gby=Math.random()*H;
+        aiPreviewCtx.fillStyle='rgba(255,200,0,'+(0.03+Math.random()*0.05)+')';
+        aiPreviewCtx.beginPath(); aiPreviewCtx.arc(gbx,gby,3+Math.random()*10,0,Math.PI*2); aiPreviewCtx.fill();
+      }
+      aiPreviewCtx.font='bold 35px sans-serif'; aiPreviewCtx.globalAlpha=0.06;
+      var blingEmoji=['💎','⛓️','👑','💰'];
+      for(var be=0;be<10;be++) aiPreviewCtx.fillText(blingEmoji[Math.floor(Math.random()*4)],Math.random()*W,Math.random()*H);
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(style==='gold'){
+      /* Gold shimmer */
+      aiPreviewCtx.globalAlpha=0.08;
+      for(var gli=0;gli<30;gli++){
+        var glx=Math.random()*W, gly=Math.random()*H;
+        var glg=aiPreviewCtx.createRadialGradient(glx,gly,0,glx,gly,20+Math.random()*40);
+        glg.addColorStop(0,'rgba(255,200,0,.15)'); glg.addColorStop(1,'transparent');
+        aiPreviewCtx.fillStyle=glg; aiPreviewCtx.fillRect(glx-50,gly-50,100,100);
+      }
+      aiPreviewCtx.font='bold 50px sans-serif'; aiPreviewCtx.globalAlpha=0.06;
+      aiPreviewCtx.fillText('👑',W*0.4,H*0.3); aiPreviewCtx.fillText('💎',W*0.6,H*0.6);
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    /* ═══ NEW HIP HOP AI STYLES ═══ */
+    if(style==='hiphop'){
+      /* Hip-hop culture art — figures, turntables, crowns, chains */
+      /* Silhouette figures */
+      aiPreviewCtx.globalAlpha=0.12;
+      for(var hf=0;hf<3;hf++){
+        var hfx=W*(0.2+hf*0.3), hfy=H*0.6;
+        aiPreviewCtx.save(); aiPreviewCtx.translate(hfx,hfy);
+        /* Head */
+        aiPreviewCtx.fillStyle='#1a1a2a'; aiPreviewCtx.beginPath();
+        aiPreviewCtx.ellipse(0,-90,22,28,0,0,Math.PI*2); aiPreviewCtx.fill();
+        /* Body */
+        aiPreviewCtx.fillRect(-18,-65,36,70);
+        /* Cap */
+        aiPreviewCtx.fillStyle='hsl('+(Math.random()*360)+',70%,40%)';
+        aiPreviewCtx.fillRect(-25,-118,50,12);
+        aiPreviewCtx.fillRect(-15,-122,30,8);
+        aiPreviewCtx.restore();
+      }
+      /* Floating hip-hop elements */
+      var hhElements=['🎤','👑','💰','🔥','💎','📻','🎧','⛓️','👟','💿'];
+      aiPreviewCtx.globalAlpha=0.08; aiPreviewCtx.font='bold 50px sans-serif';
+      for(var he=0;he<20;he++) aiPreviewCtx.fillText(hhElements[Math.floor(Math.random()*hhElements.length)],Math.random()*W,Math.random()*H);
+      /* Rap bars / sound waves */
+      aiPreviewCtx.globalAlpha=0.1;
+      for(var rb=0;rb<25;rb++){
+        var rbH=10+Math.random()*60, rbX=rb*(W/25);
+        aiPreviewCtx.fillStyle='hsl('+(280+rb*3)+',70%,50%)';
+        aiPreviewCtx.fillRect(rbX,H-rbH-20,W/30,rbH);
+      }
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(style==='trapart'){
+      /* Trap art — dark, moody, masked figures with neon accents */
+      /* Dark figure silhouettes with masks */
+      aiPreviewCtx.globalAlpha=0.15;
+      for(var tf=0;tf<4;tf++){
+        var tfx=W*(0.15+tf*0.22), tfy=H*0.5;
+        aiPreviewCtx.save(); aiPreviewCtx.translate(tfx,tfy);
+        /* Hooded figure */
+        aiPreviewCtx.fillStyle='#0a0a0a';
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(0,-50,35,45,0,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.fillRect(-30,-10,60,80);
+        /* Hood */
+        aiPreviewCtx.fillStyle='#151515'; aiPreviewCtx.beginPath();
+        aiPreviewCtx.ellipse(0,-55,40,35,0,Math.PI,Math.PI*2); aiPreviewCtx.fill();
+        /* Glowing eyes */
+        aiPreviewCtx.fillStyle='rgba(255,0,100,.3)'; aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(-10,-55,5,3,0,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(10,-55,5,3,0,0,Math.PI*2); aiPreviewCtx.fill();
+        /* Neon outline */
+        aiPreviewCtx.strokeStyle='rgba(255,0,100,.08)'; aiPreviewCtx.lineWidth=2; aiPreviewCtx.shadowColor='#ff0066'; aiPreviewCtx.shadowBlur=15;
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(0,-50,37,47,0,0,Math.PI*2); aiPreviewCtx.stroke();
+        aiPreviewCtx.shadowBlur=0;
+        aiPreviewCtx.restore();
+      }
+      /* Dripping neon accents */
+      var trapNeon=['#ff0066','#aa00ff','#00ffcc'];
+      aiPreviewCtx.globalAlpha=0.06;
+      for(var td=0;td<20;td++){
+        var tdx=Math.random()*W; aiPreviewCtx.fillStyle=trapNeon[td%3];
+        aiPreviewCtx.fillRect(tdx,Math.random()*H*0.3,2,50+Math.random()*150);
+      }
+      /* Tag text */
+      var trapTags=['TRAP','DRIP','NO CAP','100','ICE','HUSTLE'];
+      aiPreviewCtx.globalAlpha=0.05;
+      for(var tt=0;tt<8;tt++){
+        aiPreviewCtx.save(); aiPreviewCtx.translate(Math.random()*W,Math.random()*H);
+        aiPreviewCtx.rotate((Math.random()-0.5)*0.4);
+        aiPreviewCtx.font='bold '+(22+Math.random()*35)+'px Impact, sans-serif';
+        aiPreviewCtx.fillStyle=trapNeon[Math.floor(Math.random()*3)];
+        aiPreviewCtx.fillText(trapTags[Math.floor(Math.random()*trapTags.length)],0,0);
+        aiPreviewCtx.restore();
+      }
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(style==='skimask'){
+      /* Ski mask / balaclava art — like the reference image */
+      aiPreviewCtx.globalAlpha=0.2;
+      /* Multiple masked figure panels side by side */
+      var panelW=W/5;
+      for(var sp=0;sp<5;sp++){
+        var spx=sp*panelW, spy=0;
+        /* Panel background - each slightly different tint */
+        var panelHue=[0,270,200,330,40][sp];
+        aiPreviewCtx.fillStyle='hsl('+panelHue+',30%,'+(8+sp*2)+'%)';
+        aiPreviewCtx.fillRect(spx,spy,panelW,H);
+        /* Masked figure */
+        var figX=spx+panelW*0.5, figY=H*0.35;
+        aiPreviewCtx.save(); aiPreviewCtx.translate(figX,figY);
+        var figScale=0.7+sp*0.05;
+        aiPreviewCtx.scale(figScale,figScale);
+        /* Head/mask */
+        aiPreviewCtx.fillStyle='hsl('+panelHue+',20%,15%)';
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(0,0,45,55,0,0,Math.PI*2); aiPreviewCtx.fill();
+        /* Balaclava texture */
+        aiPreviewCtx.fillStyle='hsl('+panelHue+',15%,18%)';
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(0,-5,42,50,0,0,Math.PI*2); aiPreviewCtx.fill();
+        /* Eye openings */
+        aiPreviewCtx.fillStyle='#000'; aiPreviewCtx.globalAlpha=0.4;
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(-14,-8,11,7,-0.1,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(14,-8,11,7,0.1,0,Math.PI*2); aiPreviewCtx.fill();
+        /* Intense eyes */
+        aiPreviewCtx.fillStyle='rgba(255,220,150,.2)'; aiPreviewCtx.globalAlpha=0.3;
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(-14,-8,7,4,0,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.beginPath(); aiPreviewCtx.ellipse(14,-8,7,4,0,0,Math.PI*2); aiPreviewCtx.fill();
+        /* Gold grillz */
+        aiPreviewCtx.fillStyle='rgba(255,200,0,.15)'; aiPreviewCtx.globalAlpha=0.25;
+        aiPreviewCtx.fillRect(-18,18,36,10);
+        /* Small teeth marks on grillz */
+        aiPreviewCtx.strokeStyle='rgba(180,150,0,.1)'; aiPreviewCtx.lineWidth=1;
+        for(var gt=-15;gt<18;gt+=6){aiPreviewCtx.beginPath();aiPreviewCtx.moveTo(gt,18);aiPreviewCtx.lineTo(gt,28);aiPreviewCtx.stroke();}
+        aiPreviewCtx.globalAlpha=0.2;
+        /* Shoulder area */
+        aiPreviewCtx.fillStyle='hsl('+panelHue+',20%,12%)';
+        aiPreviewCtx.fillRect(-50,55,100,120);
+        /* Accessories per panel */
+        if(sp===0){ aiPreviewCtx.font='bold 40px sans-serif'; aiPreviewCtx.globalAlpha=0.1; aiPreviewCtx.fillText('👑',-15,-65); }
+        if(sp===1){ aiPreviewCtx.strokeStyle='rgba(255,200,0,.08)'; aiPreviewCtx.lineWidth=3; for(var ch=0;ch<3;ch++){aiPreviewCtx.beginPath();aiPreviewCtx.arc(0,50+ch*8,25-ch*3,0,Math.PI);aiPreviewCtx.stroke();} }
+        if(sp===2){ aiPreviewCtx.font='bold 30px sans-serif'; aiPreviewCtx.globalAlpha=0.08; aiPreviewCtx.fillText('🎧',-15,-62); }
+        if(sp===3){ aiPreviewCtx.fillStyle='rgba(255,0,0,.06)'; aiPreviewCtx.fillRect(-30,-55,60,8); /* bandana */ }
+        if(sp===4){ aiPreviewCtx.font='bold 25px sans-serif'; aiPreviewCtx.globalAlpha=0.08; aiPreviewCtx.fillText('💰',-12,80); aiPreviewCtx.fillText('💵',5,95); }
+        aiPreviewCtx.restore();
+        /* Panel divider */
+        aiPreviewCtx.strokeStyle='rgba(255,255,255,.03)'; aiPreviewCtx.lineWidth=1;
+        aiPreviewCtx.beginPath(); aiPreviewCtx.moveTo(spx+panelW,0); aiPreviewCtx.lineTo(spx+panelW,H); aiPreviewCtx.stroke();
+      }
+      /* Atmospheric haze */
+      var maskHaze=aiPreviewCtx.createRadialGradient(W*0.5,H*0.3,50,W*0.5,H*0.3,W*0.5);
+      maskHaze.addColorStop(0,'rgba(255,255,255,.04)'); maskHaze.addColorStop(1,'transparent');
+      aiPreviewCtx.fillStyle=maskHaze; aiPreviewCtx.fillRect(0,0,W,H);
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(style==='lowrider'){
+      /* Lowrider car culture — bouncing cars, chrome, purple glow */
+      aiPreviewCtx.globalAlpha=0.15;
+      /* Cityscape silhouette */
+      aiPreviewCtx.fillStyle='#0a0015';
+      for(var bld=0;bld<12;bld++){
+        var bldX=bld*(W/12), bldW=W/12-2, bldH=80+Math.random()*180;
+        aiPreviewCtx.fillRect(bldX,H*0.3-bldH,bldW,bldH+H*0.2);
+        /* Windows */
+        aiPreviewCtx.fillStyle='rgba(255,200,100,.03)';
+        for(var wy=H*0.3-bldH+10;wy<H*0.5;wy+=15){
+          for(var wx=bldX+5;wx<bldX+bldW-5;wx+=12){
+            if(Math.random()>0.4) aiPreviewCtx.fillRect(wx,wy,6,8);
+          }
+        }
+        aiPreviewCtx.fillStyle='#0a0015';
+      }
+      /* Road */
+      aiPreviewCtx.fillStyle='#0a0a0a'; aiPreviewCtx.fillRect(0,H*0.6,W,H*0.4);
+      /* Car silhouettes */
+      var carColors=['rgba(130,0,255,.12)','rgba(0,180,255,.10)','rgba(255,0,150,.10)'];
+      for(var cc=0;cc<2;cc++){
+        var cx=W*(0.25+cc*0.4), cy=H*0.65;
+        aiPreviewCtx.fillStyle=carColors[cc];
+        aiPreviewCtx.beginPath(); aiPreviewCtx.moveTo(cx-80,cy); aiPreviewCtx.lineTo(cx-60,cy-30);
+        aiPreviewCtx.lineTo(cx-20,cy-40); aiPreviewCtx.lineTo(cx+20,cy-40);
+        aiPreviewCtx.lineTo(cx+60,cy-30); aiPreviewCtx.lineTo(cx+80,cy); aiPreviewCtx.closePath(); aiPreviewCtx.fill();
+        /* Body */
+        aiPreviewCtx.fillRect(cx-90,cy-5,180,20);
+        /* Wheels */
+        aiPreviewCtx.fillStyle='rgba(255,255,255,.06)';
+        aiPreviewCtx.beginPath(); aiPreviewCtx.arc(cx-50,cy+15,12,0,Math.PI*2); aiPreviewCtx.fill();
+        aiPreviewCtx.beginPath(); aiPreviewCtx.arc(cx+50,cy+15,12,0,Math.PI*2); aiPreviewCtx.fill();
+        /* Ground neon reflection */
+        var refGrad=aiPreviewCtx.createLinearGradient(cx-90,cy+20,cx-90,cy+80);
+        refGrad.addColorStop(0,carColors[cc]); refGrad.addColorStop(1,'transparent');
+        aiPreviewCtx.fillStyle=refGrad; aiPreviewCtx.fillRect(cx-90,cy+20,180,60);
+      }
+      /* Purple atmospheric glow */
+      var lrGlow=aiPreviewCtx.createRadialGradient(W*0.5,H*0.5,50,W*0.5,H*0.5,W*0.6);
+      lrGlow.addColorStop(0,'rgba(100,0,200,.06)'); lrGlow.addColorStop(1,'transparent');
+      aiPreviewCtx.fillStyle=lrGlow; aiPreviewCtx.fillRect(0,0,W,H);
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(style==='vinyl'){
+      /* Vinyl / DJ culture */
+      aiPreviewCtx.globalAlpha=0.15;
+      /* Large vinyl record */
+      aiPreviewCtx.fillStyle='#0a0a0a'; aiPreviewCtx.beginPath();
+      aiPreviewCtx.arc(W*0.5,H*0.5,Math.min(W,H)*0.35,0,Math.PI*2); aiPreviewCtx.fill();
+      /* Grooves */
+      aiPreviewCtx.strokeStyle='rgba(255,255,255,.05)'; aiPreviewCtx.lineWidth=0.5;
+      for(var vg=0;vg<45;vg++) { aiPreviewCtx.beginPath(); aiPreviewCtx.arc(W*0.5,H*0.5,25+vg*(Math.min(W,H)*0.007),0,Math.PI*2); aiPreviewCtx.stroke(); }
+      /* Label */
+      aiPreviewCtx.fillStyle='rgba(255,100,0,.15)'; aiPreviewCtx.beginPath();
+      aiPreviewCtx.arc(W*0.5,H*0.5,Math.min(W,H)*0.07,0,Math.PI*2); aiPreviewCtx.fill();
+      /* Label text */
+      aiPreviewCtx.font='bold 12px Impact, sans-serif'; aiPreviewCtx.fillStyle='rgba(255,200,100,.2)';
+      aiPreviewCtx.textAlign='center'; aiPreviewCtx.fillText('VYBEFLOW',W*0.5,H*0.5+4); aiPreviewCtx.textAlign='left';
+      /* Light streak */
+      aiPreviewCtx.strokeStyle='rgba(255,255,255,.04)'; aiPreviewCtx.lineWidth=30;
+      aiPreviewCtx.beginPath(); aiPreviewCtx.arc(W*0.5,H*0.5,Math.min(W,H)*0.2,Math.PI*0.7,Math.PI*1.1); aiPreviewCtx.stroke();
+      /* Scattered music notes */
+      aiPreviewCtx.globalAlpha=0.06; aiPreviewCtx.font='bold 36px sans-serif';
+      var vnotes=['🎵','🎶','♫','♪'];
+      for(var vn=0;vn<12;vn++) aiPreviewCtx.fillText(vnotes[vn%4],Math.random()*W,Math.random()*H);
+      /* Equalizer at bottom */
+      aiPreviewCtx.globalAlpha=0.08;
+      for(var ve=0;ve<30;ve++){
+        var veH=15+Math.random()*50, veX=ve*(W/30);
+        aiPreviewCtx.fillStyle='hsl('+(20+ve*3)+',80%,50%)';
+        aiPreviewCtx.fillRect(veX,H-veH-10,W/35,veH);
+      }
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(style==='boombox'){
+      /* Boombox / old-school hip-hop */
+      aiPreviewCtx.globalAlpha=0.15;
+      /* Large boombox */
+      var bbW=W*0.65, bbH=H*0.35, bbX=(W-bbW)/2, bbY=H*0.32;
+      aiPreviewCtx.fillStyle='#2a1a0a'; aiPreviewCtx.fillRect(bbX,bbY,bbW,bbH);
+      aiPreviewCtx.strokeStyle='rgba(255,150,0,.12)'; aiPreviewCtx.lineWidth=3;
+      aiPreviewCtx.strokeRect(bbX,bbY,bbW,bbH);
+      /* Handle */
+      aiPreviewCtx.strokeStyle='rgba(200,150,100,.08)'; aiPreviewCtx.lineWidth=4;
+      aiPreviewCtx.beginPath(); aiPreviewCtx.moveTo(bbX+bbW*0.3,bbY); aiPreviewCtx.quadraticCurveTo(bbX+bbW*0.5,bbY-30,bbX+bbW*0.7,bbY); aiPreviewCtx.stroke();
+      /* Speakers */
+      aiPreviewCtx.fillStyle='#151510';
+      aiPreviewCtx.beginPath(); aiPreviewCtx.arc(bbX+bbW*0.25,bbY+bbH*0.5,bbW*0.12,0,Math.PI*2); aiPreviewCtx.fill();
+      aiPreviewCtx.beginPath(); aiPreviewCtx.arc(bbX+bbW*0.75,bbY+bbH*0.5,bbW*0.12,0,Math.PI*2); aiPreviewCtx.fill();
+      /* Speaker cones */
+      aiPreviewCtx.strokeStyle='rgba(255,150,0,.08)'; aiPreviewCtx.lineWidth=1;
+      for(var sr=1;sr<5;sr++){
+        aiPreviewCtx.beginPath(); aiPreviewCtx.arc(bbX+bbW*0.25,bbY+bbH*0.5,sr*bbW*0.025,0,Math.PI*2); aiPreviewCtx.stroke();
+        aiPreviewCtx.beginPath(); aiPreviewCtx.arc(bbX+bbW*0.75,bbY+bbH*0.5,sr*bbW*0.025,0,Math.PI*2); aiPreviewCtx.stroke();
+      }
+      /* Cassette window */
+      aiPreviewCtx.fillStyle='rgba(50,40,30,.2)'; aiPreviewCtx.fillRect(bbX+bbW*0.35,bbY+bbH*0.2,bbW*0.3,bbH*0.3);
+      aiPreviewCtx.strokeStyle='rgba(255,150,0,.06)'; aiPreviewCtx.strokeRect(bbX+bbW*0.35,bbY+bbH*0.2,bbW*0.3,bbH*0.3);
+      /* Sound waves emanating */
+      aiPreviewCtx.strokeStyle='rgba(255,150,0,.06)'; aiPreviewCtx.lineWidth=2;
+      for(var sw=0;sw<6;sw++){
+        aiPreviewCtx.beginPath(); aiPreviewCtx.arc(bbX-10,bbY+bbH*0.5,30+sw*20,Math.PI*0.7,Math.PI*1.3); aiPreviewCtx.stroke();
+        aiPreviewCtx.beginPath(); aiPreviewCtx.arc(bbX+bbW+10,bbY+bbH*0.5,30+sw*20,Math.PI*1.7,Math.PI*2.3); aiPreviewCtx.stroke();
+      }
+      /* Breakdancer silhouette */
+      aiPreviewCtx.globalAlpha=0.06; aiPreviewCtx.fillStyle='#ff9900';
+      aiPreviewCtx.font='bold 28px Impact, sans-serif';
+      aiPreviewCtx.fillText('B-BOY',W*0.1,H*0.88); aiPreviewCtx.fillText('FRESH',W*0.65,H*0.88);
+      aiPreviewCtx.globalAlpha=1;
+    }
+
+    if(style==='abstract'){
+      for(var abi=0;abi<12;abi++){
+        aiPreviewCtx.save(); aiPreviewCtx.globalAlpha=0.08;
+        aiPreviewCtx.fillStyle=pal[2+Math.floor(Math.random()*(pal.length-2))];
+        aiPreviewCtx.translate(Math.random()*W,Math.random()*H);
+        aiPreviewCtx.rotate(Math.random()*Math.PI*2);
+        var abw=40+Math.random()*160, abh=40+Math.random()*160;
+        aiPreviewCtx.fillRect(-abw/2,-abh/2,abw,abh);
+        aiPreviewCtx.restore();
+      }
+    }
+
+    /* Vignette */
+    var vig=aiPreviewCtx.createRadialGradient(W/2,H/2,W*0.3,W/2,H/2,W*0.8);
+    vig.addColorStop(0,'transparent'); vig.addColorStop(1,'rgba(0,0,0,.4)');
+    aiPreviewCtx.fillStyle=vig; aiPreviewCtx.fillRect(0,0,W,H);
+
+    /* Subtle grain */
+    aiPreviewCtx.globalAlpha=0.02;
+    for(var gri=0;gri<800;gri++){
+      aiPreviewCtx.fillStyle=Math.random()>0.5?'#fff':'#000';
+      aiPreviewCtx.fillRect(Math.random()*W,Math.random()*H,1,1);
+    }
+    aiPreviewCtx.globalAlpha=1;
+  }
+
+  /* ═══════════════════════════════════════
+     3. MUSIC PLAYER + GLOW + ANALYSER (for wallpaper sync)
+     ═══════════════════════════════════════ */
+  var glowWrap = document.getElementById('avatar-glow-wrap');
+  var playBtn  = document.getElementById('profile-play-btn');
+  var audio    = document.getElementById('profile-music-audio');
+  var playing  = false;
+  var audioCtx = null;
+
+  function startGlow(){ if(glowWrap) glowWrap.classList.add('music-playing'); }
+  function stopGlow(){ if(glowWrap) glowWrap.classList.remove('music-playing'); }
+
+  function setupAnalyser(){
+    if(musicAnalyser || !audio) return;
+    try {
+      audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      var source = audioCtx.createMediaElementSource(audio);
+      musicAnalyser = audioCtx.createAnalyser();
+      musicAnalyser.fftSize = 256;
+      musicDataArray = new Uint8Array(musicAnalyser.frequencyBinCount);
+      source.connect(musicAnalyser);
+      musicAnalyser.connect(audioCtx.destination);
+      function pollLevel(){
+        if(!musicAnalyser) return;
+        requestAnimationFrame(pollLevel);
+        musicAnalyser.getByteFrequencyData(musicDataArray);
+        var sum=0; for(var i=0;i<musicDataArray.length;i++) sum+=musicDataArray[i];
+        musicLevel = sum/musicDataArray.length;
+      }
+      pollLevel();
+    } catch(e){ console.warn('AudioContext not available',e); }
+  }
+
+  if(playBtn && audio){
+    playBtn.addEventListener('click',function(){
+      if(playing){
+        audio.pause(); playing=false; playBtn.textContent='\u25B6'; stopGlow(); musicLevel=0;
+      } else {
+        if(audio.ended) audio.currentTime=0;
+        audio.play().then(function(){
+          playing=true; playBtn.textContent='\u23F8'; startGlow();
+          if(wpConfig.musicSync) setupAnalyser();
+        }).catch(function(e){
+          console.error('Play failed:',e);
+          setTimeout(function(){ audio.play().then(function(){ playing=true; playBtn.textContent='\u23F8'; startGlow(); if(wpConfig.musicSync) setupAnalyser(); }).catch(function(){}); },100);
+        });
+      }
+    });
+    audio.addEventListener('ended',function(){ playing=false; playBtn.textContent='\u25B6'; stopGlow(); musicLevel=0; });
+    audio.addEventListener('pause',function(){ if(!audio.ended){ playing=false; playBtn.textContent='\u25B6'; stopGlow(); musicLevel=0; } });
+  }
+
+  /* ═══════════════════════════════════════
+     4. RETRO 2011 TOGGLE
+     ═══════════════════════════════════════ */
+  var toggle = document.getElementById('profile-retro-toggle');
+  if(toggle){
+    var key = 'vybe_feed_retro_2011';
+    try{ toggle.checked = window.localStorage.getItem(key)==='1'; }catch(e){ toggle.checked=false; }
+    function applyRetro(){ try{ document.body.classList.toggle('retro-2011',!!toggle.checked); }catch(e){} }
+    applyRetro();
+    toggle.addEventListener('change',function(){
+      try{ window.localStorage.setItem(key, toggle.checked?'1':'0'); applyRetro(); }catch(e){}
+    });
+  }
+
+  /* ═══════════════════════════════════════
+     5. FIX ALL AVATAR IMAGES (tear-proof)
+     ═══════════════════════════════════════ */
+  document.querySelectorAll('.avatar-large, .avatar-preview, img[alt="avatar"]').forEach(function(img){
+    img.style.objectFit='cover';
+    img.style.objectPosition='center';
+    img.style.imageRendering='auto';
+    img.onerror = function(){ this.src='{{ url_for("static", filename="VFlogo_clean.png") }}'; };
+  });
+
+})();
+</script>
+
+<!-- ── Pause Conversation Modal (account page) ── -->
+<style>
+  .pause-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99998;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease; }
+  .pause-modal-overlay.active { opacity:1;pointer-events:all; }
+  .pause-modal { background:var(--card,#1a1a2e);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:28px 32px;min-width:320px;max-width:400px;color:var(--text,#fff);box-shadow:0 20px 60px rgba(0,0,0,.6); }
+  .pause-modal h3 { margin:0 0 6px;font-size:20px;font-weight:800;background:linear-gradient(135deg,#ffb43c,#ff8800);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+  .pause-modal .pause-target-name { font-size:13px;color:rgba(255,255,255,.5);margin-bottom:18px; }
+  .pause-modal label.pause-section-label { display:block;font-size:13px;font-weight:700;color:rgba(255,255,255,.7);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.5px; }
+  .pause-modal .pause-option { display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:10px;cursor:pointer;transition:background .15s; }
+  .pause-modal .pause-option:hover { background:rgba(255,255,255,.06); }
+  .pause-modal .pause-option input[type="radio"] { accent-color:#ffb43c;width:16px;height:16px;cursor:pointer; }
+  .pause-modal .pause-option span { font-size:14px; }
+  .pause-modal-actions { display:flex;gap:10px;margin-top:22px;justify-content:flex-end; }
+  .pause-modal-actions button { padding:10px 22px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;border:none;transition:.2s; }
+  .pause-cancel-btn { background:rgba(255,255,255,.08);color:rgba(255,255,255,.7); }
+  .pause-cancel-btn:hover { background:rgba(255,255,255,.14); }
+  .pause-confirm-btn { background:linear-gradient(135deg,#ffb43c,#ff8800);color:#fff; }
+  .pause-confirm-btn:hover { filter:brightness(1.15); }
+  .pause-confirm-btn:disabled { opacity:.5;cursor:not-allowed; }
+</style>
+<div class="pause-modal-overlay" id="pauseModalOverlay">
+  <div class="pause-modal">
+    <h3>⏸ Pause Conversation</h3>
+    <div class="pause-target-name" id="pauseTargetName"></div>
+    <label class="pause-section-label">Pause messages for:</label>
+    <label class="pause-option"><input type="radio" name="pause_duration" value="12_hours"><span>12 hours</span></label>
+    <label class="pause-option"><input type="radio" name="pause_duration" value="3_days" checked><span>3 days</span></label>
+    <label class="pause-option"><input type="radio" name="pause_duration" value="1_week"><span>1 week</span></label>
+    <div class="pause-modal-actions">
+      <button type="button" class="pause-cancel-btn" id="pauseCancelBtn">Cancel</button>
+      <button type="button" class="pause-confirm-btn" id="pauseConfirmBtn">Pause</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var overlay=document.getElementById('pauseModalOverlay'),targetNameEl=document.getElementById('pauseTargetName'),confirmBtn=document.getElementById('pauseConfirmBtn'),cancelBtn=document.getElementById('pauseCancelBtn'),_pauseUsername='';
+  window.openPauseModal=function(u){_pauseUsername=u;targetNameEl.textContent='@'+u;confirmBtn.disabled=false;confirmBtn.textContent='Pause';overlay.classList.add('active');};
+  function close(){overlay.classList.remove('active');_pauseUsername='';}
+  cancelBtn.addEventListener('click',close);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)close();});
+  confirmBtn.addEventListener('click',function(){
+    if(!_pauseUsername)return;
+    var dur=document.querySelector('input[name="pause_duration"]:checked');
+    if(!dur){vfToast('Please select a pause duration.','error');return;}
+    confirmBtn.disabled=true;confirmBtn.textContent='Pausing\u2026';
+    fetch('/api/pause/conversation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:_pauseUsername,duration:dur.value})})
+    .then(function(r){return r.json();})
+    .then(function(d){if(d.ok){close();vfToast('Messages from @'+_pauseUsername+' paused.','success');}else{vfToast(d.error||'Pause failed.','error');confirmBtn.disabled=false;confirmBtn.textContent='Pause';}})
+    .catch(function(){vfToast('Network error.','error');confirmBtn.disabled=false;confirmBtn.textContent='Pause';});
+  });
+})();
+</script>
+
+<!-- ── Block User Modal (account page) ── -->
+<style>
+  .block-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease; }
+  .block-modal-overlay.active { opacity:1;pointer-events:all; }
+  .block-modal { background:var(--card,#1a1a2e);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:28px 32px;min-width:340px;max-width:420px;color:var(--text,#fff);box-shadow:0 20px 60px rgba(0,0,0,.6); }
+  .block-modal h3 { margin:0 0 6px;font-size:20px;font-weight:800;background:linear-gradient(135deg,#ff6b6b,#ff8800);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+  .block-modal .block-target-name { font-size:13px;color:rgba(255,255,255,.5);margin-bottom:18px; }
+  .block-modal label.block-section-label { display:block;font-size:13px;font-weight:700;color:rgba(255,255,255,.7);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.5px; }
+  .block-modal .block-option { display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:10px;cursor:pointer;transition:background .15s; }
+  .block-modal .block-option:hover { background:rgba(255,255,255,.06); }
+  .block-modal .block-option input[type="radio"],.block-modal .block-option input[type="checkbox"] { accent-color:#ff6b6b;width:16px;height:16px;cursor:pointer; }
+  .block-modal .block-option span { font-size:14px; }
+  .block-modal-actions { display:flex;gap:10px;margin-top:22px;justify-content:flex-end; }
+  .block-modal-actions button { padding:10px 22px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;border:none;transition:.2s; }
+  .block-cancel-btn { background:rgba(255,255,255,.08);color:rgba(255,255,255,.7); }
+  .block-cancel-btn:hover { background:rgba(255,255,255,.14); }
+  .block-confirm-btn { background:linear-gradient(135deg,#ff4444,#cc0000);color:#fff; }
+  .block-confirm-btn:hover { filter:brightness(1.15); }
+  .block-confirm-btn:disabled { opacity:.5;cursor:not-allowed; }
+</style>
+<div class="block-modal-overlay" id="blockModalOverlay">
+  <div class="block-modal">
+    <h3>🚫 Block User</h3>
+    <div class="block-target-name" id="blockTargetName"></div>
+    <label class="block-section-label">Block for:</label>
+    <label class="block-option"><input type="radio" name="block_duration" value="1_hour"><span>1 hour</span></label>
+    <label class="block-option"><input type="radio" name="block_duration" value="24_hours"><span>24 hours</span></label>
+    <label class="block-option"><input type="radio" name="block_duration" value="3_days"><span>3 days</span></label>
+    <label class="block-option"><input type="radio" name="block_duration" value="7_days" checked><span>7 days</span></label>
+    <label class="block-option"><input type="radio" name="block_duration" value="30_days"><span>30 days</span></label>
+    <label class="block-option"><input type="radio" name="block_duration" value="permanent"><span>Until I remove it</span></label>
+    <label class="block-section-label">Block scope:</label>
+    <label class="block-option"><input type="checkbox" name="block_scope" value="account" checked><span>Block this account</span></label>
+    <label class="block-option"><input type="checkbox" name="block_scope" value="person"><span>Block all accounts from this person</span></label>
+    <label class="block-option"><input type="checkbox" name="block_scope" value="device"><span>Block future accounts from this device</span></label>
+    <div class="block-modal-actions">
+      <button type="button" class="block-cancel-btn" id="blockCancelBtn">Cancel</button>
+      <button type="button" class="block-confirm-btn" id="blockConfirmBtn">Block</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var overlay=document.getElementById('blockModalOverlay'),targetNameEl=document.getElementById('blockTargetName'),confirmBtn=document.getElementById('blockConfirmBtn'),cancelBtn=document.getElementById('blockCancelBtn'),_blockUsername='';
+  window.openBlockModal=function(u){_blockUsername=u;targetNameEl.textContent='@'+u;confirmBtn.disabled=false;confirmBtn.textContent='Block';overlay.classList.add('active');};
+  function close(){overlay.classList.remove('active');_blockUsername='';}
+  cancelBtn.addEventListener('click',close);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)close();});
+  confirmBtn.addEventListener('click',function(){
+    if(!_blockUsername)return;
+    var dur=document.querySelector('input[name="block_duration"]:checked');
+    if(!dur){vfToast('Please select a block duration.','error');return;}
+    var scopes=[];document.querySelectorAll('input[name="block_scope"]:checked').forEach(function(c){scopes.push(c.value);});
+    if(!scopes.length){vfToast('Please select at least one block scope.','error');return;}
+    confirmBtn.disabled=true;confirmBtn.textContent='Blocking…';
+    fetch('/api/block/user',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:_blockUsername,duration:dur.value,scopes:scopes})})
+    .then(function(r){return r.json();})
+    .then(function(d){if(d.ok){close();vfToast('User @'+_blockUsername+' has been blocked.','success');}else{vfToast(d.error||'Block failed.','error');confirmBtn.disabled=false;confirmBtn.textContent='Block';}})
+    .catch(function(){vfToast('Network error.','error');confirmBtn.disabled=false;confirmBtn.textContent='Block';});
+  });
+})();
+</script>
+<script>
+/* ═══ Friend Request Actions ═══ */
+function sendFriendRequest(username) {
+  var btn = document.getElementById('add-friend-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  fetch('/api/friends/request', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username: username})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.status === 'sent' || d.status === 'already_pending' || d.status === 'already_friends') {
+      if (btn) { btn.textContent = '⏳ Request Sent'; btn.style.background = 'rgba(255,180,60,.15)'; btn.style.color = '#ffb43c'; }
+      if (d.status === 'already_friends' && btn) { btn.textContent = '✅ Friends'; btn.style.background = 'rgba(60,200,60,.15)'; btn.style.color = '#6bff6b'; }
+    } else {
+      vfToast(d.error || d.message || 'Could not send friend request.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '➕ Add Friend'; }
+    }
+  })
+  .catch(function() {
+    vfToast('Network error.', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '➕ Add Friend'; }
+  });
+}
+function acceptFriendRequest(requestId) {
+  fetch('/api/friends/accept', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({request_id: requestId})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.ok || d.success || d.status === 'ok') {
+      location.reload();
+    } else {
+      vfToast(d.error || d.message || 'Could not accept request.');
+    }
+  })
+  .catch(function() { vfToast('Network error.'); });
+}
+</script>
+{% endblock %}

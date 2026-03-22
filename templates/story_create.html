@@ -1,0 +1,3336 @@
+{% extends "base.html" %}
+
+{% block body_class %}story-create-page{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Bungee+Shade&family=Fascinate+Inline&family=Fugaz+One&family=Permanent+Marker&family=Press+Start+2P&family=Rubik+Mono+One&family=Russo+One&family=Special+Elite&family=Teko:wght@700&family=Ultra&display=swap" rel="stylesheet">
+<style>
+  body.story-create-page {
+    background: radial-gradient(circle at 30% 20%, #2b2b2b, #121212 54%, #0a0a0a 100%);
+  }
+
+  body.story-create-page .landing-shell,
+  body.story-create-page .lang-chips,
+  body.story-create-page .sparkle-field {
+    display: none;
+  }
+
+  body.story-create-page main {
+    width: 100%;
+    max-width: none;
+  }
+
+  body.story-create-page .auth-wrap {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+  }
+
+  .story-create-shell {
+    width: min(95vw, 980px);
+    display: grid;
+    grid-template-columns: 460px 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .story-preview {
+    position: relative;
+    aspect-ratio: 9 / 16;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+    box-shadow: 0 16px 40px rgba(0,0,0,.45);
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.75);
+    font-weight: 700;
+    letter-spacing: .03em;
+    overflow: hidden;
+  }
+
+  .story-preview-media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+
+  .story-preview-placeholder {
+    z-index: 1;
+    text-align: center;
+    padding: 0 12px;
+  }
+
+  .story-preview-text {
+    position: absolute;
+    inset: 18% 10% auto 10%;
+    z-index: 2;
+    text-align: center;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 700;
+    text-shadow: 0 6px 18px rgba(0,0,0,.7);
+    word-break: break-word;
+  }
+
+  /* IG-style font classes */
+  .story-preview-text.font-neon {
+    font-family: 'Brush Script MT', 'Segoe Script', 'Dancing Script', cursive;
+    text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #e040fb, 0 0 80px #e040fb;
+  }
+  .story-preview-text.font-typewriter {
+    font-family: 'Courier New', 'Courier', monospace;
+    font-weight: 400;
+    letter-spacing: .02em;
+    text-shadow: none;
+    color: #222;
+  }
+  .story-preview-text.font-modern {
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .story-preview-text.font-strong {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 900;
+    font-style: italic;
+    color: #ff6a4d;
+    text-shadow: 0 4px 20px rgba(0,0,0,.6);
+  }
+  .story-preview-text.font-classic {
+    font-family: 'Trebuchet MS', system-ui, sans-serif;
+  }
+  /* ═══ GANGSTA / STREET FONTS ═══ */
+  .story-preview-text.font-gangsta {
+    font-family: 'Black Ops One', 'Impact', system-ui, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    text-shadow: 0 4px 12px rgba(0,0,0,.8), 0 0 30px rgba(255,77,0,.4);
+    color: #fff;
+  }
+  .story-preview-text.font-thug {
+    font-family: 'Permanent Marker', 'Impact', cursive;
+    text-shadow: 3px 3px 0 #000, 0 0 20px rgba(255,0,0,.3);
+    color: #ff4d00;
+  }
+  .story-preview-text.font-trap {
+    font-family: 'Bebas Neue', 'Impact', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .15em;
+    font-size: 40px;
+    text-shadow: 0 0 15px rgba(145,85,255,.6), 0 4px 8px rgba(0,0,0,.8);
+    color: #e0c3ff;
+  }
+  .story-preview-text.font-drip {
+    font-family: 'Anton', 'Impact', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    text-shadow: 2px 2px 0 rgba(255,215,0,.7), 0 0 20px rgba(255,215,0,.3);
+    color: #ffdf00;
+  }
+  .story-preview-text.font-og {
+    font-family: 'Russo One', 'Impact', sans-serif;
+    text-transform: uppercase;
+    text-shadow: 0 0 25px rgba(0,255,136,.5), 3px 3px 0 #000;
+    color: #00ff88;
+  }
+  .story-preview-text.font-graffiti {
+    font-family: 'Bungee Shade', 'Impact', cursive;
+    text-shadow: 0 4px 12px rgba(255,0,255,.5);
+    color: #ff44cc;
+    font-size: 28px;
+  }
+  .story-preview-text.font-hood {
+    font-family: 'Teko', 'Impact', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-size: 38px;
+    text-shadow: 0 0 20px rgba(255,122,24,.5), 2px 2px 0 #000;
+    color: #ff9a3d;
+  }
+  .story-preview-text.font-pixel {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px;
+    text-shadow: 2px 2px 0 #000;
+    color: #00ff00;
+  }
+  .story-preview-text.font-block {
+    font-family: 'Rubik Mono One', monospace;
+    text-transform: uppercase;
+    text-shadow: 4px 4px 0 #222, 0 0 30px rgba(255,77,0,.4);
+    color: #fff;
+    font-size: 24px;
+  }
+  .story-preview-text.font-wanted {
+    font-family: 'Special Elite', 'Courier New', monospace;
+    text-shadow: 1px 1px 0 rgba(0,0,0,.6);
+    color: #d4a574;
+  }
+  /* Background presets for gangsta fonts */
+  .story-preview.bg-gangsta { background: linear-gradient(180deg, #1a1a2e, #16213e, #0f3460) !important; }
+  .story-preview.bg-thug { background: linear-gradient(135deg, #2d1b00, #1a0000, #000) !important; }
+  .story-preview.bg-trap { background: linear-gradient(135deg, #1a0033, #0d001a, #000) !important; }
+  .story-preview.bg-drip { background: linear-gradient(135deg, #1a1500, #0d0b00, #000) !important; }
+  .story-preview.bg-og { background: linear-gradient(135deg, #001a0d, #000d06, #000) !important; }
+  .story-preview.bg-graffiti { background: linear-gradient(135deg, #1a0022, #260033, #000) !important; }
+  .story-preview.bg-hood { background: linear-gradient(135deg, #1f0a00, #331100, #000) !important; }
+  .story-preview.bg-pixel { background: #000 !important; }
+  .story-preview.bg-block { background: linear-gradient(180deg, #222, #111, #000) !important; }
+  .story-preview.bg-wanted { background: linear-gradient(180deg, #3d2b1f, #2a1f16, #1a1410) !important; }
+
+  /* Background presets per font mode */
+  .story-preview.bg-neon {
+    background: linear-gradient(135deg, #833ab4, #5b2c8e) !important;
+  }
+  .story-preview.bg-typewriter {
+    background: #f5f5f5 !important;
+  }
+  .story-preview.bg-modern {
+    background: linear-gradient(135deg, #e040fb, #ff6f00) !important;
+  }
+  .story-preview.bg-strong {
+    background: linear-gradient(135deg, #fd5c63, #ff9a3d) !important;
+  }
+
+  .story-sticker-toolbar {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    padding: 6px 8px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    border-radius: 999px;
+    background: radial-gradient(circle at 0 0, rgba(0,0,0,.85), rgba(0,0,0,.65));
+    backdrop-filter: blur(12px);
+    box-shadow: 0 12px 30px rgba(0,0,0,.7);
+  }
+
+  .story-sticker-chip {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.04);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 6px 10px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .story-sticker-chip span {
+    opacity: .92;
+  }
+
+  .story-sticker-chip-primary {
+    background: linear-gradient(135deg, #ff7a18, #ff4fd8);
+    border-color: rgba(255,255,255,.32);
+  }
+
+  /* ═══ STICKER TRAY OVERLAY (full-screen picker like IG but bigger) ═══ */
+  .sticker-tray-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    background: rgba(0,0,0,.35);
+    backdrop-filter: blur(24px) saturate(1.2);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sticker-tray-overlay[hidden] { display: none; }
+  .sticker-tray-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+  .sticker-tray-title { font-weight: 900; color: #fff; font-size: 16px; }
+  .sticker-tray-close { border: none; background: none; color: #fff; font-size: 22px; cursor: pointer; }
+  .sticker-tray-search {
+    margin: 10px 14px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    font-size: 14px;
+    width: calc(100% - 28px);
+    box-sizing: border-box;
+  }
+  .sticker-tray-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .sticker-tray-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 8px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.1);
+    background: rgba(255,255,255,.05);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .sticker-tray-item:hover { background: rgba(255,255,255,.12); border-color: rgba(255,149,0,.4); }
+  .sticker-tray-item .sti-icon { font-size: 28px; }
+  .sticker-tray-item.sti-primary {
+    background: linear-gradient(135deg, rgba(255,122,24,.2), rgba(255,79,216,.15));
+    border-color: rgba(255,122,24,.3);
+  }
+
+  /* ═══ PLACED STICKERS (draggable on preview) ═══ */
+  .story-preview { touch-action: none; }
+  .placed-sticker {
+    position: absolute;
+    z-index: 10;
+    padding: 8px 14px;
+    border-radius: 14px;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.22);
+    color: #fff;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    -webkit-user-select: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    transition: box-shadow .15s, transform .08s;
+  }
+  .placed-sticker.dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 32px rgba(255,122,24,.5);
+    transform: scale(1.08) !important;
+    z-index: 50 !important;
+  }
+  .placed-sticker .sticker-emoji { font-size: 20px; margin-right: 4px; }
+  .sticker-delete {
+    position: absolute;
+    top: -8px; right: -8px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,60,60,.9);
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    display: none;
+    place-items: center;
+    z-index: 60;
+  }
+  .placed-sticker:hover .sticker-delete,
+  .placed-sticker:focus .sticker-delete,
+  .placed-sticker.dragging .sticker-delete { display: grid; }
+
+  /* ═══ MUSIC STICKER ON STORY ═══ */
+  .placed-music-sticker {
+    position: absolute;
+    z-index: 10;
+    padding: 10px 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(255,122,24,.85), rgba(255,79,216,.75));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.25);
+    color: #fff;
+    font-weight: 900;
+    font-size: 13px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    -webkit-user-select: none;
+    white-space: nowrap;
+    box-shadow: 0 6px 24px rgba(255,79,216,.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: musicStickerPulse 2s ease-in-out infinite;
+  }
+  .placed-music-sticker.dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 32px rgba(255,122,24,.6);
+    transform: scale(1.08) !important;
+    z-index: 50 !important;
+    animation: none;
+  }
+  .placed-music-sticker .music-bars {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+    height: 16px;
+  }
+  .placed-music-sticker .music-bars span {
+    width: 3px;
+    background: #fff;
+    border-radius: 2px;
+    animation: musicBar 0.8s ease-in-out infinite alternate;
+  }
+  .placed-music-sticker .music-bars span:nth-child(1) { height: 6px; animation-delay: 0s; }
+  .placed-music-sticker .music-bars span:nth-child(2) { height: 12px; animation-delay: 0.15s; }
+  .placed-music-sticker .music-bars span:nth-child(3) { height: 8px; animation-delay: 0.3s; }
+  .placed-music-sticker .music-bars span:nth-child(4) { height: 14px; animation-delay: 0.45s; }
+  @keyframes musicBar {
+    0% { height: 4px; }
+    100% { height: 16px; }
+  }
+  @keyframes musicStickerPulse {
+    0%, 100% { box-shadow: 0 6px 24px rgba(255,79,216,.3); }
+    50% { box-shadow: 0 6px 32px rgba(255,122,24,.5); }
+  }
+
+  /* ═══ MUSIC OVERLAY PANEL (on preview) ═══ */
+  .music-overlay-panel {
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    background: rgba(0,0,0,.35);
+    backdrop-filter: blur(24px) saturate(1.2);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .music-overlay-panel[hidden] { display: none; }
+  .music-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+  .music-overlay-title { font-weight: 900; color: #fff; font-size: 16px; }
+  .music-overlay-close { border: none; background: none; color: #fff; font-size: 22px; cursor: pointer; }
+  .music-overlay-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .music-overlay-body .music-grid { margin: 0; max-height: none; flex: 1; }
+  .music-overlay-body audio { width: 100%; margin-top: 6px; }
+
+  /* ═══ CONTENTEDITABLE PREVIEW TEXT ═══ */
+  .story-preview-text[contenteditable] {
+    cursor: text;
+    outline: none;
+    min-height: 40px;
+    pointer-events: auto;
+  }
+  .story-preview-text:empty::before {
+    content: attr(data-placeholder);
+    color: rgba(255,255,255,.4);
+    pointer-events: none;
+  }
+
+  .story-link-sticker {
+    position: absolute;
+    left: 50%;
+    bottom: 56px;
+    transform: translateX(-50%);
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.78);
+    border: 1px solid rgba(255,255,255,.3);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,.7);
+  }
+
+  /* ═══ LINK STICKER INPUT OVERLAY ═══ */
+  .link-sticker-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 35;
+    background: rgba(0,0,0,.92);
+    backdrop-filter: blur(16px);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+  }
+  .link-sticker-overlay[hidden] { display: none; }
+  .link-sticker-overlay h3 {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 900;
+    text-align: center;
+  }
+  .link-sticker-overlay .link-input-wrap {
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .link-sticker-overlay input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .link-sticker-overlay input:focus {
+    border-color: rgba(255,122,24,.6);
+  }
+  .link-sticker-overlay input::placeholder {
+    color: rgba(255,255,255,.35);
+  }
+  .link-sticker-overlay .link-btn-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 360px;
+  }
+  .link-sticker-overlay .link-add-btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ff9a3d, #ff4d00);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    transition: transform .1s, filter .1s;
+  }
+  .link-sticker-overlay .link-add-btn:hover {
+    filter: brightness(1.15);
+    transform: scale(1.02);
+  }
+  .link-sticker-overlay .link-cancel-btn {
+    padding: 14px 20px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 14px;
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  /* Placed link sticker on story */
+  .placed-link-sticker {
+    position: absolute;
+    z-index: 10;
+    padding: 10px 18px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(255,255,255,.95), rgba(240,240,240,.95));
+    border: none;
+    color: #222;
+    font-weight: 900;
+    font-size: 13px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    -webkit-user-select: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow .15s, transform .08s;
+  }
+  .placed-link-sticker .link-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff9a3d, #ff4d00);
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .placed-link-sticker .link-label {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+  }
+  .placed-link-sticker .link-label .link-domain {
+    font-size: 12px;
+    font-weight: 900;
+    color: #222;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 160px;
+  }
+  .placed-link-sticker .link-label .link-text {
+    font-size: 10px;
+    font-weight: 600;
+    color: #666;
+  }
+  .placed-link-sticker.dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 32px rgba(255,122,24,.4);
+    transform: scale(1.08) !important;
+    z-index: 50 !important;
+  }
+
+  .story-tools-rail {
+    position: absolute;
+    top: 40px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 5;
+  }
+
+  .story-tool-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    white-space: nowrap;
+  }
+
+  .story-tool-btn span {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .story-mode-rail {
+    position: absolute;
+    top: 80px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 5;
+  }
+
+  .story-mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    white-space: nowrap;
+  }
+
+  .story-mode-btn span:first-child {
+    font-size: 16px;
+  }
+
+  .story-mode-btn.is-active {
+    border-color: rgba(255,255,255,.9);
+    background: linear-gradient(135deg, #ff7a18, #ff4fd8);
+    box-shadow: 0 0 24px rgba(0,0,0,.7);
+  }
+
+  .story-create-card {
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(20,20,20,.66);
+    box-shadow: 0 12px 28px rgba(0,0,0,.4);
+    backdrop-filter: blur(10px);
+    padding: 18px;
+    color: #fff;
+  }
+
+  .story-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .story-title { margin: 0; font-size: 20px; }
+  .story-sub { margin: 0; color: rgba(255,255,255,.66); font-size: 13px; }
+
+  .story-input {
+    width: 100%;
+    margin: 6px 0 14px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    box-sizing: border-box;
+  }
+
+  .story-submit {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #0095f6, #5851db, #c13584);
+    cursor: pointer;
+  }
+
+  .story-link {
+    display: inline-block;
+    margin-top: 12px;
+    color: #d8e8ff;
+    text-decoration: none;
+  }
+
+  .music-grid {
+    margin: 8px 0 14px;
+    max-height: 170px;
+    overflow: auto;
+    display: grid;
+    gap: 8px;
+  }
+
+  .music-item {
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 10px;
+    background: rgba(255,255,255,.06);
+    color: #fff;
+    padding: 8px 10px;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .music-item.active {
+    border-color: rgba(255,149,0,.72);
+    box-shadow: 0 0 14px rgba(255,120,0,.35);
+    background: rgba(255,149,0,.14);
+  }
+
+  .fx-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 8px 0 14px;
+  }
+
+  .fx-pill {
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 999px;
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    padding: 8px 10px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  /* fx-pill checkbox styles removed – effects come from story modes */
+
+  .doodle-wrap {
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(255,255,255,.06);
+    margin-bottom: 14px;
+  }
+
+  .doodle-canvas {
+    width: 100%;
+    height: 180px;
+    border-radius: 10px;
+    border: 1px dashed rgba(255,255,255,.26);
+    background: rgba(0,0,0,.18);
+    cursor: crosshair;
+  }
+
+  .doodle-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .doodle-btn { border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.12); color: #fff; border-radius: 8px; padding: 6px 8px; cursor: pointer; }
+
+  .camera-wrap {
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(255,255,255,.06);
+    margin: 4px 0 14px;
+  }
+
+  .camera-preview {
+    width: 100%;
+    max-height: 220px;
+    border-radius: 10px;
+    border: 1px dashed rgba(255,255,255,.26);
+    background: rgba(0,0,0,.22);
+    object-fit: cover;
+  }
+
+  .camera-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .music-preview {
+    width: 100%;
+    margin: 8px 0 14px;
+    filter: hue-rotate(-10deg) saturate(1.2);
+  }
+
+  .music-hint {
+    margin: 4px 0 8px;
+    font-size: 12px;
+    color: rgba(255,255,255,.72);
+  }
+
+  .story-font-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 8px 0 14px;
+  }
+
+  .story-font-slider-wrap {
+    width: 32px;
+    height: 120px;
+    border-radius: 999px;
+    padding: 8px 0;
+    background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.05));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .story-font-slider {
+    writing-mode: bt-lr;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100px;
+    height: 4px;
+    transform: rotate(-90deg);
+    background: rgba(0,0,0,.35);
+    border-radius: 999px;
+    outline: none;
+  }
+
+  .story-font-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0,0,0,.4);
+    cursor: pointer;
+  }
+
+  .story-font-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0,0,0,.4);
+    cursor: pointer;
+  }
+
+  .story-font-chips {
+    flex: 1;
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+  }
+
+  .story-font-chip {
+    flex: 0 0 auto;
+    min-width: 70px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 2px solid rgba(255,255,255,.22);
+    background: rgba(0,0,0,.45);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    backdrop-filter: blur(6px);
+    transition: all .15s ease;
+  }
+  .story-font-chip[data-font="font-neon"] {
+    font-family: 'Brush Script MT', 'Segoe Script', cursive;
+    text-transform: none; font-size: 15px;
+  }
+  .story-font-chip[data-font="font-typewriter"] {
+    font-family: 'Courier New', monospace;
+    text-transform: none;
+  }
+  .story-font-chip[data-font="font-modern"] {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-weight: 900;
+  }
+  .story-font-chip[data-font="font-strong"] {
+    font-family: 'Georgia', serif;
+    font-style: italic;
+  }
+  .story-font-chip[data-font="font-gangsta"] {
+    font-family: 'Black Ops One', sans-serif;
+    color: #fff;
+  }
+  .story-font-chip[data-font="font-thug"] {
+    font-family: 'Permanent Marker', cursive;
+    color: #ff4d00;
+  }
+  .story-font-chip[data-font="font-trap"] {
+    font-family: 'Bebas Neue', sans-serif;
+    color: #e0c3ff;
+  }
+  .story-font-chip[data-font="font-drip"] {
+    font-family: 'Anton', sans-serif;
+    color: #ffdf00;
+  }
+  .story-font-chip[data-font="font-og"] {
+    font-family: 'Russo One', sans-serif;
+    color: #00ff88;
+  }
+  .story-font-chip[data-font="font-graffiti"] {
+    font-family: 'Bungee Shade', cursive;
+    color: #ff44cc; font-size: 11px;
+  }
+  .story-font-chip[data-font="font-hood"] {
+    font-family: 'Teko', sans-serif;
+    color: #ff9a3d;
+  }
+  .story-font-chip[data-font="font-pixel"] {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px; color: #00ff00;
+  }
+  .story-font-chip[data-font="font-block"] {
+    font-family: 'Rubik Mono One', monospace;
+    font-size: 10px;
+  }
+  .story-font-chip[data-font="font-wanted"] {
+    font-family: 'Special Elite', monospace;
+    color: #d4a574;
+  }
+
+  .story-font-chip.active {
+    border-color: #fff;
+    background: rgba(255,255,255,.2);
+    box-shadow: 0 0 20px rgba(255,255,255,.2);
+  }
+
+  :root{
+    --vf-bg: #07070b;
+    --vf-card: rgba(255,255,255,.06);
+    --vf-line: rgba(255,255,255,.12);
+    --vf-text: rgba(255,255,255,.92);
+    --vf-muted: rgba(255,255,255,.64);
+    --vf-orange:#ff7a18;
+    --vf-orange2:#ff4d00;
+    --vf-pink:#ff4fd8;
+    --vf-cyan:#22d3ee;
+  }
+
+  .vybe-rail{
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,.12);
+    background:
+      radial-gradient(900px 280px at 15% 10%, rgba(255,122,24,.18), transparent 60%),
+      radial-gradient(900px 280px at 90% 30%, rgba(34,211,238,.10), transparent 60%),
+      rgba(255,255,255,.04);
+    box-shadow: 0 16px 45px rgba(0,0,0,.45);
+    overflow:hidden;
+  }
+
+  .vybe-rail-head{
+    padding: 12px 12px 10px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+    backdrop-filter: blur(12px);
+  }
+  .vybe-rail-title{
+    font-weight: 1000;
+    letter-spacing:.2px;
+    font-size: 16px;
+  }
+  .vybe-rail-sub{
+    font-size: 12px;
+    color: var(--vf-muted);
+    margin-top: 2px;
+  }
+
+  .vybe-rail-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .vybe-chip{
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.22);
+    color: var(--vf-text);
+    font-weight: 900;
+    cursor:pointer;
+    transition: .15s ease;
+  }
+  .vybe-chip:hover{
+    transform: translateY(-1px);
+    border-color: rgba(255,122,24,.35);
+    box-shadow: 0 0 0 4px rgba(255,122,24,.12);
+  }
+
+  .vybe-stories{
+    padding: 12px;
+    display:flex;
+    gap: 12px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .vybe-stories::-webkit-scrollbar{ height: 8px; }
+  .vybe-stories::-webkit-scrollbar-thumb{
+    background: rgba(255,255,255,.12);
+    border-radius: 999px;
+  }
+
+  .vybe-story{
+    flex: 0 0 128px;
+    height: 220px;
+    border-radius: 22px;
+    position:relative;
+    overflow:hidden;
+    scroll-snap-align: start;
+    text-decoration:none;
+    color: var(--vf-text);
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.05);
+    box-shadow: 0 18px 45px rgba(0,0,0,.45);
+    transition: .18s ease;
+    transform: translateZ(0);
+  }
+
+  .vybe-story::before{
+    content:"";
+    position:absolute; inset:-40px;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.18), transparent 55%);
+    pointer-events:none;
+    opacity:.9;
+  }
+
+  .vybe-story::after{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.65));
+    pointer-events:none;
+  }
+
+  .vybe-story:hover{
+    transform: translateY(-3px) rotate(-.4deg);
+    border-color: rgba(255,122,24,.32);
+    box-shadow:
+      0 22px 55px rgba(0,0,0,.55),
+      0 0 40px rgba(255,122,24,.16);
+  }
+
+  .vybe-story .media{
+    position:absolute; inset:0;
+    background-size: cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    filter: saturate(1.1) contrast(1.05);
+  }
+  .vybe-story .media.demo{
+    background:
+      radial-gradient(700px 260px at 20% 20%, rgba(255,122,24,.35), transparent 60%),
+      radial-gradient(700px 260px at 90% 70%, rgba(34,211,238,.18), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  }
+
+  .vybe-story .ring{
+    position:absolute;
+    top: 10px; left: 10px;
+    width: 36px; height: 36px;
+    border-radius: 14px;
+    object-fit: cover;
+    z-index: 3;
+    border: 2px solid rgba(255,122,24,.95);
+    box-shadow: 0 0 18px rgba(255,122,24,.22);
+    background: rgba(255,255,255,.06);
+  }
+  .vybe-story .ring.fake{
+    border-color: rgba(34,211,238,.8);
+  }
+
+  .vybe-story .label{
+    position:absolute;
+    left: 10px; right: 10px;
+    bottom: 26px;
+    z-index: 3;
+    font-weight: 1000;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 12px 20px rgba(0,0,0,.75);
+  }
+  .vybe-story .meta{
+    position:absolute;
+    left: 10px; right: 10px;
+    bottom: 10px;
+    z-index: 3;
+    font-size: 11px;
+    color: rgba(255,255,255,.72);
+    text-shadow: 0 12px 20px rgba(0,0,0,.75);
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vybe-story .stamp{
+    position:absolute;
+    top: 10px; right: 10px;
+    width: 34px; height: 34px;
+    border-radius: 14px;
+    display:grid; place-items:center;
+    z-index:3;
+    background: rgba(0,0,0,.24);
+    border: 1px solid rgba(255,255,255,.14);
+    backdrop-filter: blur(10px);
+  }
+
+  .vybe-story.create{
+    background: linear-gradient(135deg, rgba(255,122,24,.20), rgba(255,77,0,.10));
+    border-color: rgba(255,122,24,.28);
+  }
+  .vybe-story.create .media{
+    background:
+      radial-gradient(circle at 30% 20%, rgba(255,122,24,.40), transparent 60%),
+      radial-gradient(circle at 70% 80%, rgba(34,211,238,.16), transparent 55%),
+      rgba(0,0,0,.10);
+  }
+  .vybe-story.create .plus{
+    position:absolute;
+    top: 10px; left: 10px;
+    width: 36px; height: 36px;
+    border-radius: 14px;
+    display:grid; place-items:center;
+    font-weight: 1000;
+    color: #0b0f17;
+    background: linear-gradient(135deg, var(--vf-orange), var(--vf-orange2));
+    z-index:3;
+    box-shadow: 0 18px 40px rgba(255,122,24,.22);
+  }
+
+  .vybe-quickbar{
+    padding: 10px 12px 12px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    border-top: 1px solid rgba(255,255,255,.10);
+    background: rgba(0,0,0,.18);
+  }
+  .qbtn{
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color: var(--vf-text);
+    font-weight: 1000;
+    cursor:pointer;
+    transition: .15s ease;
+  }
+  .qbtn:hover{
+    transform: translateY(-1px);
+    border-color: rgba(255,122,24,.32);
+    box-shadow: 0 0 0 4px rgba(255,122,24,.12);
+  }
+
+  /* ===== VybeFlow Reel Picker ===== */
+  .vf-reel-ui{
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto 14px;
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 18px 60px rgba(0,0,0,.55);
+  }
+
+  .vf-reel-topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+  }
+
+  .vf-iconbtn{
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.92);
+    font-weight: 900;
+    cursor:pointer;
+  }
+
+  .vf-reel-titlewrap{ display:flex; align-items:center; justify-content:center; flex: 1; }
+  .vf-reel-title{
+    font-size: 16px;
+    font-weight: 1000;
+    letter-spacing: .2px;
+    color: rgba(255,255,255,.92);
+  }
+
+  .vf-reel-toolbar{
+    padding: 12px;
+  }
+
+  .vf-pillrow{
+    display:flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .vf-pill{
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.92);
+    font-weight: 950;
+    cursor:pointer;
+  }
+  .vf-pill.active{
+    border-color: rgba(255,255,255,.24);
+    background: rgba(255,255,255,.12);
+  }
+
+  .vf-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    position: relative;
+  }
+
+  .vf-dd{
+    flex: 1;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.88);
+    font-weight: 900;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 0 12px;
+    cursor:pointer;
+  }
+  .vf-caret{ opacity: .85; }
+
+  .vf-selectbtn{
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.92);
+    font-weight: 1000;
+    cursor:pointer;
+  }
+
+  .vf-ddmenu{
+    position:absolute;
+    top: 44px;
+    left: 0;
+    width: 70%;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(10,10,12,.92);
+    box-shadow: 0 18px 50px rgba(0,0,0,.6);
+    overflow:hidden;
+    z-index: 50;
+  }
+  .vf-dditem{
+    width: 100%;
+    text-align:left;
+    padding: 10px 12px;
+    border: 0;
+    background: transparent;
+    color: rgba(255,255,255,.90);
+    cursor:pointer;
+    font-weight: 850;
+  }
+  .vf-dditem:hover{ background: rgba(255,255,255,.08); }
+
+  .vf-gridwrap{
+    padding: 0 12px 12px;
+  }
+
+  .vf-grid{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .vf-tile{
+    position:relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    overflow:hidden;
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.05);
+    cursor:pointer;
+    padding: 0;
+  }
+  .vf-tile:hover{
+    border-color: rgba(255,255,255,.18);
+  }
+
+  .vf-thumb{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit: cover;
+    display:block;
+    filter: saturate(1.08) contrast(1.06);
+  }
+
+  .vf-tile-camera{
+    display:grid;
+    place-items:center;
+    background: rgba(255,255,255,.04);
+  }
+  .vf-cameraIcon{
+    font-size: 22px;
+    opacity: .92;
+  }
+
+  .vf-badge{
+    position:absolute;
+    right: 6px;
+    top: 6px;
+    width: 26px;
+    height: 26px;
+    border-radius: 10px;
+    display:grid;
+    place-items:center;
+    font-size: 12px;
+    font-weight: 1000;
+    color: rgba(255,255,255,.92);
+    background: rgba(0,0,0,.42);
+    border: 1px solid rgba(255,255,255,.14);
+    backdrop-filter: blur(10px);
+  }
+
+  .vf-bottommodes{
+    display:flex;
+    align-items:center;
+    justify-content:space-around;
+    padding: 10px 10px 12px;
+    border-top: 1px solid rgba(255,255,255,.10);
+    background: rgba(0,0,0,.35);
+  }
+
+  .vf-mode{
+    border: 0;
+    background: transparent;
+    color: rgba(255,255,255,.55);
+    font-weight: 1000;
+    letter-spacing: .14em;
+    font-size: 12px;
+    cursor:pointer;
+    padding: 6px 8px;
+    border-radius: 10px;
+  }
+  .vf-mode.active{
+    color: rgba(255,255,255,.94);
+    background: rgba(255,255,255,.08);
+  }
+
+  /* Make it feel like the mobile composer screenshot: keep it above your form on desktop too */
+  @media (min-width: 841px){
+    .vf-reel-ui{ max-width: 520px; }
+  }
+
+  @media (max-width: 840px) {
+    .story-create-shell {
+      grid-template-columns: 1fr;
+    }
+
+    .story-preview {
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .vybe-quickbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 560px){
+    .vybe-story{ flex-basis: 112px; height: 200px; }
+    .vybe-rail-actions{ display:none; }
+  }
+
+  /* ═══ MUSIC-REACTIVE STORY EFFECTS ═══ */
+  .story-effect-label {
+    position: absolute; bottom: 62px; left: 50%; transform: translateX(-50%);
+    z-index: 40; background: rgba(0,0,0,.65); backdrop-filter: blur(8px);
+    padding: 5px 14px; border-radius: 20px; color: #fff; font-size: 11px;
+    font-weight: 700; letter-spacing: .04em; pointer-events: none;
+    transition: opacity .3s; text-transform: uppercase; white-space: nowrap;
+  }
+  .story-effect-label.hidden { opacity: 0; }
+
+  /* beat-sync keyframes */
+  @keyframes vybe-shake { 0%,100%{transform:translate(0)} 10%{transform:translate(-3px,2px)} 20%{transform:translate(4px,-2px)} 30%{transform:translate(-2px,3px)} 40%{transform:translate(3px,-1px)} 50%{transform:translate(-1px,2px)} 60%{transform:translate(2px,-3px)} 70%{transform:translate(-4px,1px)} 80%{transform:translate(1px,3px)} 90%{transform:translate(-2px,-2px)} }
+  @keyframes vybe-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+  @keyframes vybe-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes vybe-tilt { 0%,100%{transform:rotate(0)} 25%{transform:rotate(1.5deg)} 75%{transform:rotate(-1.5deg)} }
+  @keyframes vybe-glitch { 0%,100%{clip-path:inset(0)} 20%{clip-path:inset(8% 0 60% 0)} 40%{clip-path:inset(30% 0 20% 0)} 60%{clip-path:inset(55% 0 5% 0)} 80%{clip-path:inset(15% 0 40% 0)} }
+  @keyframes vybe-flicker { 0%,100%{opacity:1} 50%{opacity:.7} 75%{opacity:1} 85%{opacity:.6} }
+  @keyframes vybe-zoom-beat { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+  @keyframes vybe-spin-slow { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+  @keyframes vybe-wave { 0%,100%{transform:skewX(0)} 25%{transform:skewX(2deg)} 75%{transform:skewX(-2deg)} }
+  @keyframes vybe-neon-breathe { 0%,100%{box-shadow:0 0 8px rgba(255,0,255,.4),0 0 24px rgba(0,255,255,.3)} 50%{box-shadow:0 0 20px rgba(255,0,255,.8),0 0 50px rgba(0,255,255,.6)} }
+  @keyframes vybe-rgb-border { 0%{border-color:#ff0055} 33%{border-color:#00ff99} 66%{border-color:#5500ff} 100%{border-color:#ff0055} }
+  @keyframes vybe-holo { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  @keyframes vybe-morph { 0%,100%{border-radius:20px} 25%{border-radius:30px 20px 40px 20px} 50%{border-radius:20px 40px 20px 30px} 75%{border-radius:40px 20px 30px 40px} }
+
+  .fx-shake { animation: vybe-shake .25s infinite; }
+  .fx-pulse { animation: vybe-pulse .5s ease-in-out infinite; }
+  .fx-bounce { animation: vybe-bounce .4s ease-in-out infinite; }
+  .fx-tilt { animation: vybe-tilt .6s ease-in-out infinite; }
+  .fx-glitch { animation: vybe-glitch .3s steps(1) infinite; }
+  .fx-flicker { animation: vybe-flicker .4s ease-in-out infinite; }
+  .fx-zoom-beat { animation: vybe-zoom-beat .35s ease-in-out infinite; }
+  .fx-spin-slow { animation: vybe-spin-slow 8s linear infinite; }
+  .fx-wave { animation: vybe-wave .6s ease-in-out infinite; }
+  .fx-neon-breathe { animation: vybe-neon-breathe 1s ease-in-out infinite; }
+  .fx-rgb-border { border: 3px solid #ff0055; animation: vybe-rgb-border 1.2s linear infinite; }
+  .fx-morph { animation: vybe-morph 2s ease-in-out infinite; }
+  .fx-holo { background: linear-gradient(135deg,#ff006640,#00ffff40,#aa00ff40,#ffaa0040); background-size:300% 300%; animation:vybe-holo 2s ease infinite; }
+</style>
+
+<!-- ===== VybeFlow: New Reel Picker (Instagram-style) ===== -->
+<section class="vf-reel-ui" id="vfReelUI">
+  <header class="vf-reel-topbar">
+    <button class="vf-iconbtn" type="button" id="vfReelClose" aria-label="Close">✕</button>
+    <div class="vf-reel-titlewrap">
+      <div class="vf-reel-title">New Vibe Snap</div>
+    </div>
+    <button class="vf-iconbtn" type="button" id="vfReelSettings" aria-label="Settings">⚙</button>
+  </header>
+
+  <div class="vf-reel-toolbar">
+    <div class="vf-pillrow">
+      <button class="vf-pill active" type="button" data-tab="drafts">Drafts</button>
+      <button class="vf-pill" type="button" data-tab="templates">Templates</button>
+    </div>
+
+    <div class="vf-row">
+      <button class="vf-dd" type="button" id="vfRecentsBtn">
+        <span id="vfRecentsLabel">Recents</span>
+        <span class="vf-caret">▾</span>
+      </button>
+      <button class="vf-selectbtn" type="button" id="vfSelectBtn">Select</button>
+    </div>
+
+    <div class="vf-ddmenu" id="vfRecentsMenu" hidden>
+      <button type="button" class="vf-dditem" data-recents="recents">Recents</button>
+      <button type="button" class="vf-dditem" data-recents="videos">Videos</button>
+      <button type="button" class="vf-dditem" data-recents="photos">Photos</button>
+      <button type="button" class="vf-dditem" data-recents="favorites">Favorites</button>
+    </div>
+  </div>
+
+  <div class="vf-gridwrap">
+    <!-- This is the hidden “real” file input you already have. We'll reuse it. -->
+    <!-- (Keep your existing #theme_video input in the form. Don’t delete it.) -->
+
+    <!-- Grid -->
+    <div class="vf-grid" id="vfMediaGrid">
+      <!-- “Camera tile” (optional) -->
+      <button class="vf-tile vf-tile-camera" type="button" id="vfOpenPickerTile">
+        <div class="vf-cameraIcon">📷</div>
+      </button>
+
+      <!-- JS will inject the rest of the tiles -->
+    </div>
+  </div>
+
+  <footer class="vf-bottommodes">
+    <button type="button" class="vf-mode" data-mode="post">POST</button>
+    <button type="button" class="vf-mode active" data-mode="story">STORY</button>
+    <button type="button" class="vf-mode" data-mode="reel">VIBE SNAP</button>
+    <button type="button" class="vf-mode" data-mode="live">LIVE</button>
+    <input type="hidden" name="publish_mode" id="vfPublishMode" value="story">
+  </footer>
+</section>
+
+<section class="story-create-shell">
+  <div class="story-preview" id="story-preview-box">
+    <div class="story-preview-placeholder" id="story-preview-placeholder">Story preview</div>
+    <div id="story-preview-text" class="story-preview-text font-neon" contenteditable="true" data-placeholder="Tap to type on your story..." data-i18n-dataph="story_tap_type"></div>
+    <img id="story-preview-image" class="story-preview-media" alt="Story image preview" />
+    <video id="story-preview-video" class="story-preview-media" muted playsinline loop></video>
+    <a id="story-link-sticker" class="story-link-sticker" href="#" target="_blank" rel="noopener" hidden>Open link</a>
+
+    <!-- ═══ LINK STICKER INPUT OVERLAY ═══ -->
+    <div id="link-sticker-overlay" class="link-sticker-overlay" hidden>
+      <h3>🔗 Add Link Sticker</h3>
+      <div class="link-input-wrap">
+        <input type="url" id="link-sticker-url" placeholder="https://example.com" autocomplete="url" />
+        <input type="text" id="link-sticker-label" placeholder="Link text (optional, e.g. 'Shop Now')" />
+      </div>
+      <div class="link-btn-row">
+        <button type="button" class="link-cancel-btn" id="link-sticker-cancel">Cancel</button>
+        <button type="button" class="link-add-btn" id="link-sticker-add">🔗 DROP LINK ON STORY</button>
+      </div>
+    </div>
+
+    <div class="story-mode-rail" id="story-mode-rail">
+      <button type="button" class="story-mode-btn is-active" data-story-mode="create"><span>Aa</span><span>Create</span></button>
+      <button type="button" class="story-mode-btn" data-story-mode="boomerang"><span>∞</span><span>Boomerang</span></button>
+      <button type="button" class="story-mode-btn" data-story-mode="ai-images"><span>✨</span><span>AI Images</span></button>
+      <button type="button" class="story-mode-btn" data-story-mode="layout"><span>▦</span><span>Layout</span></button>
+      <button type="button" class="story-mode-btn" data-story-mode="handsfree"><span>◉</span><span>Hands-free</span></button>
+      <button type="button" class="story-mode-btn" data-story-mode="close"><span>⌃</span><span>Close</span></button>
+    </div>
+
+    <div class="story-tools-rail" id="story-tools-rail">
+      <button type="button" class="story-tool-btn" data-tool="text"><span data-i18n="tool_text">Text</span></button>
+      <button type="button" class="story-tool-btn" data-tool="stickers"><span data-i18n="tool_stickers">Stickers</span></button>
+      <button type="button" class="story-tool-btn" data-tool="music"><span data-i18n="tool_music">Music</span></button>
+      <button type="button" class="story-tool-btn" data-tool="restyle"><span data-i18n="tool_restyle">Restyle</span></button>
+      <button type="button" class="story-tool-btn" data-tool="mention"><span data-i18n="tool_mention">Mention</span></button>
+      <button type="button" class="story-tool-btn" data-tool="effects"><span data-i18n="tool_effects">Effects</span></button>
+      <button type="button" class="story-tool-btn" data-tool="draw"><span data-i18n="tool_draw">Draw</span></button>
+      <button type="button" class="story-tool-btn" data-tool="save"><span data-i18n="tool_save">Save</span></button>
+      <button type="button" class="story-tool-btn" data-tool="more"><span data-i18n="tool_more">More</span></button>
+    </div>
+
+    <div class="story-sticker-toolbar" id="story-sticker-toolbar">
+      <button type="button" class="story-sticker-chip story-sticker-chip-primary" data-sticker="stickers"><span>🧩 Stickers</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="location"><span>📍</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="mention"><span>@</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="hashtag"><span>#</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="music"><span>🎵</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="poll"><span>📊</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="emoji"><span>😊</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="questions"><span>❓</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="link"><span>🔗</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="countdown"><span>⏰</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="vibecheck"><span>🔥</span></button>
+      <button type="button" class="story-sticker-chip" data-sticker="gif"><span>🎬</span></button>
+    </div>
+
+    <!-- ═══ STICKER TRAY OVERLAY (way more stickers than IG!) ═══ -->
+    <div id="sticker-tray" class="sticker-tray-overlay" hidden>
+      <div class="sticker-tray-header">
+        <span class="sticker-tray-title" data-i18n="st_stickers">Stickers</span>
+        <button type="button" class="sticker-tray-close" id="sticker-tray-close">×</button>
+      </div>
+      <input type="text" class="sticker-tray-search" id="sticker-tray-search" placeholder="Search stickers..." data-i18n-placeholder="st_search_stickers" />
+      <div class="sticker-tray-grid" id="sticker-tray-grid">
+        <button type="button" class="sticker-tray-item" data-spawn="location"><span class="sti-icon">📍</span>Location</button>
+        <button type="button" class="sticker-tray-item" data-spawn="mention"><span class="sti-icon">@</span>Mention</button>
+        <button type="button" class="sticker-tray-item" data-spawn="hashtag"><span class="sti-icon">#</span>Hashtag</button>
+        <button type="button" class="sticker-tray-item sti-primary" data-spawn="questions"><span class="sti-icon">❓</span>Questions</button>
+        <button type="button" class="sticker-tray-item" data-spawn="avatar"><span class="sti-icon">👤</span>Avatar</button>
+        <button type="button" class="sticker-tray-item sti-primary" data-spawn="music"><span class="sti-icon">🎵</span>Music</button>
+        <button type="button" class="sticker-tray-item" data-spawn="emoji"><span class="sti-icon">😊</span>Emoji</button>
+        <button type="button" class="sticker-tray-item sti-primary" data-spawn="poll"><span class="sti-icon">📊</span>Poll</button>
+        <button type="button" class="sticker-tray-item" data-spawn="quiz"><span class="sti-icon">🧩</span>Quiz</button>
+        <button type="button" class="sticker-tray-item" data-spawn="link"><span class="sti-icon">🔗</span>Link</button>
+        <button type="button" class="sticker-tray-item" data-spawn="countdown"><span class="sti-icon">⏰</span>Countdown</button>
+        <button type="button" class="sticker-tray-item" data-spawn="gif"><span class="sti-icon">🎬</span>GIF</button>
+        <!-- VybeFlow exclusive stickers — way more than IG -->
+        <button type="button" class="sticker-tray-item sti-primary" data-spawn="vibecheck"><span class="sti-icon">🔥</span>Vibe Check</button>
+        <button type="button" class="sticker-tray-item" data-spawn="challenge"><span class="sti-icon">😎</span>Challenge</button>
+        <button type="button" class="sticker-tray-item" data-spawn="dare"><span class="sti-icon">🎯</span>Dare</button>
+        <button type="button" class="sticker-tray-item" data-spawn="rating"><span class="sti-icon">⭐</span>Rating</button>
+        <button type="button" class="sticker-tray-item" data-spawn="timestamp"><span class="sti-icon">🕐</span>Timestamp</button>
+        <button type="button" class="sticker-tray-item" data-spawn="weather"><span class="sti-icon">🌡</span>Weather</button>
+        <button type="button" class="sticker-tray-item" data-spawn="shoutout"><span class="sti-icon">📣</span>Shoutout</button>
+        <button type="button" class="sticker-tray-item" data-spawn="confession"><span class="sti-icon">👻</span>Confession</button>
+        <button type="button" class="sticker-tray-item" data-spawn="mood"><span class="sti-icon">🎭</span>Mood</button>
+        <button type="button" class="sticker-tray-item" data-spawn="slider"><span class="sti-icon">📏</span>Slider</button>
+        <button type="button" class="sticker-tray-item" data-spawn="collab"><span class="sti-icon">🤝</span>Collab</button>
+        <button type="button" class="sticker-tray-item" data-spawn="throwback"><span class="sti-icon">⏳</span>Throwback</button>
+        <button type="button" class="sticker-tray-item" data-spawn="aura"><span class="sti-icon">💫</span>Aura</button>
+        <button type="button" class="sticker-tray-item" data-spawn="voice"><span class="sti-icon">🎤</span>Voice Note</button>
+        <button type="button" class="sticker-tray-item" data-spawn="trophy"><span class="sti-icon">🏆</span>Trophy</button>
+        <button type="button" class="sticker-tray-item" data-spawn="reaction"><span class="sti-icon">❤️</span>Reaction</button>
+        <button type="button" class="sticker-tray-item" data-spawn="quote"><span class="sti-icon">💬</span>Quote</button>
+        <button type="button" class="sticker-tray-item" data-spawn="palette"><span class="sti-icon">🎨</span>Palette</button>
+        <button type="button" class="sticker-tray-item" data-spawn="todo"><span class="sti-icon">📝</span>To-Do</button>
+        <button type="button" class="sticker-tray-item" data-spawn="gift"><span class="sti-icon">🎁</span>Gift</button>
+        <button type="button" class="sticker-tray-item" data-spawn="event"><span class="sti-icon">🎪</span>Event</button>
+        <button type="button" class="sticker-tray-item" data-spawn="spin"><span class="sti-icon">🎰</span>Spin</button>
+        <button type="button" class="sticker-tray-item" data-spawn="tip"><span class="sti-icon">💡</span>Tip</button>
+        <button type="button" class="sticker-tray-item" data-spawn="thisorthat"><span class="sti-icon">🧲</span>This or That</button>
+      </div>
+    </div>
+
+    <!-- ═══ MUSIC SEARCH OVERLAY (on preview, like reels) ═══ -->
+    <div id="music-overlay" class="music-overlay-panel" hidden>
+      <div class="music-overlay-header">
+        <span class="music-overlay-title" data-i18n-html="st_add_music" data-i18n-icon="🎵">🎵 Add Music</span>
+        <button type="button" class="music-overlay-close" id="music-overlay-close">×</button>
+      </div>
+      <div class="music-overlay-body">
+        <input id="music-search" type="text" class="sticker-tray-search" style="margin:0;width:100%;" placeholder="Search any song, artist, genre…" />
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="doodle-btn" id="music-search-btn" style="flex:1;">Search</button>
+          <button type="button" class="doodle-btn" id="music-clear-btn">Clear</button>
+          <button type="button" class="doodle-btn" id="music-upload-trigger">📁 Upload</button>
+        </div>
+        <div id="music-grid" class="music-grid"></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="doodle-btn" id="audio-toggle">▶ Play</button>
+          <span id="music-selected-label" style="font-size:12px;color:rgba(255,255,255,.7);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        </div>
+        <audio id="music-audio" preload="none" style="width:100%;" controls></audio>
+        <button type="button" class="doodle-btn" id="music-drop-story" style="width:100%;background:linear-gradient(135deg,#ff9a3d,#ff4d00);font-weight:900;font-size:14px;padding:12px;margin-top:4px;border-radius:12px;letter-spacing:.04em;">🎵 DROP MUSIC ON STORY</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="story-create-card">
+    <div class="story-head">
+      <div>
+        <h1 class="story-title" data-i18n="story_create">Create story</h1>
+        <p class="story-sub" data-i18n="story_composer_desc">Instagram-style story composer</p>
+      </div>
+    </div>
+
+    <section class="vybe-rail panel">
+      <div class="vybe-rail-head">
+        <div>
+          <div class="vybe-rail-title" data-i18n="story_rail_title">Stories</div>
+          <div class="vybe-rail-sub" data-i18n="story_rail_sub">Tap • Hold • Remix • Drop a beat</div>
+        </div>
+
+        <div class="vybe-rail-actions">
+          <button class="vybe-chip" id="vybe-chaos" type="button">🎲 Chaos</button>
+          <button class="vybe-chip" id="vybe-theme" type="button">🎨 Theme</button>
+          <button class="vybe-chip" id="vybe-sound" type="button">🔊 Sound</button>
+        </div>
+      </div>
+
+      <div class="vybe-stories" id="vybe-stories">
+        <a href="{{ url_for('create_story') }}" class="vybe-story create" id="rail-create-story">
+          <div class="media"></div>
+          <div class="plus">＋</div>
+          <div class="label">Create</div>
+          <div class="meta">story / beat / meme</div>
+        </a>
+
+        {# REAL stories only #}
+        {% for s in stories %}
+          <a href="{{ url_for('view_story', story_id=s.id) }}" class="vybe-story">
+            <div class="media" data-bg="{{ s.media_url or '' }}"></div>
+            <img class="ring" src="{{ s.user.avatar_url if s.user else '' }}" alt="avatar" />
+            <div class="label">{{ s.user.username if s.user else 'User' }}</div>
+            <div class="stamp">🔥</div>
+          </a>
+        {% endfor %}
+      </div>
+
+      <div class="vybe-quickbar">
+        <button class="qbtn" id="q-poll" type="button">📊 Poll</button>
+        <button class="qbtn" id="q-remix" type="button">🧬 Remix</button>
+        <button class="qbtn" id="q-meme" type="button">🧨 Meme</button>
+        <button class="qbtn" id="q-beat" type="button">🥁 Beat Drop</button>
+        <button class="qbtn" id="q-roast" type="button">🔥 Roast</button>
+      </div>
+    </section>
+
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('story_create_post') }}">
+      <input type="hidden" name="story_mode" id="story-mode-input" value="create" />
+
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <button type="button" class="story-submit" id="pick-media-btn" style="flex:1;background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.2);">📷 Photo / Video</button>
+        <button type="button" class="story-submit" id="pick-selfie-btn" style="flex:1;background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.2);">🤳 Selfie</button>
+      </div>
+      <input class="story-input" id="theme_video" type="file" name="theme_video" accept="image/*,video/*" style="display:none;" />
+      <input class="story-input" id="selfie_capture" type="file" accept="image/*" capture="user" style="display:none;" />
+
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <button type="button" class="doodle-btn" id="open-camera" style="flex:1;">📸 Open Camera</button>
+        <button type="button" class="doodle-btn" id="snap-photo" style="flex:1;">✨ Snap Photo</button>
+      </div>
+
+      <canvas id="camera-canvas" width="720" height="1280" style="display:none;"></canvas>
+      <input type="hidden" id="camera-photo-data" name="camera_photo_data" />
+
+      <input type="hidden" id="caption" name="caption" />
+
+      <div class="story-font-row">
+        <div class="story-font-slider-wrap">
+          <input id="story-font-size" class="story-font-slider" type="range" min="18" max="56" value="32" />
+        </div>
+        <div class="story-font-chips" id="story-font-chips">
+          <button type="button" class="story-font-chip active" data-font="font-neon" data-bg="bg-neon" data-i18n="font_neon">Neon</button>
+          <button type="button" class="story-font-chip" data-font="font-gangsta" data-bg="bg-gangsta">🔫 Gangsta</button>
+          <button type="button" class="story-font-chip" data-font="font-thug" data-bg="bg-thug">🩸 Thug</button>
+          <button type="button" class="story-font-chip" data-font="font-trap" data-bg="bg-trap">💎 Trap</button>
+          <button type="button" class="story-font-chip" data-font="font-drip" data-bg="bg-drip">💰 Drip</button>
+          <button type="button" class="story-font-chip" data-font="font-og" data-bg="bg-og">🐍 OG</button>
+          <button type="button" class="story-font-chip" data-font="font-graffiti" data-bg="bg-graffiti">🎨 Graffiti</button>
+          <button type="button" class="story-font-chip" data-font="font-hood" data-bg="bg-hood">🔥 Hood</button>
+          <button type="button" class="story-font-chip" data-font="font-pixel" data-bg="bg-pixel">👾 Pixel</button>
+          <button type="button" class="story-font-chip" data-font="font-block" data-bg="bg-block">🧱 Block</button>
+          <button type="button" class="story-font-chip" data-font="font-wanted" data-bg="bg-wanted">📜 Wanted</button>
+          <button type="button" class="story-font-chip" data-font="font-typewriter" data-bg="bg-typewriter" data-i18n="font_typewriter">Typewriter</button>
+          <button type="button" class="story-font-chip" data-font="font-modern" data-bg="bg-modern" data-i18n="font_modern">Modern</button>
+          <button type="button" class="story-font-chip" data-font="font-strong" data-bg="bg-strong" data-i18n="font_strong">Strong</button>
+          <button type="button" class="story-font-chip" data-font="font-classic" data-bg="" data-i18n="font_classic">Classic</button>
+        </div>
+      </div>
+      <input type="hidden" id="story-font-input" name="story_font" value="neon" />
+
+      <input type="hidden" id="mentions" name="mentions" />
+
+      <input type="hidden" id="location" name="location" />
+
+      <select class="story-input" id="story-visibility" name="visibility">
+        <option value="Public">🌍 Public</option>
+        <option value="Followers">👥 Followers only</option>
+      </select>
+
+      <details style="margin-bottom:14px;">
+        <summary style="cursor:pointer;font-weight:800;color:rgba(255,255,255,.8);font-size:13px;">🎨 Draw on story</summary>
+        <div class="doodle-wrap" style="margin-top:8px;">
+        <canvas id="doodle-canvas" class="doodle-canvas" width="760" height="320"></canvas>
+        <div class="doodle-actions">
+          <button type="button" id="clear-doodle" class="doodle-btn">Clear doodle</button>
+          <button type="button" id="save-doodle" class="doodle-btn">Save doodle</button>
+        </div>
+      </div>
+      </details>
+      <input type="hidden" id="doodle-data" name="doodle_data" />
+
+      <!-- Music data now edited on preview overlay -->
+      <input type="hidden" id="music-track" name="music_track" />
+      <input type="hidden" id="music-preview-url" name="music_preview_url" />
+      <input id="music_file" type="file" name="music_file" accept="audio/*" hidden />
+
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button class="story-submit" type="button" id="story-publish-btn" data-i18n="story_share">Share to story</button>
+        <button class="story-submit" type="button" id="story-draft-btn" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.4);" data-i18n="story_draft">Save as draft</button>
+      </div>
+      <div id="story-post-feedback" style="margin-top:8px;font-size:13px;font-weight:700;min-height:20px;"></div>
+    </form>
+    <a class="story-link" href="{{ url_for('feed.feed_page') }}" data-i18n="story_back">Back to feed</a>
+  </div>
+</section>
+<script>
+  (function () {
+    /* Apply bg from data-bg attributes */
+    document.querySelectorAll('[data-bg]').forEach(function(el){
+      var bg=el.getAttribute('data-bg');
+      if(bg){el.style.backgroundImage="url('"+bg+"')";el.style.backgroundSize='cover';el.style.backgroundPosition='center';}
+    });
+
+    const localMusicLibrary = [
+      { track: 'Bodak Yellow', artist: 'Cardi B', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'I Like It', artist: 'Cardi B', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'Up', artist: 'Cardi B', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'WAP', artist: 'Cardi B', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'HUMBLE.', artist: 'Kendrick Lamar', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'DNA.', artist: 'Kendrick Lamar', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'SICKO MODE', artist: 'Travis Scott', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'Mask Off', artist: 'Future', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'Dreams and Nightmares', artist: 'Meek Mill', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'Lose Yourself', artist: 'Eminem', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'Shook Ones Pt. II', artist: 'Mobb Deep', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'God’s Plan', artist: 'Drake', genre: 'Hip Hop', previewUrl: '' },
+      { track: 'One Dance', artist: 'Drake', genre: 'Pop', previewUrl: '' },
+      { track: 'Blinding Lights', artist: 'The Weeknd', genre: 'Pop', previewUrl: '' },
+      { track: 'Die For You', artist: 'The Weeknd', genre: 'R&B', previewUrl: '' },
+      { track: 'Levitating', artist: 'Dua Lipa', genre: 'Pop', previewUrl: '' },
+      { track: 'Calm Down', artist: 'Rema', genre: 'Afrobeats', previewUrl: '' },
+      { track: 'Essence', artist: 'Wizkid', genre: 'Afrobeats', previewUrl: '' },
+      { track: 'Goosebumps', artist: 'Travis Scott', genre: 'Rap', previewUrl: '' },
+      { track: 'Industry Baby', artist: 'Lil Nas X', genre: 'Rap', previewUrl: '' },
+      { track: 'Amazing Grace', artist: 'Aretha Franklin', genre: 'Gospel', previewUrl: '' },
+      { track: 'Take Me to the King', artist: 'Tamela Mann', genre: 'Gospel', previewUrl: '' },
+      { track: 'Break Every Chain', artist: 'Tasha Cobbs Leonard', genre: 'Gospel', previewUrl: '' },
+      { track: 'Way Maker', artist: 'Sinach', genre: 'Gospel', previewUrl: '' },
+      { track: 'Goodness of God', artist: 'CeCe Winans', genre: 'Gospel', previewUrl: '' },
+      { track: 'Jireh', artist: 'Elevation Worship', genre: 'Gospel', previewUrl: '' },
+      { track: 'Reckless Love', artist: 'Cory Asbury', genre: 'Gospel', previewUrl: '' },
+      { track: 'Oceans', artist: 'Hillsong UNITED', genre: 'Gospel', previewUrl: '' },
+      { track: 'No Longer Slaves', artist: 'Bethel Music', genre: 'Gospel', previewUrl: '' },
+      { track: 'Firm Foundation', artist: 'Maverick City Music', genre: 'Gospel', previewUrl: '' },
+      { track: 'My Future', artist: 'Billie Eilish', genre: 'Pop', previewUrl: '' },
+      { track: 'Peaches', artist: 'Justin Bieber', genre: 'Pop', previewUrl: '' },
+      { track: 'Heat Waves', artist: 'Glass Animals', genre: 'Pop', previewUrl: '' },
+      { track: 'Unholy', artist: 'Sam Smith', genre: 'Pop', previewUrl: '' },
+      { track: 'Bad Habit', artist: 'Steve Lacy', genre: 'R&B', previewUrl: '' },
+      { track: 'Snooze', artist: 'SZA', genre: 'R&B', previewUrl: '' },
+      { track: 'Kill Bill', artist: 'SZA', genre: 'R&B', previewUrl: '' },
+      { track: 'Trip', artist: 'Ella Mai', genre: 'R&B', previewUrl: '' },
+      { track: 'On It', artist: 'Jazmine Sullivan', genre: 'R&B', previewUrl: '' },
+      { track: 'Hrs & Hrs', artist: 'Muni Long', genre: 'R&B', previewUrl: '' }
+    ];
+
+    const search = document.getElementById('music-search');
+    const musicSearchBtn = document.getElementById('music-search-btn');
+    const musicClearBtn = document.getElementById('music-clear-btn');
+    const grid = document.getElementById('music-grid');
+    const hidden = document.getElementById('music-track');
+    const previewUrlHidden = document.getElementById('music-preview-url');
+    const musicPreview = document.getElementById('music-audio');
+    const musicFileInput = document.getElementById('music_file');
+    const audioToggle = document.getElementById('audio-toggle');
+
+    const doodleCanvas = document.getElementById('doodle-canvas');
+    const doodleData = document.getElementById('doodle-data');
+    const clearDoodle = document.getElementById('clear-doodle');
+    const saveDoodle = document.getElementById('save-doodle');
+
+    const mediaInput = document.getElementById('theme_video');
+    const selfieCapture = document.getElementById('selfie_capture');
+    const previewPlaceholder = document.getElementById('story-preview-placeholder');
+    const previewImage = document.getElementById('story-preview-image');
+    const previewVideo = document.getElementById('story-preview-video');
+    const railCreate = document.getElementById('rail-create-story');
+    const vfReelUi = document.getElementById('vfReelUI');
+    const vfReelClose = document.getElementById('vfReelClose');
+    const vfReelSettings = document.getElementById('vfReelSettings');
+    const vfRecentsBtn = document.getElementById('vfRecentsBtn');
+    const vfRecentsLabel = document.getElementById('vfRecentsLabel');
+    const vfRecentsMenu = document.getElementById('vfRecentsMenu');
+    const vfSelectBtn = document.getElementById('vfSelectBtn');
+    const vfMediaGrid = document.getElementById('vfMediaGrid');
+    const vfOpenPickerTile = document.getElementById('vfOpenPickerTile');
+    const vfPublishMode = document.getElementById('vfPublishMode');
+    const vfModeButtons = Array.from(document.querySelectorAll('.vf-mode'));
+    const vfTabButtons = Array.from(document.querySelectorAll('.vf-pill'));
+
+    const cameraCanvas = document.getElementById('camera-canvas');
+    const openCamera = document.getElementById('open-camera');
+    const snapPhoto = document.getElementById('snap-photo');
+    const cameraPhotoData = document.getElementById('camera-photo-data');
+    let cameraStream = null;
+
+    const chaos = document.getElementById('vybe-chaos');
+    const theme = document.getElementById('vybe-theme');
+    const sound = document.getElementById('vybe-sound');
+    const modeRail = document.getElementById('story-mode-rail');
+    const modeInput = document.getElementById('story-mode-input');
+    const captionInput = document.getElementById('caption');
+    const previewText = document.getElementById('story-preview-text');
+    const fontSizeSlider = document.getElementById('story-font-size');
+    const fontChipsRoot = document.getElementById('story-font-chips');
+    const locationInput = document.getElementById('location');
+    const mentionsInput = document.getElementById('mentions');
+    const stickerToolbar = document.getElementById('story-sticker-toolbar');
+    const toolsRail = document.getElementById('story-tools-rail');
+    const linkSticker = document.getElementById('story-link-sticker');
+    const quickMap = {
+      'q-poll': '📊 Poll: A or B?',
+      'q-remix': '🧬 Remix this story with your own version',
+      'q-meme': '🧨 Meme drop in 3...2...1',
+      'q-beat': '🥁 Beat drop incoming',
+      'q-roast': '🔥 Roast me (friendly only)'
+    };
+    const vfStoryMedia = [];
+
+    const clickSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=');
+    let soundEnabled = true;
+    let musicSearchTimer = null;
+    let vfSelectMode = false;
+    let vfSelected = new Set();
+
+    function vfSetSelectMode(on) {
+      vfSelectMode = !!on;
+      if (vfSelectBtn) {
+        vfSelectBtn.textContent = vfSelectMode ? 'Done' : 'Select';
+      }
+      vfSelected.clear();
+      if (!vfMediaGrid) return;
+      vfMediaGrid.querySelectorAll('.vf-tile[data-idx]').forEach(function (tile) {
+        tile.classList.remove('vf-selected');
+      });
+    }
+
+    function vfCloseRecents() {
+      if (vfRecentsMenu) vfRecentsMenu.hidden = true;
+    }
+
+    function vfOpenFilePicker() {
+      if (mediaInput) mediaInput.click();
+    }
+
+    function detectMediaKind(url) {
+      const value = String(url || '').toLowerCase();
+      if (value.includes('.mp4') || value.includes('.webm') || value.includes('.mov') || value.includes('.m4v')) {
+        return 'video';
+      }
+      return 'image';
+    }
+
+    function vfAddTile(data) {
+      if (!vfMediaGrid) return null;
+      const url = data.url;
+      const kind = data.kind;
+      const idx = data.idx;
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'vf-tile';
+      tile.dataset.idx = String(idx);
+
+      if (kind === 'video') {
+        const video = document.createElement('video');
+        video.className = 'vf-thumb';
+        video.src = url;
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.addEventListener('loadeddata', function () {
+          try {
+            video.currentTime = 0.01;
+          } catch (error) {
+          }
+        });
+        tile.appendChild(video);
+
+        const badge = document.createElement('div');
+        badge.className = 'vf-badge';
+        badge.textContent = '▶';
+        tile.appendChild(badge);
+      } else {
+        const image = document.createElement('img');
+        image.className = 'vf-thumb';
+        image.src = url;
+        image.alt = 'media';
+        tile.appendChild(image);
+      }
+
+      tile.addEventListener('click', function () {
+        if (vfSelectMode) {
+          const id = Number(tile.dataset.idx);
+          if (vfSelected.has(id)) {
+            vfSelected.delete(id);
+            tile.classList.remove('vf-selected');
+          } else {
+            vfSelected.add(id);
+            tile.classList.add('vf-selected');
+          }
+          return;
+        }
+
+        setPreviewFromMedia(url, kind === 'video');
+      });
+
+      return tile;
+    }
+
+    function renderVfMediaGrid() {
+      if (!vfMediaGrid) return;
+      vfMediaGrid.querySelectorAll('.vf-tile[data-idx]').forEach(function (node) {
+        node.remove();
+      });
+
+      vfStoryMedia.slice(0, 11).forEach(function (url, index) {
+        if (!url) return;
+        const tile = vfAddTile({
+          url: url,
+          kind: detectMediaKind(url),
+          idx: index
+        });
+        if (tile) vfMediaGrid.appendChild(tile);
+      });
+    }
+
+    function setPublishMode(mode) {
+      if (!mode) return;
+      if (vfPublishMode) vfPublishMode.value = mode;
+      vfModeButtons.forEach(function (button) {
+        button.classList.toggle('active', button.dataset.mode === mode);
+      });
+
+      if (!mediaInput) return;
+      if (mode === 'reel' || mode === 'live') {
+        mediaInput.setAttribute('accept', 'video/*');
+      } else {
+        mediaInput.setAttribute('accept', 'image/*,video/*');
+      }
+    }
+
+    if (stickerToolbar) {
+      stickerToolbar.addEventListener('click', function (event) {
+        var chip = event.target.closest('[data-sticker]');
+        if (!chip) return;
+        handleStickerSpawn(chip.getAttribute('data-sticker'));
+      });
+    }
+
+    if (toolsRail) {
+      toolsRail.addEventListener('click', function (event) {
+        const btn = event.target.closest('[data-tool]');
+        if (!btn) return;
+        const tool = btn.getAttribute('data-tool');
+
+        if (tool === 'text' && previewText) {
+          previewText.focus();
+          return;
+        }
+
+        if (tool === 'stickers') {
+          var tray = document.getElementById('sticker-tray');
+          if (tray) tray.hidden = false;
+          return;
+        }
+
+        if (tool === 'music') {
+          var musicOv = document.getElementById('music-overlay');
+          if (musicOv) musicOv.hidden = false;
+          return;
+        }
+
+        if (tool === 'restyle') {
+          /* Cycle through visual filters on the story preview */
+          var _restyleBox = document.getElementById('story-preview-box');
+          if (_restyleBox) {
+            var filters = ['none','grayscale(1)','sepia(.8)','contrast(1.4) saturate(1.6)','hue-rotate(90deg)','brightness(1.3) saturate(1.8)','hue-rotate(180deg)','invert(1)','blur(1px) brightness(1.2)','contrast(1.8) hue-rotate(270deg)'];
+            var cur = parseInt(_restyleBox.dataset.filterIdx || '0', 10);
+            cur = (cur + 1) % filters.length;
+            _restyleBox.dataset.filterIdx = String(cur);
+            _restyleBox.style.filter = filters[cur];
+            btn.textContent = cur === 0 ? 'Restyle' : 'Restyle (' + cur + '/' + (filters.length - 1) + ')';
+          }
+          return;
+        }
+
+        if (tool === 'mention') {
+          handleStickerSpawn('mention');
+          return;
+        }
+
+        if (tool === 'effects') {
+          /* ═══ VybeFlow: 28 STORY EFFECTS (more than IG) ═══ */
+          var _fxBox = document.getElementById('story-preview-box');
+          if (_fxBox) {
+            var fx = [
+              { name: 'None',           filter: 'none', cls: '' },
+              { name: 'Neon Glow',      filter: 'drop-shadow(0 0 12px rgba(255,0,255,.7)) brightness(1.1)', cls: '' },
+              { name: 'Cyber Pulse',    filter: 'drop-shadow(0 0 20px rgba(0,255,255,.8)) saturate(1.4)', cls: 'fx-pulse' },
+              { name: 'Fire Storm',     filter: 'drop-shadow(0 0 14px rgba(255,80,0,.8)) contrast(1.2)', cls: 'fx-shake' },
+              { name: 'Galaxy',         filter: 'hue-rotate(200deg) brightness(1.1) saturate(1.6)', cls: '' },
+              { name: 'Vaporwave',      filter: 'sepia(.3) hue-rotate(240deg) saturate(2) brightness(1.1)', cls: '' },
+              { name: 'Film Grain',     filter: 'contrast(1.15) brightness(.95) sepia(.15)', cls: '' },
+              { name: 'VHS Retro',      filter: 'saturate(1.8) contrast(1.3) brightness(.9)', cls: 'fx-glitch' },
+              { name: 'Thermal',        filter: 'hue-rotate(170deg) saturate(3) contrast(1.4)', cls: '' },
+              { name: 'X-Ray',          filter: 'invert(1) brightness(1.2) hue-rotate(180deg)', cls: '' },
+              { name: 'Duotone Pink',   filter: 'grayscale(1) brightness(1.1) sepia(1) hue-rotate(300deg) saturate(3)', cls: '' },
+              { name: 'Duotone Teal',   filter: 'grayscale(1) brightness(1.1) sepia(1) hue-rotate(130deg) saturate(2.5)', cls: '' },
+              { name: 'Golden Hour',    filter: 'sepia(.4) brightness(1.15) saturate(1.4) hue-rotate(10deg)', cls: '' },
+              { name: 'Moonlight',      filter: 'brightness(.85) contrast(1.2) saturate(.7) hue-rotate(200deg)', cls: '' },
+              { name: 'Acid Trip',      filter: 'hue-rotate(90deg) saturate(3) contrast(1.3) brightness(1.05)', cls: 'fx-tilt' },
+              { name: 'Holographic',    filter: 'brightness(1.1) contrast(1.1)', cls: 'fx-holo fx-neon-breathe' },
+              { name: 'Anime',          filter: 'saturate(1.8) contrast(1.5) brightness(1.05)', cls: '' },
+              { name: 'Chromatic',      filter: 'drop-shadow(3px 0 0 rgba(255,0,0,.5)) drop-shadow(-3px 0 0 rgba(0,0,255,.5))', cls: '' },
+              { name: 'Noir',           filter: 'grayscale(1) contrast(1.6) brightness(.9)', cls: '' },
+              { name: 'Synthwave',      filter: 'hue-rotate(270deg) saturate(2) brightness(1.05) contrast(1.15)', cls: 'fx-neon-breathe' },
+              { name: 'Diamond Dust',   filter: 'brightness(1.2) contrast(1.1) drop-shadow(0 0 8px rgba(255,255,255,.6))', cls: 'fx-flicker' },
+              { name: 'Earthquake',     filter: 'contrast(1.15) saturate(1.2)', cls: 'fx-shake' },
+              { name: 'Heartbeat',      filter: 'brightness(1.05) saturate(1.3)', cls: 'fx-zoom-beat' },
+              { name: 'Slow Spin',      filter: 'none', cls: 'fx-spin-slow' },
+              { name: 'Liquid Wave',    filter: 'brightness(1.05)', cls: 'fx-wave' },
+              { name: 'Neon Border',    filter: 'brightness(1.05) saturate(1.2)', cls: 'fx-rgb-border' },
+              { name: 'Morph',          filter: 'brightness(1.05)', cls: 'fx-morph' },
+              { name: 'Bass Bounce',    filter: 'contrast(1.1) saturate(1.4)', cls: 'fx-bounce' }
+            ];
+            var ci = parseInt(_fxBox.dataset.fxIdx || '0', 10);
+            ci = (ci + 1) % fx.length;
+            _fxBox.dataset.fxIdx = String(ci);
+            /* clear previous fx classes */
+            var allFxClasses = ['fx-shake','fx-pulse','fx-bounce','fx-tilt','fx-glitch','fx-flicker','fx-zoom-beat','fx-spin-slow','fx-wave','fx-neon-breathe','fx-rgb-border','fx-morph','fx-holo'];
+            allFxClasses.forEach(function(c){ _fxBox.classList.remove(c); });
+            _fxBox.style.filter = fx[ci].filter;
+            _fxBox.style.border = '';
+            if (fx[ci].cls) { fx[ci].cls.split(' ').forEach(function(c){ if(c) _fxBox.classList.add(c); }); }
+            window._vybeCurrentEffect = ci;
+            /* Effect label */
+            var lbl = document.getElementById('story-effect-label');
+            if (!lbl) { lbl = document.createElement('div'); lbl.id = 'story-effect-label'; lbl.className = 'story-effect-label'; _fxBox.parentElement.appendChild(lbl); }
+            lbl.textContent = fx[ci].name;
+            lbl.classList.remove('hidden');
+            clearTimeout(window._fxLabelTimer);
+            window._fxLabelTimer = setTimeout(function(){ lbl.classList.add('hidden'); }, 1800);
+            btn.textContent = ci === 0 ? 'Effects' : '✨ ' + fx[ci].name;
+          }
+          return;
+        }
+
+        if (tool === 'draw' && doodleCanvas) {
+          doodleCanvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+
+        if (tool === 'save') {
+          /* Trigger draft save via the AJAX story publisher */
+          var _draftBtnRef = document.getElementById('story-draft-btn');
+          if (_draftBtnRef) { _draftBtnRef.click(); }
+          else { var _pubBtnRef = document.getElementById('story-publish-btn'); if (_pubBtnRef) _pubBtnRef.click(); }
+          return;
+        }
+
+        if (tool === 'more') {
+          const quickBar = document.querySelector('.vybe-quickbar');
+          if (quickBar) {
+            quickBar.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          }
+        }
+      });
+    }
+
+    function wireVfReelPicker() {
+      if (!vfReelUi) return;
+
+      document.querySelectorAll('.vybe-stories .vybe-story .media').forEach(function (node) {
+        const raw = node.style && node.style.backgroundImage ? node.style.backgroundImage : '';
+        const match = raw.match(/url\(["']?(.*?)["']?\)/i);
+        if (match && match[1]) {
+          vfStoryMedia.push(match[1]);
+        }
+      });
+
+      if (vfReelClose) {
+        vfReelClose.addEventListener('click', function () {
+          vfReelUi.style.display = 'none';
+        });
+      }
+
+      if (vfReelSettings) {
+        vfReelSettings.addEventListener('click', function () {
+          window.location.href = '/settings';
+        });
+      }
+
+      if (vfSelectBtn && mediaInput) {
+        vfSelectBtn.addEventListener('click', function () {
+          vfSetSelectMode(!vfSelectMode);
+        });
+      }
+
+      if (vfOpenPickerTile) {
+        vfOpenPickerTile.addEventListener('click', vfOpenFilePicker);
+      }
+
+      if (vfRecentsBtn && vfRecentsMenu) {
+        vfRecentsBtn.addEventListener('click', function () {
+          vfRecentsMenu.hidden = !vfRecentsMenu.hidden;
+        });
+
+        vfRecentsMenu.querySelectorAll('.vf-dditem').forEach(function (item) {
+          item.addEventListener('click', function () {
+            if (vfRecentsLabel) {
+              vfRecentsLabel.textContent = (item.textContent || 'Recents').trim();
+            }
+            vfCloseRecents();
+          });
+        });
+
+        document.addEventListener('click', function (event) {
+          if (!vfRecentsMenu.hidden && !vfRecentsMenu.contains(event.target) && event.target !== vfRecentsBtn && !vfRecentsBtn.contains(event.target)) {
+            vfCloseRecents();
+          }
+        });
+      }
+
+      vfTabButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          vfTabButtons.forEach(function (node) { node.classList.remove('active'); });
+          button.classList.add('active');
+        });
+      });
+
+      vfModeButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          setPublishMode(button.dataset.mode || 'story');
+        });
+      });
+
+      const vfSelectedStyle = document.createElement('style');
+      vfSelectedStyle.textContent = '.vf-selected{outline:3px solid rgba(255,122,24,.75);outline-offset:-3px;box-shadow:0 0 0 4px rgba(255,122,24,.15);}';
+      document.head.appendChild(vfSelectedStyle);
+
+      setPublishMode((vfPublishMode && vfPublishMode.value) || 'story');
+      renderVfMediaGrid();
+    }
+
+    function playUiClick() {
+      if (!soundEnabled) return;
+      try {
+        clickSound.currentTime = 0;
+        clickSound.play();
+      } catch (error) {
+      }
+    }
+
+    function syncPreviewText() {
+      /* Text is contenteditable on preview — sync to hidden caption input */
+      if (!previewText) return;
+      var text = previewText.textContent || '';
+      if (captionInput) captionInput.value = text;
+      if (!text.trim()) {
+        if (previewPlaceholder && !previewImage.src && !previewVideo.src) previewPlaceholder.style.display = '';
+      } else {
+        if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+      }
+    }
+
+    function setPreviewFromMedia(url, isVideo) {
+      previewPlaceholder.style.display = 'none';
+      if (isVideo) {
+        previewImage.style.display = 'none';
+        previewImage.removeAttribute('src');
+        previewVideo.style.display = 'block';
+        previewVideo.src = url;
+        previewVideo.play().catch(function () {});
+        return;
+      }
+      previewVideo.pause();
+      previewVideo.removeAttribute('src');
+      previewVideo.load();
+      previewVideo.style.display = 'none';
+      previewImage.style.display = 'block';
+      previewImage.src = url;
+    }
+
+    if (previewText) {
+      previewText.addEventListener('input', syncPreviewText);
+      previewText.addEventListener('focus', function() {
+        if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+      });
+      previewText.addEventListener('blur', function() {
+        syncPreviewText();
+      });
+    }
+
+    if (fontSizeSlider && previewText) {
+      const applySize = function () {
+        const size = parseInt(fontSizeSlider.value || '32', 10) || 32;
+        previewText.style.fontSize = size + 'px';
+      };
+      fontSizeSlider.addEventListener('input', applySize);
+      applySize();
+    }
+
+    if (fontChipsRoot && previewText) {
+      var previewBox = document.getElementById('story-preview-box');
+      var fontInput = document.getElementById('story-font-input');
+      var chips = Array.from(fontChipsRoot.querySelectorAll('.story-font-chip'));
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          var font = chip.getAttribute('data-font') || 'font-neon';
+          var bg = chip.getAttribute('data-bg') || '';
+          /* Apply font to text */
+          previewText.className = 'story-preview-text ' + font;
+          /* Apply background preset to preview box */
+          if (previewBox) {
+            previewBox.classList.remove('bg-neon','bg-typewriter','bg-modern','bg-strong','bg-gangsta','bg-thug','bg-trap','bg-drip','bg-og','bg-graffiti','bg-hood','bg-pixel','bg-block','bg-wanted');
+            if (bg) previewBox.classList.add(bg);
+          }
+          /* Track selected font */
+          if (fontInput) fontInput.value = font.replace('font-','');
+          chips.forEach(function (c) { c.classList.toggle('active', c === chip); });
+          playUiClick();
+        });
+      });
+      /* Apply initial neon font */
+      previewText.className = 'story-preview-text font-neon';
+      if (previewBox) previewBox.classList.add('bg-neon');
+    }
+
+    function renderMusic(list) {
+      grid.innerHTML = '';
+      list.forEach(function (song) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'music-item';
+        button.innerHTML = '<div><div>' + song.track + ' — ' + song.artist + '</div><div class="meta">' + song.genre + '</div></div><div>♫</div>';
+        button.addEventListener('click', function () {
+          hidden.value = song.track + ' — ' + song.artist;
+          if (previewUrlHidden) {
+            previewUrlHidden.value = song.previewUrl || '';
+          }
+          grid.querySelectorAll('.music-item').forEach(function (item) { item.classList.remove('active'); });
+          button.classList.add('active');
+          if (musicPreview) {
+            if (song.previewUrl) {
+              musicPreview.src = song.previewUrl;
+              if (soundEnabled) {
+                musicPreview.play().catch(function () {});
+              }
+            } else {
+              musicPreview.removeAttribute('src');
+              musicPreview.load();
+            }
+          }
+          playUiClick();
+        });
+        grid.appendChild(button);
+      });
+    }
+
+    function localFilter(term) {
+      const needle = (term || '').toLowerCase();
+      if (!needle) return localMusicLibrary;
+      return localMusicLibrary.filter(function (song) {
+        return (song.track + ' ' + song.artist + ' ' + song.genre).toLowerCase().includes(needle);
+      });
+    }
+
+    function fetchOnlineSongs(term) {
+      if (!term || term.length < 2) return Promise.resolve([]);
+      const url = '/api/music/search?q=' + encodeURIComponent(term);
+      return fetch(url)
+        .then(function (res) { return res.ok ? res.json() : { results: [] }; })
+        .then(function (data) {
+          const rows = Array.isArray(data.results) ? data.results : [];
+          return rows.map(function (row) {
+            return {
+              track: row.title || 'Unknown Song',
+              artist: row.artist || 'Unknown Artist',
+              genre: row.album || 'Music',
+              previewUrl: row.preview_url || ''
+            };
+          });
+        })
+        .catch(function () { return []; });
+    }
+
+    renderMusic(localMusicLibrary.slice(0, 30));
+
+    function runMusicSearch(term) {
+      const local = localFilter(term);
+      return fetchOnlineSongs(term).then(function (online) {
+        const merged = [];
+        const seen = new Set();
+        local.concat(online).forEach(function (song) {
+          const key = (song.track + '|' + song.artist).toLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          merged.push(song);
+        });
+        renderMusic(merged.length ? merged.slice(0, 60) : localMusicLibrary.slice(0, 30));
+      });
+    }
+
+    if (search) {
+      search.addEventListener('input', function () {
+        const term = (search.value || '').trim();
+        clearTimeout(musicSearchTimer);
+        musicSearchTimer = setTimeout(function () {
+          runMusicSearch(term);
+        }, 220);
+      });
+    }
+
+    if (musicSearchBtn && search) {
+      musicSearchBtn.addEventListener('click', function () {
+        runMusicSearch((search.value || '').trim());
+      });
+    }
+
+    if (musicClearBtn && search) {
+      musicClearBtn.addEventListener('click', function () {
+        search.value = '';
+        hidden.value = '';
+        if (previewUrlHidden) previewUrlHidden.value = '';
+        if (musicPreview) {
+          musicPreview.pause();
+          musicPreview.removeAttribute('src');
+          musicPreview.load();
+        }
+        if (audioToggle) audioToggle.textContent = '▶ Tap to play';
+        renderMusic(localMusicLibrary.slice(0, 30));
+      });
+    }
+
+    if (musicFileInput && musicPreview) {
+      musicFileInput.addEventListener('change', function () {
+        const file = musicFileInput.files && musicFileInput.files[0];
+        if (!file) return;
+        const audioUrl = URL.createObjectURL(file);
+        musicPreview.src = audioUrl;
+        hidden.value = file.name;
+        if (previewUrlHidden) {
+          previewUrlHidden.value = audioUrl;
+        }
+        if (soundEnabled) {
+          musicPreview.play().catch(function () {});
+        }
+      });
+    }
+
+    if (mediaInput && previewImage && previewVideo && previewPlaceholder) {
+      mediaInput.addEventListener('change', function () {
+        const files = Array.from(mediaInput.files || []);
+        if (!files.length) return;
+
+        if (vfMediaGrid) {
+          vfMediaGrid.querySelectorAll('.vf-tile[data-idx]').forEach(function (node) {
+            node.remove();
+          });
+
+          files.forEach(function (file, index) {
+            const mediaUrl = URL.createObjectURL(file);
+            const kind = (file.type || '').startsWith('video/') ? 'video' : 'image';
+            const tile = vfAddTile({ url: mediaUrl, kind: kind, idx: index });
+            if (tile) vfMediaGrid.appendChild(tile);
+          });
+        }
+
+        const first = files[0];
+        const firstUrl = URL.createObjectURL(first);
+        const isVideo = (first.type || '').startsWith('video/');
+        if (cameraPhotoData) {
+          cameraPhotoData.value = '';
+        }
+        setPreviewFromMedia(firstUrl, isVideo);
+        vfSetSelectMode(false);
+      });
+    }
+
+    if (railCreate && mediaInput) {
+      railCreate.addEventListener('click', function (event) {
+        event.preventDefault();
+        mediaInput.click();
+      });
+    }
+
+    function stopCameraStream() {
+      if (!cameraStream) return;
+      cameraStream.getTracks().forEach(function (track) { track.stop(); });
+      cameraStream = null;
+      if (previewVideo) previewVideo.srcObject = null;
+    }
+
+    if (openCamera) {
+      openCamera.addEventListener('click', async function () {
+        try {
+          stopCameraStream();
+          cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+          if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+          if (previewImage) {
+            previewImage.style.display = 'none';
+            previewImage.removeAttribute('src');
+          }
+          if (previewVideo) {
+            previewVideo.style.display = 'block';
+            previewVideo.srcObject = cameraStream;
+            previewVideo.play().catch(function () {});
+          }
+        } catch (error) {
+          if (selfieCapture) {
+            selfieCapture.click();
+          } else {
+            vfToast('Camera access failed. Check browser camera permissions.');
+          }
+        }
+      });
+    }
+
+    if (snapPhoto && previewVideo && cameraCanvas) {
+      snapPhoto.addEventListener('click', function () {
+        if (!cameraStream) {
+          if (selfieCapture) selfieCapture.click();
+          return;
+        }
+        const width = previewVideo.videoWidth || 720;
+        const height = previewVideo.videoHeight || 1280;
+        cameraCanvas.width = width;
+        cameraCanvas.height = height;
+        const cameraCtx = cameraCanvas.getContext('2d');
+        cameraCtx.drawImage(previewVideo, 0, 0, width, height);
+        const photoDataUrl = cameraCanvas.toDataURL('image/jpeg', 0.92);
+        if (cameraPhotoData) {
+          cameraPhotoData.value = photoDataUrl;
+        }
+        setPreviewFromMedia(photoDataUrl, false);
+        stopCameraStream();
+      });
+    }
+
+    if (selfieCapture) {
+      selfieCapture.addEventListener('change', function () {
+        const file = selfieCapture.files && selfieCapture.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const dataUrl = String(event.target && event.target.result || '');
+          if (!dataUrl) return;
+          if (cameraPhotoData) cameraPhotoData.value = dataUrl;
+          setPreviewFromMedia(dataUrl, false);
+          stopCameraStream();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (audioToggle && musicPreview) {
+      audioToggle.addEventListener('click', function () {
+        if (!musicPreview.src) return;
+        if (musicPreview.paused) {
+          musicPreview.play().then(function () {
+            audioToggle.textContent = '⏸ Pause preview';
+            startBeatSync();
+          }).catch(function () {});
+        } else {
+          musicPreview.pause();
+          audioToggle.textContent = '▶ Tap to play';
+          stopBeatSync();
+        }
+      });
+      musicPreview.addEventListener('ended', function () {
+        audioToggle.textContent = '▶ Tap to play';
+        stopBeatSync();
+      });
+    }
+
+    /* ═══ VybeFlow: MUSIC-REACTIVE BEAT SYNC ENGINE ═══ */
+    var _vybeAudioCtx = null, _vybeAnalyser = null, _vybeSrc = null, _vybeBeatRAF = null;
+    var _vybeBeatActive = false;
+
+    function startBeatSync() {
+      if (_vybeBeatActive) return;
+      _vybeBeatActive = true;
+      try {
+        if (!_vybeAudioCtx) {
+          _vybeAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (!_vybeSrc && musicPreview) {
+          _vybeSrc = _vybeAudioCtx.createMediaElementSource(musicPreview);
+        }
+        if (!_vybeAnalyser) {
+          _vybeAnalyser = _vybeAudioCtx.createAnalyser();
+          _vybeAnalyser.fftSize = 256;
+          _vybeAnalyser.smoothingTimeConstant = 0.7;
+          _vybeSrc.connect(_vybeAnalyser);
+          _vybeAnalyser.connect(_vybeAudioCtx.destination);
+        }
+        _vybeBeatLoop();
+      } catch (e) { console.warn('Beat sync not available:', e); }
+    }
+
+    function stopBeatSync() {
+      _vybeBeatActive = false;
+      if (_vybeBeatRAF) cancelAnimationFrame(_vybeBeatRAF);
+      _vybeBeatRAF = null;
+      var box = document.getElementById('story-preview-box');
+      if (box) {
+        box.style.transform = '';
+        box.style.boxShadow = '';
+      }
+    }
+
+    function _vybeBeatLoop() {
+      if (!_vybeBeatActive || !_vybeAnalyser) return;
+      var bufLen = _vybeAnalyser.frequencyBinCount;
+      var dataArr = new Uint8Array(bufLen);
+      _vybeAnalyser.getByteFrequencyData(dataArr);
+
+      /* bass energy (bins 0-8), mid energy (bins 8-40), treble (40+) */
+      var bass = 0, mid = 0, treble = 0;
+      for (var i = 0; i < 8; i++) bass += dataArr[i];
+      bass = bass / (8 * 255);
+      for (var i = 8; i < 40; i++) mid += dataArr[i];
+      mid = mid / (32 * 255);
+      for (var i = 40; i < bufLen; i++) treble += dataArr[i];
+      treble = treble / ((bufLen - 40) * 255);
+
+      var box = document.getElementById('story-preview-box');
+      if (box) {
+        /* shake intensity from bass */
+        var shakeX = (Math.random() - 0.5) * bass * 12;
+        var shakeY = (Math.random() - 0.5) * bass * 12;
+        var sca = 1 + bass * 0.06 + mid * 0.03;
+        var rot = (Math.random() - 0.5) * bass * 3;
+        box.style.transform = 'translate(' + shakeX.toFixed(1) + 'px,' + shakeY.toFixed(1) + 'px) scale(' + sca.toFixed(3) + ') rotate(' + rot.toFixed(2) + 'deg)';
+
+        /* neon glow intensity from bass + mid */
+        var glowR = Math.round(255 * bass);
+        var glowG = Math.round(180 * mid);
+        var glowB = Math.round(255 * treble);
+        var glowSize = 8 + bass * 40;
+        var glowSize2 = 4 + mid * 20;
+        box.style.boxShadow = '0 0 ' + glowSize.toFixed(0) + 'px rgba(' + glowR + ',' + glowG + ',' + glowB + ',.6), inset 0 0 ' + glowSize2.toFixed(0) + 'px rgba(' + glowB + ',' + glowR + ',' + glowG + ',.15)';
+      }
+
+      _vybeBeatRAF = requestAnimationFrame(_vybeBeatLoop);
+    }
+
+    if (doodleCanvas) {
+      const context = doodleCanvas.getContext('2d');
+      context.lineWidth = 3;
+      context.lineCap = 'round';
+      context.strokeStyle = '#ff9a3d';
+      let drawing = false;
+
+      function point(event) {
+        const rect = doodleCanvas.getBoundingClientRect();
+        const scaleX = doodleCanvas.width / rect.width;
+        const scaleY = doodleCanvas.height / rect.height;
+        return {
+          x: (event.clientX - rect.left) * scaleX,
+          y: (event.clientY - rect.top) * scaleY
+        };
+      }
+
+      doodleCanvas.addEventListener('pointerdown', function (event) {
+        drawing = true;
+        const p = point(event);
+        context.beginPath();
+        context.moveTo(p.x, p.y);
+      });
+
+      doodleCanvas.addEventListener('pointermove', function (event) {
+        if (!drawing) return;
+        const p = point(event);
+        context.lineTo(p.x, p.y);
+        context.stroke();
+      });
+
+      doodleCanvas.addEventListener('pointerup', function () { drawing = false; });
+      doodleCanvas.addEventListener('pointerleave', function () { drawing = false; });
+
+      if (clearDoodle) {
+        clearDoodle.addEventListener('click', function () {
+          context.clearRect(0, 0, doodleCanvas.width, doodleCanvas.height);
+          if (doodleData) doodleData.value = '';
+        });
+      }
+
+      if (saveDoodle) {
+        saveDoodle.addEventListener('click', function () {
+          if (doodleData) doodleData.value = doodleCanvas.toDataURL('image/png');
+        });
+      }
+
+      const form = doodleCanvas.closest('form');
+      if (form) {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault(); /* AJAX handles submission now */
+          if (doodleData && !doodleData.value) {
+            doodleData.value = doodleCanvas.toDataURL('image/png');
+          }
+          stopCameraStream();
+        });
+      }
+    }
+
+    /* ═══ AJAX Story Publish (fast, no page reload) ═══ */
+    var publishBtn = document.getElementById('story-publish-btn');
+    var draftBtn = document.getElementById('story-draft-btn');
+    var storyFeedback = document.getElementById('story-post-feedback');
+    var storyForm = document.querySelector('form[action*="story"]') || document.querySelector('form[enctype]');
+
+    /* Wire photo/selfie picker buttons */
+    var pickMediaBtn = document.getElementById('pick-media-btn');
+    var pickSelfieBtn = document.getElementById('pick-selfie-btn');
+    if (pickMediaBtn && mediaInput) {
+      pickMediaBtn.addEventListener('click', function() { mediaInput.click(); });
+    }
+    if (pickSelfieBtn && selfieCapture) {
+      pickSelfieBtn.addEventListener('click', function() { selfieCapture.click(); });
+    }
+
+    function postStory(visibility) {
+      if (!storyForm) return;
+      if (storyFeedback) { storyFeedback.textContent = '⏳ Posting story...'; storyFeedback.style.color = '#ffc27a'; }
+      /* Save doodle data if canvas has content (sample every 200th pixel for speed) */
+      if (doodleCanvas) {
+        var dCtx = doodleCanvas.getContext('2d');
+        var imgData = dCtx.getImageData(0, 0, doodleCanvas.width, doodleCanvas.height);
+        var hasContent = false;
+        for (var pi = 3, len = imgData.data.length; pi < len; pi += 800) {
+          if (imgData.data[pi] > 0) { hasContent = true; break; }
+        }
+        if (hasContent && doodleData) {
+          doodleData.value = doodleCanvas.toDataURL('image/png');
+        }
+      }
+      stopCameraStream();
+
+      var fd = new FormData(storyForm);
+      if (visibility) fd.set('visibility', visibility);
+
+      /* Include font choice */
+      var fontInput = document.getElementById('story-font-input');
+      if (fontInput) fd.set('story_font', fontInput.value);
+
+      /* Include caption from contenteditable preview text */
+      if (previewText) {
+        var capText = (previewText.innerText || previewText.textContent || '').trim();
+        if (capText && capText !== 'Tap to type on your story...') fd.set('caption', capText);
+      }
+
+      /* Ensure music track and URL are included */
+      var _mTrack = document.getElementById('music-track');
+      var _mUrl = document.getElementById('music-preview-url');
+      if (_mTrack && _mTrack.value) fd.set('music_track', _mTrack.value);
+      if (_mUrl && _mUrl.value) fd.set('music_preview_url', _mUrl.value);
+
+      vfUploadWithProgress(storyForm.action || '/story/create', fd)
+        .then(function(result) {
+          var data = result.data || {};
+          if (result.ok && data.ok) {
+            if (storyFeedback) { storyFeedback.textContent = '✅ Story shared!'; storyFeedback.style.color = '#66ff66'; }
+            window.location.href = '{{ url_for("feed.feed_page") }}';
+          } else {
+            if (storyFeedback) { storyFeedback.textContent = '❌ ' + (data.error || 'Failed to post. Try adding media first.'); storyFeedback.style.color = '#ff6b6b'; }
+          }
+        })
+        .catch(function() {
+          if (storyFeedback) { storyFeedback.textContent = '❌ Network error. Check connection.'; storyFeedback.style.color = '#ff6b6b'; }
+        });
+    }
+
+    if (publishBtn) {
+      publishBtn.addEventListener('click', function() { postStory('Public'); });
+    }
+    if (draftBtn) {
+      draftBtn.addEventListener('click', function() { postStory('Only Me'); });
+    }
+
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    if (chaos) {
+      chaos.addEventListener('click', function () {
+        /* ═══ VybeFlow CHAOS MODE — MASSIVE VISUAL EXPLOSION ═══ */
+        var chaosBox = document.getElementById('story-preview-box');
+
+        /* 1. Shake every story card wildly */
+        document.querySelectorAll('.vybe-story').forEach(function (card) {
+          const rotation = rand(-8, 8).toFixed(2);
+          const offsetY = rand(-20, 20).toFixed(0);
+          const offsetX = rand(-15, 15).toFixed(0);
+          const scale = rand(0.9, 1.15).toFixed(3);
+          card.style.transition = 'transform .15s cubic-bezier(.36,1.56,.64,1)';
+          card.style.transform = 'translate(' + offsetX + 'px,' + offsetY + 'px) rotate(' + rotation + 'deg) scale(' + scale + ')';
+          setTimeout(function () {
+            card.style.transform = '';
+            setTimeout(function() { card.style.transition = ''; }, 300);
+          }, 600);
+        });
+
+        /* 2. Flash the preview box with random neon filter */
+        if (chaosBox) {
+          var chaosFilters = [
+            'hue-rotate('+Math.floor(rand(0,360))+'deg) saturate(3) brightness(1.3)',
+            'invert(1) hue-rotate(180deg)',
+            'sepia(1) hue-rotate('+Math.floor(rand(100,300))+'deg) saturate(3)',
+            'drop-shadow(0 0 30px rgba(255,0,255,.8)) brightness(1.4)',
+            'contrast(2) saturate(2.5) hue-rotate('+Math.floor(rand(0,360))+'deg)'
+          ];
+          var randomFilter = chaosFilters[Math.floor(Math.random() * chaosFilters.length)];
+          chaosBox.style.transition = 'filter .1s, transform .15s';
+          chaosBox.style.filter = randomFilter;
+          chaosBox.style.transform = 'scale(1.04) rotate(' + rand(-3,3).toFixed(1) + 'deg)';
+          setTimeout(function() {
+            chaosBox.style.filter = '';
+            chaosBox.style.transform = '';
+            setTimeout(function() { chaosBox.style.transition = ''; }, 300);
+          }, 800);
+        }
+
+        /* 3. Spawn particle explosion */
+        var particleColors = ['#ff4d00','#ff00ff','#00ffff','#ffff00','#ff6b6b','#7c4dff','#00e676'];
+        for (var p = 0; p < 25; p++) {
+          (function(i) {
+            setTimeout(function() {
+              var particle = document.createElement('div');
+              particle.style.cssText = 'position:fixed;z-index:99999;pointer-events:none;width:'+rand(6,14)+'px;height:'+rand(6,14)+'px;border-radius:50%;background:'+particleColors[Math.floor(Math.random()*particleColors.length)]+';left:'+rand(20,80)+'vw;top:'+rand(20,80)+'vh;opacity:1;transition:all '+rand(0.5,1.2)+'s cubic-bezier(.25,.46,.45,.94);';
+              document.body.appendChild(particle);
+              requestAnimationFrame(function() {
+                particle.style.left = rand(0,100) + 'vw';
+                particle.style.top = rand(0,100) + 'vh';
+                particle.style.opacity = '0';
+                particle.style.transform = 'scale(0)';
+              });
+              setTimeout(function() { particle.remove(); }, 1500);
+            }, i * 30);
+          })(p);
+        }
+
+        /* 4. Screen flash */
+        var flash = document.createElement('div');
+        flash.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(255,255,255,.3);pointer-events:none;transition:opacity .3s;';
+        document.body.appendChild(flash);
+        setTimeout(function() { flash.style.opacity = '0'; }, 50);
+        setTimeout(function() { flash.remove(); }, 400);
+
+        /* 5. Chaos label */
+        var chaosLabel = document.createElement('div');
+        chaosLabel.textContent = ['💥 CHAOS!','🔥 UNLEASHED!','⚡ WILD!','🌀 VORTEX!','💀 MAYHEM!'][Math.floor(Math.random()*5)];
+        chaosLabel.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:99999;font-size:48px;font-weight:900;color:#fff;text-shadow:0 0 30px #ff4d00,0 0 60px #ff00ff;pointer-events:none;transition:all .3s cubic-bezier(.36,1.56,.64,1);font-family:"Black Ops One","Bebas Neue",Impact,sans-serif;';
+        document.body.appendChild(chaosLabel);
+        requestAnimationFrame(function() { chaosLabel.style.transform = 'translate(-50%,-50%) scale(1)'; });
+        setTimeout(function() { chaosLabel.style.opacity = '0'; chaosLabel.style.transform = 'translate(-50%,-50%) scale(2)'; }, 600);
+        setTimeout(function() { chaosLabel.remove(); }, 1000);
+
+        playUiClick();
+      });
+    }
+
+    if (theme) {
+      theme.addEventListener('click', function () {
+        document.body.classList.toggle('vybe-hot-theme');
+      });
+    }
+
+    if (sound) {
+      sound.addEventListener('click', function () {
+        soundEnabled = !soundEnabled;
+        sound.dataset.on = soundEnabled ? '1' : '0';
+        sound.textContent = soundEnabled ? '🔊 Sound On' : '🔇 Sound';
+        if (!soundEnabled && musicPreview) {
+          musicPreview.pause();
+          if (audioToggle) audioToggle.textContent = '▶ Tap to play';
+        }
+        playUiClick();
+      });
+    }
+
+    Object.keys(quickMap).forEach(function (id) {
+      const button = document.getElementById(id);
+      if (!button) return;
+      button.addEventListener('click', function () {
+        if (!captionInput) return;
+        captionInput.value = quickMap[id];
+        captionInput.dispatchEvent(new Event('input'));
+      });
+    });
+
+    if (modeRail) {
+      const buttons = Array.from(modeRail.querySelectorAll('.story-mode-btn'));
+      buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const mode = btn.getAttribute('data-story-mode');
+          if (!mode) return;
+          buttons.forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+          if (modeInput) modeInput.value = mode;
+
+          if (mode === 'create' && captionInput) {
+            captionInput.focus();
+            captionInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          if (mode === 'boomerang') {
+            /* Boomerang: open media picker in video mode for loop clip */
+            if (mediaInput) {
+              mediaInput.setAttribute('accept', 'video/*');
+              mediaInput.click();
+            }
+            if (previewPlaceholder) previewPlaceholder.textContent = 'Record or pick a short clip — it will loop back and forth.';
+          }
+          if (mode === 'ai-images') {
+            /* AI Images — prompt user and generate via API */
+            (async function(){
+            var aiPrompt = await vfPrompt('✨ AI Image Generator\n\nDescribe the background or sticker you want:\n(e.g. "ocean", "sunset", "neon party", "galaxy")');
+            if (aiPrompt && previewPlaceholder) {
+              previewPlaceholder.innerHTML = '<div style="text-align:center;padding:20px;"><div style="font-size:32px;">⏳</div><div style="margin-top:8px;font-size:14px;">Generating...</div><div style="margin-top:6px;font-size:12px;opacity:.7;">Prompt: "' + aiPrompt.replace(/</g,'&lt;') + '"</div></div>';
+              previewPlaceholder.style.display = '';
+
+              /* Ask for type */
+              var genType = (await vfConfirm('Click OK for Background, Cancel for Stickers')) ? 'background' : 'sticker';
+
+              fetch('/api/ai-generate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({prompt: aiPrompt, type: genType})
+              })
+              .then(function(r){ return r.json(); })
+              .then(function(data){
+                if (!data.ok) {
+                  previewPlaceholder.innerHTML = '<div style="text-align:center;color:#ff6b6b;">Error: ' + (data.error || 'Generation failed') + '</div>';
+                  return;
+                }
+                if (data.type === 'background') {
+                  /* Show generated background in preview */
+                  var previewBox = document.getElementById('story-preview-box');
+                  if (previewBox) {
+                    previewBox.style.backgroundImage = 'url(' + data.image_url + ')';
+                    previewBox.style.backgroundSize = 'cover';
+                    previewBox.style.backgroundPosition = 'center';
+                  }
+                  var paletteHtml = '<div style="display:flex;gap:6px;justify-content:center;margin-top:8px;">';
+                  (data.palette || []).forEach(function(c){ paletteHtml += '<span style="width:24px;height:24px;border-radius:50%;background:'+c+';display:inline-block;border:2px solid rgba(255,255,255,.3);"></span>'; });
+                  paletteHtml += '</div>';
+                  var emojiRow = (data.emojis || []).join(' ');
+                  previewPlaceholder.innerHTML = '<div style="text-align:center;"><div style="font-size:14px;font-weight:700;">✨ Background Generated!</div><div style="margin-top:4px;font-size:12px;opacity:.7;">Theme: ' + (data.theme || 'custom') + '</div>' + paletteHtml + '<div style="margin-top:8px;font-size:20px;">' + emojiRow + '</div><div style="margin-top:8px;font-size:11px;opacity:.5;">Prompt: "' + aiPrompt.replace(/</g,'&lt;') + '"</div></div>';
+                } else {
+                  /* Show generated stickers */
+                  var stickerHtml = '<div style="text-align:center;"><div style="font-size:14px;font-weight:700;">🎨 Stickers Generated!</div><div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;">';
+                  (data.stickers || []).forEach(function(s){
+                    stickerHtml += '<div class="ai-gen-sticker" data-emoji="'+s.emoji+'" style="font-size:42px;cursor:pointer;transform:rotate('+s.rotation+'deg) scale('+s.scale+');filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));transition:.15s;" onmouseenter="this.style.transform=\'scale(1.3)\'" onmouseleave="this.style.transform=\'rotate('+s.rotation+'deg) scale('+s.scale+')\'">'+s.emoji+'</div>';
+                  });
+                  stickerHtml += '</div><div style="margin-top:10px;font-size:11px;opacity:.5;">Tap a sticker to place it on your story</div></div>';
+                  previewPlaceholder.innerHTML = stickerHtml;
+
+                  /* Allow clicking generated stickers to place them */
+                  previewPlaceholder.querySelectorAll('.ai-gen-sticker').forEach(function(el){
+                    el.addEventListener('click', function(){
+                      var emoji = el.getAttribute('data-emoji');
+                      var box = document.getElementById('story-preview-box');
+                      if (box && typeof handleStickerSpawn === 'function') {
+                        handleStickerSpawn(emoji, 'emoji');
+                      } else if (box) {
+                        var span = document.createElement('span');
+                        span.className = 'placedSticker';
+                        span.textContent = emoji;
+                        span.style.left = '40%';
+                        span.style.top = '40%';
+                        box.appendChild(span);
+                      }
+                    });
+                  });
+                }
+              })
+              .catch(function(err){
+                previewPlaceholder.innerHTML = '<div style="text-align:center;color:#ff6b6b;">Network error — please try again</div>';
+              });
+            }
+            })();
+          }
+          if (mode === 'layout') {
+            /* Layout: open multi-select for photo grid layouts */
+            if (mediaInput) {
+              mediaInput.setAttribute('multiple', 'multiple');
+              mediaInput.setAttribute('accept', 'image/*');
+              mediaInput.click();
+            }
+            if (previewPlaceholder) previewPlaceholder.textContent = 'Select multiple photos for a grid layout.';
+          }
+          if (mode === 'handsfree') {
+            /* Hands-free: open camera automatically with countdown */
+            if (openCamera) openCamera.click();
+            if (previewPlaceholder) previewPlaceholder.textContent = 'Hands-free! Camera opened — tap Snap Photo when ready.';
+          }
+          if (mode === 'close') {
+            window.location.href = '{{ url_for("feed.feed_page") }}';
+          }
+        });
+      });
+    }
+
+    /* ═══ STICKER DEFINITIONS + SPAWNING + DRAGGING ═══ */
+    var _previewBox = document.getElementById('story-preview-box');
+    var _stickerDefs = {
+      location: {type:'prompt', prompt:'Enter location:', emoji:'📍', prefix:'📍 '},
+      mention: {type:'prompt', prompt:'Enter @username:', emoji:'@', prefix:'@'},
+      hashtag: {type:'prompt', prompt:'Enter hashtag:', emoji:'#', prefix:'#'},
+      link: {type:'link'},  /* custom link sticker — handled in handleStickerSpawn */
+      shoutout: {type:'prompt', prompt:'Shoutout to:', emoji:'📣', prefix:'📣 '},
+      quote: {type:'prompt', prompt:'Enter quote:', emoji:'💬', prefix:'💬 '},
+      tip: {type:'prompt', prompt:'Share a tip:', emoji:'💡', prefix:'💡 '},
+      questions: {type:'widget', html:'<div style="text-align:center"><span class="sticker-emoji">❓</span><div style="font-size:11px;margin-top:4px;background:rgba(255,255,255,.12);border-radius:8px;padding:6px;">Ask me anything</div></div>'},
+      poll: {type:'widget', html:'<div style="text-align:center"><span class="sticker-emoji">📊</span><div style="font-size:11px;margin-top:4px;">POLL<br><span style="display:inline-block;padding:3px 10px;border:1px solid rgba(255,255,255,.3);border-radius:6px;margin:2px;">Yes</span> <span style="display:inline-block;padding:3px 10px;border:1px solid rgba(255,255,255,.3);border-radius:6px;margin:2px;">No</span></div></div>'},
+      quiz: {type:'widget', html:'<div style="text-align:center"><span class="sticker-emoji">🧩</span><div style="font-size:11px;margin-top:4px;">QUIZ TIME<br><span style="opacity:.6">Tap to answer</span></div></div>'},
+      countdown: {type:'widget', html:'<div style="text-align:center"><span class="sticker-emoji">⏰</span><div style="font-size:11px;margin-top:4px;">COUNTDOWN<br>00:00:00</div></div>'},
+      slider: {type:'widget', html:'<div style="text-align:center"><span class="sticker-emoji">📏</span><div style="margin-top:4px;"><input type="range" style="width:100px;pointer-events:none;" value="50" /></div></div>'},
+      thisorthat: {type:'widget', html:'<div style="display:flex;gap:6px;"><div style="padding:6px 10px;border:1px solid rgba(255,255,255,.35);border-radius:8px;font-size:12px;">This?</div><div style="padding:6px 10px;border:1px solid rgba(255,255,255,.35);border-radius:8px;font-size:12px;">That?</div></div>'},
+      vibecheck: {type:'emoji', emoji:'🔥', label:'VIBE CHECK'},
+      challenge: {type:'emoji', emoji:'😎', label:'CHALLENGE'},
+      dare: {type:'emoji', emoji:'🎯', label:'DARE'},
+      rating: {type:'emoji', emoji:'⭐', label:'⭐⭐⭐⭐⭐'},
+      timestamp: {type:'auto', emoji:'🕐'},
+      weather: {type:'emoji', emoji:'🌡', label:'72°F Sunny'},
+      mood: {type:'emoji', emoji:'🎭', label:'MOOD'},
+      aura: {type:'emoji', emoji:'💫', label:'AURA'},
+      confession: {type:'emoji', emoji:'👻', label:'CONFESSION'},
+      collab: {type:'emoji', emoji:'🤝', label:'COLLAB'},
+      throwback: {type:'emoji', emoji:'⏳', label:'THROWBACK'},
+      voice: {type:'emoji', emoji:'🎤', label:'VOICE NOTE'},
+      trophy: {type:'emoji', emoji:'🏆', label:'TROPHY'},
+      reaction: {type:'emoji', emoji:'❤️', label:'❤️'},
+      palette: {type:'emoji', emoji:'🎨', label:'PALETTE'},
+      todo: {type:'prompt', prompt:'Add to-do item:', emoji:'📝', prefix:'📝 '},
+      gift: {type:'emoji', emoji:'🎁', label:'GIFT'},
+      event: {type:'prompt', prompt:'Event name:', emoji:'🎪', prefix:'🎪 '},
+      spin: {type:'widget', html:'<div style="text-align:center"><span class="sticker-emoji" style="font-size:32px;display:inline-block;animation:spinAnim 2s linear infinite;">🎰</span><div style="font-size:11px;margin-top:4px;">SPIN THE WHEEL</div></div>'},
+      emoji: {type:'emoji', emoji:'😊', label:'😊'},
+      gif: {type:'emoji', emoji:'🎬', label:'GIF'},
+      avatar: {type:'emoji', emoji:'👤', label:'AVATAR'},
+      random: {type:'emoji', emoji:'🎲', label:'RANDOM'}
+    };
+
+    function spawnSticker(html, xPct, yPct) {
+      if (!_previewBox) return null;
+      var el = document.createElement('div');
+      el.className = 'placed-sticker';
+      el.innerHTML = html;
+      /* Convert % to px based on container */
+      var cr = _previewBox.getBoundingClientRect();
+      var leftPx = (cr.width * ((xPct || 50) / 100)) - 40;
+      var topPx = (cr.height * ((yPct || 45) / 100)) - 20;
+      el.style.left = Math.max(0, leftPx) + 'px';
+      el.style.top = Math.max(0, topPx) + 'px';
+      _previewBox.appendChild(el);
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'sticker-delete';
+      del.textContent = '×';
+      del.addEventListener('click', function(e) { e.stopPropagation(); el.remove(); });
+      el.appendChild(del);
+      _makeDraggable(el, _previewBox);
+      playUiClick();
+      /* Quick entrance animation */
+      el.style.opacity = '0'; el.style.transform = 'scale(0.5)';
+      requestAnimationFrame(function() {
+        el.style.transition = 'opacity .2s, transform .25s cubic-bezier(.34,1.56,.64,1)';
+        el.style.opacity = '1'; el.style.transform = 'scale(1)';
+        setTimeout(function(){ el.style.transition = ''; }, 300);
+      });
+      return el;
+    }
+
+    function spawnMusicSticker(trackName) {
+      if (!_previewBox) return null;
+      var el = document.createElement('div');
+      el.className = 'placed-music-sticker';
+      el.innerHTML = '<div class="music-bars"><span></span><span></span><span></span><span></span></div><span>🎵 ' + (trackName || 'Music') + '</span>';
+      var cr = _previewBox.getBoundingClientRect();
+      el.style.left = Math.max(0, (cr.width * 0.15)) + 'px';
+      el.style.top = Math.max(0, (cr.height * 0.78)) + 'px';
+      _previewBox.appendChild(el);
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'sticker-delete';
+      del.textContent = '×';
+      del.addEventListener('click', function(e) { e.stopPropagation(); el.remove(); });
+      el.appendChild(del);
+      _makeDraggable(el, _previewBox);
+      playUiClick();
+      el.style.opacity = '0'; el.style.transform = 'scale(0.5)';
+      requestAnimationFrame(function() {
+        el.style.transition = 'opacity .2s, transform .25s cubic-bezier(.34,1.56,.64,1)';
+        el.style.opacity = '1'; el.style.transform = 'scale(1)';
+        setTimeout(function(){ el.style.transition = ''; }, 300);
+      });
+      return el;
+    }
+
+    function _makeDraggable(el, container) {
+      var ox = 0, oy = 0, dragging = false, pointerId = null;
+      el.addEventListener('pointerdown', function(e) {
+        if (e.target.closest('.sticker-delete')) return;
+        dragging = true;
+        pointerId = e.pointerId;
+        var r = el.getBoundingClientRect();
+        ox = e.clientX - r.left; oy = e.clientY - r.top;
+        el.setPointerCapture(e.pointerId);
+        el.classList.add('dragging');
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      el.addEventListener('pointermove', function(e) {
+        if (!dragging) return;
+        e.preventDefault();
+        var cr = container.getBoundingClientRect();
+        var x = e.clientX - cr.left - ox;
+        var y = e.clientY - cr.top - oy;
+        el.style.left = Math.max(0, Math.min(cr.width - el.offsetWidth, x)) + 'px';
+        el.style.top = Math.max(0, Math.min(cr.height - el.offsetHeight, y)) + 'px';
+      });
+      el.addEventListener('pointerup', function(e) {
+        dragging = false;
+        el.classList.remove('dragging');
+        if (pointerId !== null) {
+          try { el.releasePointerCapture(pointerId); } catch(ex) {}
+          pointerId = null;
+        }
+      });
+      el.addEventListener('pointercancel', function(e) {
+        dragging = false;
+        el.classList.remove('dragging');
+        pointerId = null;
+      });
+      /* Prevent context menu on long press */
+      el.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+    }
+
+    function spawnLinkSticker(url, label) {
+      if (!_previewBox) return null;
+      /* Normalize URL */
+      if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+      var domain = '';
+      try { domain = new URL(url).hostname.replace(/^www\./, ''); } catch(e) { domain = url; }
+      var displayText = label || domain || 'Link';
+
+      var el = document.createElement('div');
+      el.className = 'placed-link-sticker';
+      el.setAttribute('data-link-url', url);
+      el.innerHTML = '<div class="link-icon">🔗</div>'
+        + '<div class="link-label">'
+        + '<div class="link-domain">' + displayText + '</div>'
+        + '<div class="link-text">' + domain + '</div>'
+        + '</div>';
+
+      var cr = _previewBox.getBoundingClientRect();
+      el.style.left = Math.max(0, (cr.width * 0.2)) + 'px';
+      el.style.top = Math.max(0, (cr.height * 0.45)) + 'px';
+      _previewBox.appendChild(el);
+
+      /* Delete button */
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'sticker-delete';
+      del.textContent = '×';
+      del.addEventListener('click', function(e) { e.stopPropagation(); el.remove(); });
+      el.appendChild(del);
+
+      /* Double-tap / double-click to open the link */
+      var lastTap = 0;
+      el.addEventListener('pointerup', function(e) {
+        if (e.target.closest('.sticker-delete')) return;
+        var now = Date.now();
+        if (now - lastTap < 350) {
+          window.open(url, '_blank', 'noopener');
+        }
+        lastTap = now;
+      });
+
+      _makeDraggable(el, _previewBox);
+      playUiClick();
+
+      /* Also update the hidden link sticker element for story save */
+      var linkStickerEl = document.getElementById('story-link-sticker');
+      if (linkStickerEl) {
+        linkStickerEl.href = url;
+        linkStickerEl.textContent = displayText;
+        linkStickerEl.hidden = false;
+      }
+
+      /* Entrance animation */
+      el.style.opacity = '0'; el.style.transform = 'scale(0.5)';
+      requestAnimationFrame(function() {
+        el.style.transition = 'opacity .2s, transform .25s cubic-bezier(.34,1.56,.64,1)';
+        el.style.opacity = '1'; el.style.transform = 'scale(1)';
+        setTimeout(function(){ el.style.transition = ''; }, 300);
+      });
+      return el;
+    }
+
+    function handleStickerSpawn(kind) {
+      if (kind === 'stickers') {
+        var tray = document.getElementById('sticker-tray');
+        if (tray) tray.hidden = false;
+        return;
+      }
+      if (kind === 'music') {
+        var overlay = document.getElementById('music-overlay');
+        if (overlay) overlay.hidden = false;
+        return;
+      }
+      if (kind === 'link') {
+        /* Show inline link sticker overlay instead of window.prompt */
+        var linkOverlay = document.getElementById('link-sticker-overlay');
+        if (linkOverlay) {
+          linkOverlay.hidden = false;
+          var urlInput = document.getElementById('link-sticker-url');
+          if (urlInput) { urlInput.value = ''; urlInput.focus(); }
+          var lblInput = document.getElementById('link-sticker-label');
+          if (lblInput) lblInput.value = '';
+        }
+        return;
+      }
+      var def = _stickerDefs[kind];
+      if (!def) { spawnSticker('<span class="sticker-emoji">❓</span> ' + kind, 50, 45); return; }
+      if (def.type === 'prompt') {
+        (async function(){
+        var text = await vfPrompt(def.prompt);
+        if (!text) return;
+        var html = '<span class="sticker-emoji">' + def.emoji + '</span> ' + def.prefix + text;
+        spawnSticker(html, 50, 45);
+        if (kind === 'location' && locationInput) locationInput.value = text;
+        if (kind === 'mention' && mentionsInput) mentionsInput.value = (mentionsInput.value ? mentionsInput.value + ', ' : '') + text;
+        })();
+        return;
+      }
+      if (def.type === 'widget') {
+        spawnSticker(def.html, 50, 45);
+        return;
+      }
+      if (def.type === 'auto') {
+        var timeStr = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+        spawnSticker('<span class="sticker-emoji">' + def.emoji + '</span> ' + timeStr, 50, 45);
+        return;
+      }
+      if (def.type === 'emoji') {
+        spawnSticker('<span class="sticker-emoji">' + def.emoji + '</span> ' + def.label, 50, 45);
+        return;
+      }
+    }
+
+    /* ═══ LINK STICKER OVERLAY WIRING ═══ */
+    var _linkOverlay = document.getElementById('link-sticker-overlay');
+    var _linkAddBtn = document.getElementById('link-sticker-add');
+    var _linkCancelBtn = document.getElementById('link-sticker-cancel');
+    var _linkUrlInput = document.getElementById('link-sticker-url');
+    var _linkLabelInput = document.getElementById('link-sticker-label');
+
+    if (_linkCancelBtn && _linkOverlay) {
+      _linkCancelBtn.addEventListener('click', function() { _linkOverlay.hidden = true; });
+    }
+    if (_linkAddBtn && _linkOverlay && _linkUrlInput) {
+      _linkAddBtn.addEventListener('click', function() {
+        var url = (_linkUrlInput.value || '').trim();
+        if (!url) {
+          _linkUrlInput.style.borderColor = 'rgba(255,60,60,.8)';
+          _linkUrlInput.setAttribute('placeholder', '⚠️ Enter a URL first!');
+          setTimeout(function() {
+            _linkUrlInput.style.borderColor = '';
+            _linkUrlInput.setAttribute('placeholder', 'https://example.com');
+          }, 1500);
+          return;
+        }
+        var label = (_linkLabelInput ? _linkLabelInput.value : '').trim();
+        _linkOverlay.hidden = true;
+        spawnLinkSticker(url, label);
+      });
+      /* Enter key support */
+      [_linkUrlInput, _linkLabelInput].forEach(function(inp) {
+        if (!inp) return;
+        inp.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') { _linkAddBtn.click(); e.preventDefault(); }
+          if (e.key === 'Escape') { _linkOverlay.hidden = true; }
+        });
+      });
+    }
+
+    /* ═══ STICKER TRAY OVERLAY WIRING ═══ */
+    var _stickerTrayGrid = document.getElementById('sticker-tray-grid');
+    var _stickerTrayClose = document.getElementById('sticker-tray-close');
+    var _stickerTraySearch = document.getElementById('sticker-tray-search');
+    var _musicOverlay = document.getElementById('music-overlay');
+    var _musicOverlayClose = document.getElementById('music-overlay-close');
+    var _musicUploadTrigger = document.getElementById('music-upload-trigger');
+
+    if (_stickerTrayClose) {
+      _stickerTrayClose.addEventListener('click', function() {
+        document.getElementById('sticker-tray').hidden = true;
+      });
+    }
+    if (_stickerTrayGrid) {
+      _stickerTrayGrid.addEventListener('click', function(e) {
+        var item = e.target.closest('[data-spawn]');
+        if (!item) return;
+        document.getElementById('sticker-tray').hidden = true;
+        handleStickerSpawn(item.getAttribute('data-spawn'));
+      });
+    }
+    if (_stickerTraySearch) {
+      _stickerTraySearch.addEventListener('input', function() {
+        var term = (_stickerTraySearch.value || '').toLowerCase();
+        _stickerTrayGrid.querySelectorAll('[data-spawn]').forEach(function(item) {
+          item.style.display = (item.textContent || '').toLowerCase().includes(term) ? '' : 'none';
+        });
+      });
+    }
+    if (_musicOverlayClose) {
+      _musicOverlayClose.addEventListener('click', function() {
+        if (_musicOverlay) _musicOverlay.hidden = true;
+      });
+    }
+    if (_musicUploadTrigger && musicFileInput) {
+      _musicUploadTrigger.addEventListener('click', function() { musicFileInput.click(); });
+    }
+
+    /* ═══ MUSIC DROP ON STORY BUTTON ═══ */
+    var _musicDropBtn = document.getElementById('music-drop-story');
+    if (_musicDropBtn) {
+      _musicDropBtn.addEventListener('click', function() {
+        var trackName = hidden ? hidden.value : '';
+        if (!trackName) {
+          _musicDropBtn.textContent = '⚠️ SELECT A SONG FIRST!';
+          _musicDropBtn.style.background = 'rgba(255,60,60,.6)';
+          setTimeout(function() {
+            _musicDropBtn.textContent = '🎵 DROP MUSIC ON STORY';
+            _musicDropBtn.style.background = '';
+          }, 1500);
+          return;
+        }
+        /* Close music overlay and spawn music sticker */
+        if (_musicOverlay) _musicOverlay.hidden = true;
+        spawnMusicSticker(trackName);
+      });
+    }
+
+    /* ═══ Also add "Add to Story" to each music item click ═══ */
+    var _origRenderMusic = window.renderMusic;
+    /* Music items already set hidden.value on click — the DROP button uses that */
+
+    /* ═══ SPIN ANIMATION KEYFRAME ═══ */
+    (function() {
+      var s = document.createElement('style');
+      s.textContent = '@keyframes spinAnim{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}';
+      document.head.appendChild(s);
+    })();
+
+    wireVfReelPicker();
+  })();
+</script>
+{% endblock %}

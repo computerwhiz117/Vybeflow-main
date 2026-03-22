@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .pro-page{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+  .pro-hero{background:linear-gradient(135deg,rgba(255,149,0,.15),rgba(255,77,0,.08));border:1px solid rgba(255,149,0,.3);border-radius:18px;padding:28px;margin-bottom:24px;}
+  .pro-hero h1{margin:0 0 6px;font-size:24px;font-weight:900;color:#ffb562;}
+  .pro-hero p{margin:0;color:rgba(255,255,255,.55);font-size:14px;}
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:#ff9a3d;text-decoration:none;font-size:14px;font-weight:700;margin-bottom:16px;}
+  .back-link:hover{text-decoration:underline;}
+  .resume-section{background:rgba(255,255,255,.06);border:1px solid rgba(255,149,0,.15);border-radius:14px;padding:20px;margin-bottom:16px;}
+  .resume-section h3{margin:0 0 12px;font-size:16px;font-weight:800;color:#ffb562;}
+  .resume-input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,149,0,.2);background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);font-size:14px;outline:none;margin-bottom:10px;font-family:inherit;}
+  .resume-input:focus{border-color:rgba(255,149,0,.5);background:rgba(255,255,255,.08);}
+  .resume-input::placeholder{color:rgba(255,255,255,.3);}
+  textarea.resume-input{min-height:80px;resize:vertical;}
+  .resume-entry{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:10px;background:rgba(255,255,255,.04);margin-bottom:8px;}
+  .resume-entry .icon{font-size:20px;flex-shrink:0;margin-top:2px;}
+  .resume-entry h4{margin:0 0 2px;font-size:14px;font-weight:700;color:rgba(255,255,255,.85);}
+  .resume-entry p{margin:0;font-size:12px;color:rgba(255,255,255,.45);}
+  .add-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;border:1px dashed rgba(255,149,0,.3);background:transparent;color:#ff9a3d;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
+  .add-btn:hover{background:rgba(255,149,0,.08);border-color:rgba(255,149,0,.5);}
+  .save-btn{display:inline-block;padding:10px 28px;border-radius:12px;background:linear-gradient(135deg,#ff9a3d,#ff4800);color:#fff;font-size:14px;font-weight:800;border:none;cursor:pointer;transition:all .2s;margin-top:16px;}
+  .save-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,100,0,.3);}
+  .skill-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .skill-chip{padding:4px 12px;border-radius:16px;background:rgba(255,149,0,.12);color:#ff9a3d;font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px;}
+  .skill-chip .remove{cursor:pointer;font-size:14px;opacity:.6;}
+  .skill-chip .remove:hover{opacity:1;}
+</style>
+<div class="pro-page">
+  <a href="{{ url_for('pro_dashboard') }}" class="back-link">← Back to Dashboard</a>
+
+  <div class="pro-hero">
+    <h1>📄 My Resume</h1>
+    <p>Build your professional resume — share it with employers and connections</p>
+  </div>
+
+  <!-- Personal Info -->
+  <div class="resume-section">
+    <h3>👤 Personal Information</h3>
+    <input class="resume-input" type="text" placeholder="Full Name" value="{{ user.username }}">
+    <input class="resume-input" type="text" placeholder="Professional Title (e.g. Software Engineer)">
+    <input class="resume-input" type="email" placeholder="Email Address" value="{{ user.email or '' }}">
+    <input class="resume-input" type="text" placeholder="Location (e.g. New York, NY)">
+    <input class="resume-input" type="url" placeholder="Portfolio / Website URL">
+    <textarea class="resume-input" placeholder="Professional Summary — write a brief overview of your experience and goals...">{{ user.bio or '' }}</textarea>
+  </div>
+
+  <!-- Skills -->
+  <div class="resume-section">
+    <h3>🛠 Skills</h3>
+    <div class="skill-chips" id="skill-chips"></div>
+    <div style="display:flex;gap:8px;">
+      <input class="resume-input" type="text" id="skill-input" placeholder="Add a skill (e.g. Python, Marketing, Design)" style="margin:0;flex:1;" onkeydown="if(event.key==='Enter'){addSkill();}">
+      <button class="add-btn" onclick="addSkill()" style="white-space:nowrap;">+ Add</button>
+    </div>
+  </div>
+
+  <!-- Experience -->
+  <div class="resume-section">
+    <h3>💼 Work Experience</h3>
+    <div id="experience-list">
+      <div class="resume-entry">
+        <div class="icon">🏢</div>
+        <div style="flex:1;">
+          <input class="resume-input" type="text" placeholder="Job Title" style="font-weight:700;">
+          <input class="resume-input" type="text" placeholder="Company Name">
+          <div style="display:flex;gap:8px;">
+            <input class="resume-input" type="text" placeholder="Start Date (e.g. Jan 2024)" style="flex:1;">
+            <input class="resume-input" type="text" placeholder="End Date (or Present)" style="flex:1;">
+          </div>
+          <textarea class="resume-input" placeholder="Describe your role, responsibilities, and achievements..."></textarea>
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addExperience()">+ Add Experience</button>
+  </div>
+
+  <!-- Education -->
+  <div class="resume-section">
+    <h3>🎓 Education</h3>
+    <div id="education-list">
+      <div class="resume-entry">
+        <div class="icon">🏫</div>
+        <div style="flex:1;">
+          <input class="resume-input" type="text" placeholder="Degree / Certification">
+          <input class="resume-input" type="text" placeholder="School / Institution">
+          <input class="resume-input" type="text" placeholder="Year (e.g. 2020 - 2024)">
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addEducation()">+ Add Education</button>
+  </div>
+
+  <!-- Certifications -->
+  <div class="resume-section">
+    <h3>🏆 Certifications & Awards</h3>
+    <div id="certs-list">
+      <div class="resume-entry">
+        <div class="icon">📜</div>
+        <div style="flex:1;">
+          <input class="resume-input" type="text" placeholder="Certification or Award Name">
+          <input class="resume-input" type="text" placeholder="Issuing Organization">
+          <input class="resume-input" type="text" placeholder="Date Earned">
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addCert()">+ Add Certification</button>
+  </div>
+
+  <button class="save-btn" onclick="vfToast('Resume saved! (Feature in development)','success')">💾 Save Resume</button>
+  <button class="save-btn" style="background:rgba(255,149,0,.15);color:#ff9a3d;margin-left:10px;" onclick="vfToast('Share link copied! (Feature in development)','success')">🔗 Share Resume</button>
+</div>
+
+<script>
+  function addSkill() {
+    const input = document.getElementById('skill-input');
+    const val = (input.value || '').trim();
+    if (!val) return;
+    const chip = document.createElement('span');
+    chip.className = 'skill-chip';
+    chip.innerHTML = val + ' <span class="remove" onclick="this.parentElement.remove()">×</span>';
+    document.getElementById('skill-chips').appendChild(chip);
+    input.value = '';
+  }
+
+  function addExperience() {
+    const html = `<div class="resume-entry">
+      <div class="icon">🏢</div>
+      <div style="flex:1;">
+        <input class="resume-input" type="text" placeholder="Job Title" style="font-weight:700;">
+        <input class="resume-input" type="text" placeholder="Company Name">
+        <div style="display:flex;gap:8px;">
+          <input class="resume-input" type="text" placeholder="Start Date" style="flex:1;">
+          <input class="resume-input" type="text" placeholder="End Date (or Present)" style="flex:1;">
+        </div>
+        <textarea class="resume-input" placeholder="Describe your role..."></textarea>
+      </div>
+    </div>`;
+    document.getElementById('experience-list').insertAdjacentHTML('beforeend', html);
+  }
+
+  function addEducation() {
+    const html = `<div class="resume-entry">
+      <div class="icon">🏫</div>
+      <div style="flex:1;">
+        <input class="resume-input" type="text" placeholder="Degree / Certification">
+        <input class="resume-input" type="text" placeholder="School / Institution">
+        <input class="resume-input" type="text" placeholder="Year">
+      </div>
+    </div>`;
+    document.getElementById('education-list').insertAdjacentHTML('beforeend', html);
+  }
+
+  function addCert() {
+    const html = `<div class="resume-entry">
+      <div class="icon">📜</div>
+      <div style="flex:1;">
+        <input class="resume-input" type="text" placeholder="Certification or Award Name">
+        <input class="resume-input" type="text" placeholder="Issuing Organization">
+        <input class="resume-input" type="text" placeholder="Date Earned">
+      </div>
+    </div>`;
+    document.getElementById('certs-list').insertAdjacentHTML('beforeend', html);
+  }
+</script>
+{% endblock %}

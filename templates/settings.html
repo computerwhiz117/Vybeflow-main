@@ -1,0 +1,1648 @@
+{% extends "base.html" %}
+
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  .settings-shell { min-height: 100vh; display: grid; place-items: center; }
+  .settings-card {
+    width: min(94%, 860px);
+    border-radius: 18px;
+    border: 1px solid rgba(255,153,90,.10);
+    background: rgba(255,255,255,.03);
+    backdrop-filter: blur(28px) saturate(1.2);
+    box-shadow: 0 0 24px rgba(255,106,0,.08), 0 14px 36px rgba(0,0,0,.15);
+    padding: 22px;
+    color: #fff;
+  }
+  .setting-row { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; gap: 12px; }
+  .settings-select {
+    border: 1px solid rgba(255,170,112,.32);
+    background: rgba(255,255,255,.05);
+    color: #fff;
+    border-radius: 10px;
+    padding: 8px;
+  }
+  .settings-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 10px 14px;
+    color: #fff;
+    background: linear-gradient(180deg, #ff9a3d, #ff5a00);
+    cursor: pointer;
+    font-weight: 700;
+    margin-top: 10px;
+  }
+  .settings-link { color: #ffd8b2; margin-left: 10px; }
+  .settings-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .settings-block { border: 1px solid rgba(255,153,90,.08); border-radius: 14px; padding: 12px; background: rgba(255,255,255,.02); backdrop-filter: blur(16px); }
+  .settings-title { margin: 0 0 8px; font-size: 16px; }
+  .settings-textarea {
+    width: 100%; min-height: 70px; border: 1px solid rgba(255,170,112,.32);
+    background: rgba(255,255,255,.04); color: #fff; border-radius: 10px; padding: 8px;
+  }
+  .settings-file { width:100%; }
+  .theme-preview {
+    border-radius: 14px; border:1px solid rgba(255,170,112,.35); min-height: 180px; padding: 12px;
+    background: linear-gradient(180deg, var(--preview-bg, #0a0810), rgba(0,0,0,.55));
+    background-size: cover; background-position: center;
+  }
+  .theme-preview .chip {
+    display: inline-block; margin: 4px 4px 0 0; border-radius: 999px; padding: 6px 10px;
+    color: #fff; font-size: 12px;
+  }
+  .chip-1 { background: var(--preview-b1, #ff9a3d); }
+  .chip-2 { background: var(--preview-b2, #ff6a00); }
+  .chip-3 { background: var(--preview-b3, #ff4800); }
+  .avatar-row { display:flex; gap: 10px; align-items:flex-start; flex-wrap:wrap; }
+  .avatar-preview { width: 88px; height: 88px; border-radius: 18px; object-fit: cover; border:1px solid rgba(255,170,112,.32); }
+  .crop-wrap { display:grid; gap: 8px; }
+  .crop-canvas { width: 180px; height: 180px; border-radius: 12px; border:1px solid rgba(255,170,112,.32); background:#000; }
+  /* Background image crop/preview */
+  .bg-crop-row { margin-top:12px; display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+  .bg-preview-thumb {
+    width:260px; height:100px; border-radius:14px; object-fit:cover;
+    border:1px solid rgba(255,170,112,.32); background:#111;
+    box-shadow:0 4px 16px rgba(0,0,0,.3);
+  }
+  .bg-crop-canvas {
+    width:320px; height:120px; border-radius:14px;
+    border:1px solid rgba(255,170,112,.32); background:#000;
+    box-shadow:0 4px 16px rgba(0,0,0,.3);
+  }
+  .bg-crop-controls {
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;
+  }
+  .bg-crop-controls label { font-size:12px; color:rgba(255,255,255,.7); display:flex; flex-direction:column; gap:4px; }
+  .bg-crop-controls input[type=range] {
+    width:100%; accent-color:#ff6a00;
+  }
+  .bg-no-image { display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.35); font-size:12px; }
+  /* Flash saved banner */
+  .flashes { list-style:none; padding:0; margin:0 auto 16px; max-width:860px; }
+  .flashes li {
+    background:linear-gradient(135deg,rgba(40,180,80,.25),rgba(30,200,100,.12));
+    border:1px solid rgba(60,220,110,.5);
+    color:#66ff88;
+    padding:12px 20px;
+    border-radius:12px;
+    font-weight:800;
+    font-size:15px;
+    text-align:center;
+    animation: flashIn .35s ease-out;
+  }
+  @keyframes flashIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+  .crop-controls label { font-size: 12px; color:#ffd8b2; display:grid; gap:4px; }
+  .settings-actions { display:flex; align-items:center; gap:10px; margin-top: 12px; }
+
+  .settings-layout{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:20px;
+    width:min(96%,1100px);
+  }
+
+  .settings-sidebar{
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.06);
+    background:rgba(255,255,255,.02);
+    backdrop-filter: blur(24px) saturate(1.15);
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .settings-nav{
+    padding:10px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:700;
+    color:#fff;
+    transition:.2s;
+  }
+
+  .settings-nav:hover{
+    background:rgba(255,255,255,.1);
+  }
+
+  .settings-nav.active{
+    background:linear-gradient(135deg,#ff9a3d,#ff5a00);
+  }
+
+  .settings-nav.danger{
+    color:#ff9a9a;
+  }
+  .settings-content { min-width: 0; }
+
+  /* ===== VYBEFLOW GLASS + GLOW CORE ===== */
+  :root{
+    --vf-glass: rgba(255,255,255,.06);
+    --vf-glass2: rgba(255,255,255,.10);
+    --vf-line: rgba(255,173,117,.26);
+    --vf-glow: rgba(255,106,0,.45);
+    --vf-glow2: rgba(255,122,24,.22);
+  }
+
+  .settings-shell{
+    min-height:100vh;
+    display:grid;
+    place-items:center;
+    padding: 22px 12px;
+  }
+
+  /* Layout to feel like FB (sidebar + content) */
+  .settings-layout{
+    width: min(96vw, 1120px);
+    display:grid;
+    grid-template-columns: 240px 1fr;
+    gap: 18px;
+    align-items:start;
+  }
+
+  /* Glass card surface (gloss + blur + glow ring) */
+  .vf-glass-surface{
+    border-radius: 18px;
+    border: 1px solid rgba(255,173,117,.08);
+    background:
+      radial-gradient(900px 320px at 20% 0%, rgba(255,122,24,.06), transparent 60%),
+      radial-gradient(900px 320px at 90% 20%, rgba(255,72,0,.04), transparent 60%),
+      rgba(255,255,255,.02);
+    backdrop-filter: blur(32px) saturate(1.25);
+    box-shadow:
+      0 20px 60px rgba(0,0,0,.25),
+      0 0 0 1px rgba(255,173,117,.06),
+      0 0 30px rgba(255,122,24,.08);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Gloss highlight sheen */
+  .vf-glass-surface::before{
+    content:"";
+    position:absolute;
+    inset:-40% -20% auto -20%;
+    height: 55%;
+    background: radial-gradient(closest-side, rgba(255,255,255,.20), transparent 70%);
+    transform: rotate(-8deg);
+    pointer-events:none;
+    opacity:.9;
+  }
+
+  /* Orange aura around */
+  .vf-glass-surface::after{
+    content:"";
+    position:absolute;
+    inset:-2px;
+    border-radius: 20px;
+    pointer-events:none;
+    box-shadow:
+      0 0 0 1px rgba(255,173,117,.12),
+      0 0 26px rgba(255,106,0,.22),
+      0 0 60px rgba(255,106,0,.12);
+  }
+
+  /* Sidebar */
+  .settings-sidebar{
+    padding: 12px;
+  }
+
+  .settings-nav{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    cursor:pointer;
+    font-weight: 900;
+    color:#fff;
+    border: 1px solid transparent;
+    background: rgba(0,0,0,.10);
+    transition: .18s ease;
+    text-decoration:none;
+  }
+
+  .settings-nav:hover{
+    border-color: rgba(255,122,24,.28);
+    background: rgba(255,255,255,.08);
+    box-shadow: 0 0 0 4px rgba(255,122,24,.10);
+    transform: translateY(-1px);
+  }
+
+  .settings-nav.active{
+    background: linear-gradient(135deg, rgba(255,154,61,.40), rgba(255,90,0,.18));
+    border-color: rgba(255,122,24,.35);
+    box-shadow: 0 0 0 4px rgba(255,122,24,.12), 0 0 24px rgba(255,106,0,.25);
+  }
+
+  .settings-nav.danger{
+    color: rgba(255,140,140,.95);
+  }
+
+  /* Content card */
+  .settings-card{
+    padding: 18px;
+    color:#fff;
+  }
+
+  .switch{
+    position:relative;
+    display:inline-block;
+    width:44px;
+    height:24px;
+  }
+
+  .switch input{
+    opacity:0;
+    width:0;
+    height:0;
+  }
+
+  .slider{
+    position:absolute;
+    cursor:pointer;
+    inset:0;
+    background:#444;
+    border-radius:999px;
+    transition:.2s;
+  }
+
+  .slider:before{
+    content:"";
+    position:absolute;
+    height:18px;
+    width:18px;
+    left:3px;
+    bottom:3px;
+    background:white;
+    border-radius:50%;
+    transition:.2s;
+  }
+
+  input:checked + .slider{
+    background:#ff6a00;
+  }
+
+  input:checked + .slider:before{
+    transform:translateX(20px);
+  }
+
+
+  @media (max-width: 900px) {
+    .settings-grid { grid-template-columns: 1fr; }
+    .settings-layout { grid-template-columns: 1fr; }
+  }
+</style>
+
+<section class="settings-shell">
+  <div class="settings-layout">
+    <aside class="settings-sidebar vf-glass-surface">
+      <a class="settings-nav active" data-tab="settings-account" href="#settings-account" data-i18n-html="tab_account" data-i18n-icon="⚙">⚙ Account</a>
+      <a class="settings-nav" data-tab="settings-privacy" href="#settings-privacy" data-i18n-html="tab_privacy" data-i18n-icon="🔒">🔒 Privacy</a>
+      <a class="settings-nav" data-tab="settings-security" href="#settings-security" data-i18n-html="tab_security" data-i18n-icon="🛡">🛡 Security</a>
+      <a class="settings-nav" data-tab="settings-notifications" href="#settings-notifications" data-i18n-html="tab_notifications" data-i18n-icon="🔔">🔔 Notifications</a>
+      <a class="settings-nav" data-tab="settings-appearance" href="#settings-appearance" data-i18n-html="tab_appearance" data-i18n-icon="🎨">🎨 Appearance</a>
+      <a class="settings-nav" data-tab="settings-music" href="#settings-music" data-i18n-html="tab_profile_music" data-i18n-icon="🎵">🎵 Profile Music</a>
+      <a class="settings-nav" data-tab="settings-support" href="#settings-support">💬 Help & Support</a>
+      <a class="settings-nav danger" data-tab="settings-delete" href="#settings-delete" data-i18n-html="tab_delete_account" data-i18n-icon="🗑">🗑 Delete Account</a>
+    </aside>
+
+    <div class="vf-glass-surface settings-card settings-content">
+      <h1 data-i18n="settings_title">Settings</h1>
+
+    <form method="post" action="{{ url_for('settings') }}" enctype="multipart/form-data">
+      <input type="hidden" id="_active_tab" name="_active_tab" value="" />
+
+      <!-- ═══ ACCOUNT TAB ═══ -->
+      <div id="settings-account" class="settings-tab-panel">
+        <div class="settings-block">
+          <h3 class="settings-title" data-i18n="tab_account">Account</h3>
+          <div class="setting-row">
+            <label for="display_name" data-i18n="display_name">Display Name</label>
+            <input id="display_name" name="display_name" class="settings-select" type="text" maxlength="60" value="{{ preferences.display_name }}" />
+          </div>
+          <div class="setting-row">
+            <label for="date_of_birth">Date of Birth</label>
+            <div>
+              <input id="date_of_birth" name="date_of_birth" class="settings-select" type="date" value="{{ preferences.date_of_birth }}" />
+              <small style="display:block; margin-top:4px; font-size:11px; color:rgba(255,170,112,.70);">🔒 Only your date of birth is used — no other personal information is stored or viewed.</small>
+            </div>
+          </div>
+          <div class="setting-row">
+            <label for="ai_assist" data-i18n="ai_assist">AI Assist on Feed</label>
+            <label class="switch">
+              <input id="ai_assist" name="ai_assist" type="checkbox" {% if preferences.ai_assist %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <label for="retro_2011" data-i18n="mode_2011">2011 Mode (classic)</label>
+            <label class="switch">
+              <input id="retro_2011" name="retro_2011" type="checkbox" {% if preferences.retro_2011 %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <label for="default_visibility" data-i18n="post_visibility">Default Post Visibility</label>
+            <select id="default_visibility" name="default_visibility" class="settings-select">
+              <option value="public" {% if preferences.default_visibility == 'public' %}selected{% endif %} data-i18n="public">Public</option>
+              <option value="followers" {% if preferences.default_visibility == 'followers' %}selected{% endif %} data-i18n="followers">Followers</option>
+              <option value="private" {% if preferences.default_visibility == 'private' %}selected{% endif %} data-i18n="private">Private</option>
+            </select>
+          </div>
+          <label for="bio" data-i18n="bio_label">Profile Bio</label>
+          <textarea id="bio" name="bio" class="settings-textarea" maxlength="200" placeholder="Write your profile bio..." data-i18n-placeholder="bio_placeholder">{{ preferences.bio }}</textarea>
+
+          <!-- Account Type -->
+          <div style="margin-top:14px; padding:14px; border-radius:12px; border:1px solid rgba(255,149,0,.25); background:rgba(255,149,0,.06);">
+            <div style="font-weight:800; font-size:14px; margin-bottom:8px;">👤 Account Type</div>
+            <div class="setting-row">
+              <label for="account_type">Switch between Regular and Professional</label>
+              <select id="account_type" name="account_type" class="settings-select">
+                <option value="regular" {% if preferences.account_type == 'regular' or not preferences.account_type %}selected{% endif %}>Regular</option>
+                <option value="professional" {% if preferences.account_type == 'professional' %}selected{% endif %}>Professional</option>
+              </select>
+            </div>
+            <p style="margin:6px 0 0; font-size:11px; color:rgba(255,255,255,.45);">Professional accounts get a badge on their profile and access to analytics features.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PRIVACY TAB ═══ -->
+      <div id="settings-privacy" class="settings-tab-panel" style="display:none;">
+        <div class="settings-block">
+          <h3 class="settings-title">🔒 Profile Privacy</h3>
+
+          <!-- PUBLIC / PRIVATE PROFILE -->
+          <div class="setting-row">
+            <label for="profile_visibility"><strong>Profile Visibility</strong></label>
+            <select id="profile_visibility" name="profile_visibility" class="settings-select">
+              <option value="public" {% if preferences.profile_visibility == 'public' %}selected{% endif %}>🌐 Public — Anyone can view</option>
+              <option value="private" {% if preferences.profile_visibility == 'private' %}selected{% endif %}>🔒 Private — Followers only</option>
+              <option value="hidden" {% if preferences.profile_visibility == 'hidden' %}selected{% endif %}>👻 Hidden — Only you can see</option>
+            </select>
+          </div>
+          <p style="color:#ffd8b2;font-size:11px;margin:2px 0 12px;">Private profiles require follow approval. Hidden profiles are invisible to search.</p>
+
+          <!-- FOLLOW APPROVAL -->
+          <div class="setting-row">
+            <label for="follow_approval">Follow Requests Require Approval</label>
+            <label class="switch">
+              <input id="follow_approval" name="follow_approval" type="checkbox" {% if preferences.follow_approval %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- ACTIVITY STATUS -->
+          <div class="setting-row">
+            <label for="show_activity_status">Show Activity Status (Online Now)</label>
+            <label class="switch">
+              <input id="show_activity_status" name="show_activity_status" type="checkbox" {% if preferences.show_activity_status is not defined or preferences.show_activity_status %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <p style="color:#ffd8b2;font-size:11px;margin:2px 0 12px;">When off, no one can see when you're active or recently online.</p>
+        </div>
+
+        <!-- SHIELD MODE -->
+        <div class="settings-block" style="margin-top:14px; border: 1px solid rgba(59,130,246,.25); border-radius: 14px; padding: 18px; background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(34,197,94,.05));">
+          <h3 class="settings-title">🛡️ Shield Mode</h3>
+          <p style="color:#ffd8b2;font-size:11px;margin:2px 0 8px;">
+            One-click lockdown: become invisible to everyone except your existing friends.
+            Blocks new friend requests, hides your profile from search & suggestions, and prevents strangers from messaging you.
+            Even if a harasser creates 100 new accounts, they will never find you.
+          </p>
+          <div class="setting-row">
+            <label for="shield_mode_toggle"><strong>Enable Shield Mode</strong></label>
+            <label class="switch">
+              <input id="shield_mode_toggle" name="shield_mode" type="checkbox">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div id="shieldSettingsDetails" style="display:none; margin-top: 8px;">
+            <div class="setting-row"><label>Hide from search</label><label class="switch"><input type="checkbox" id="settingsShieldSearch" checked><span class="slider"></span></label></div>
+            <div class="setting-row"><label>Hide from suggestions</label><label class="switch"><input type="checkbox" id="settingsShieldSuggestions" checked><span class="slider"></span></label></div>
+            <div class="setting-row"><label>Hide "Add Friend" button</label><label class="switch"><input type="checkbox" id="settingsShieldAddFriend" checked><span class="slider"></span></label></div>
+            <div class="setting-row"><label>Hide "Message" button from non-friends</label><label class="switch"><input type="checkbox" id="settingsShieldMessage" checked><span class="slider"></span></label></div>
+            <div class="setting-row"><label>Posts visible to friends only</label><label class="switch"><input type="checkbox" id="settingsShieldFriendsOnly" checked><span class="slider"></span></label></div>
+            <div class="setting-row"><label>Auto-reject new friend requests</label><label class="switch"><input type="checkbox" id="settingsShieldAutoReject"><span class="slider"></span></label></div>
+          </div>
+          <script>
+            (function() {
+              var toggle = document.getElementById('shield_mode_toggle');
+              var details = document.getElementById('shieldSettingsDetails');
+              toggle.addEventListener('change', function() {
+                details.style.display = toggle.checked ? 'block' : 'none';
+                fetch('/api/shield/toggle', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    activate: toggle.checked,
+                    hide_from_search: document.getElementById('settingsShieldSearch').checked,
+                    hide_from_suggestions: document.getElementById('settingsShieldSuggestions').checked,
+                    hide_add_friend_button: document.getElementById('settingsShieldAddFriend').checked,
+                    hide_message_button: document.getElementById('settingsShieldMessage').checked,
+                    friends_only_posts: document.getElementById('settingsShieldFriendsOnly').checked,
+                    auto_reject_requests: document.getElementById('settingsShieldAutoReject').checked,
+                  })
+                }).catch(function(){});
+              });
+              // Load current status
+              fetch('/api/shield/status')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                  if (data.shield_active) {
+                    toggle.checked = true;
+                    details.style.display = 'block';
+                    if (data.settings) {
+                      document.getElementById('settingsShieldSearch').checked = data.settings.hide_from_search;
+                      document.getElementById('settingsShieldSuggestions').checked = data.settings.hide_from_suggestions;
+                      document.getElementById('settingsShieldAddFriend').checked = data.settings.hide_add_friend_button;
+                      document.getElementById('settingsShieldMessage').checked = data.settings.hide_message_button;
+                      document.getElementById('settingsShieldFriendsOnly').checked = data.settings.friends_only_posts;
+                      document.getElementById('settingsShieldAutoReject').checked = data.settings.auto_reject_requests;
+                    }
+                  }
+                }).catch(function(){});
+            })();
+          </script>
+        </div>
+
+        <div class="settings-block" style="margin-top:14px;">
+          <h3 class="settings-title">💬 Interactions & Messaging</h3>
+
+          <!-- WHO CAN MESSAGE -->
+          <div class="setting-row">
+            <label for="who_can_message">Who Can Message You</label>
+            <select id="who_can_message" name="who_can_message" class="settings-select">
+              <option value="everyone" {% if preferences.who_can_message == 'everyone' %}selected{% endif %}>Everyone</option>
+              <option value="followers" {% if preferences.who_can_message == 'followers' %}selected{% endif %}>Followers Only</option>
+              <option value="following" {% if preferences.who_can_message == 'following' %}selected{% endif %}>People I Follow</option>
+              <option value="mutuals" {% if preferences.who_can_message == 'mutuals' %}selected{% endif %}>Mutual Followers Only</option>
+              <option value="nobody" {% if preferences.who_can_message == 'nobody' %}selected{% endif %}>Nobody</option>
+            </select>
+          </div>
+
+          <!-- WHO CAN COMMENT -->
+          <div class="setting-row">
+            <label for="who_can_comment">Who Can Comment On Your Posts</label>
+            <select id="who_can_comment" name="who_can_comment" class="settings-select">
+              <option value="everyone" {% if preferences.who_can_comment == 'everyone' %}selected{% endif %}>Everyone</option>
+              <option value="followers" {% if preferences.who_can_comment == 'followers' %}selected{% endif %}>Followers Only</option>
+              <option value="mutuals" {% if preferences.who_can_comment == 'mutuals' %}selected{% endif %}>Mutual Followers</option>
+              <option value="nobody" {% if preferences.who_can_comment == 'nobody' %}selected{% endif %}>Nobody (Comments Off)</option>
+            </select>
+          </div>
+
+          <!-- WHO CAN TAG -->
+          <div class="setting-row">
+            <label for="who_can_tag">Who Can Tag / Mention You</label>
+            <select id="who_can_tag" name="who_can_tag" class="settings-select">
+              <option value="everyone" {% if preferences.who_can_tag == 'everyone' %}selected{% endif %}>Everyone</option>
+              <option value="followers" {% if preferences.who_can_tag == 'followers' %}selected{% endif %}>Followers Only</option>
+              <option value="nobody" {% if preferences.who_can_tag == 'nobody' %}selected{% endif %}>Nobody</option>
+            </select>
+          </div>
+
+          <!-- READ RECEIPTS -->
+          <div class="setting-row">
+            <label for="read_receipts">Show Read Receipts in DMs</label>
+            <label class="switch">
+              <input id="read_receipts" name="read_receipts" type="checkbox" {% if preferences.read_receipts is not defined or preferences.read_receipts %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-block" style="margin-top:14px;">
+          <h3 class="settings-title">📖 Story & Vibe Snap Privacy</h3>
+
+          <!-- STORY SHARING -->
+          <div class="setting-row">
+            <label for="allow_story_sharing">Allow Sharing of Your Stories</label>
+            <label class="switch">
+              <input id="allow_story_sharing" name="allow_story_sharing" type="checkbox" {% if preferences.allow_story_sharing is not defined or preferences.allow_story_sharing %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- STORY REPLIES -->
+          <div class="setting-row">
+            <label for="story_replies">Who Can Reply to Your Stories</label>
+            <select id="story_replies" name="story_replies" class="settings-select">
+              <option value="everyone" {% if preferences.story_replies == 'everyone' %}selected{% endif %}>Everyone</option>
+              <option value="followers" {% if preferences.story_replies == 'followers' %}selected{% endif %}>Followers Only</option>
+              <option value="nobody" {% if preferences.story_replies == 'nobody' %}selected{% endif %}>Nobody</option>
+            </select>
+          </div>
+
+          <!-- HIDE STORY FROM -->
+          <div class="setting-row">
+            <label for="hide_story_from">Hide Stories From (usernames)</label>
+            <input id="hide_story_from" name="hide_story_from" class="settings-select" type="text" placeholder="@user1, @user2" value="{{ preferences.hide_story_from or '' }}" />
+          </div>
+
+          <!-- REEL REMIXING -->
+          <div class="setting-row">
+            <label for="allow_reel_remix">Allow Others to Remix Your Vibe Snaps</label>
+            <label class="switch">
+              <input id="allow_reel_remix" name="allow_reel_remix" type="checkbox" {% if preferences.allow_reel_remix is not defined or preferences.allow_reel_remix %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- REEL DOWNLOADS -->
+          <div class="setting-row">
+            <label for="allow_reel_download">Allow Vibe Snap Downloads</label>
+            <label class="switch">
+              <input id="allow_reel_download" name="allow_reel_download" type="checkbox" {% if preferences.allow_reel_download is not defined or preferences.allow_reel_download %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-block" style="margin-top:14px;">
+          <h3 class="settings-title">🛡 Content & Safety</h3>
+
+          <!-- SAFE MODE -->
+          <div class="setting-row">
+            <label for="safe_mode">Safe Mode</label>
+            <label class="switch">
+              <input id="safe_mode" name="safe_mode" type="checkbox" {% if preferences.safe_mode %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <p style="color:#ffd8b2;font-size:11px;margin:2px 0 12px;">Safe Mode hides sensitive content from your feed.</p>
+
+          <!-- HIDE LIKES COUNT -->
+          <div class="setting-row">
+            <label for="hide_like_counts">Hide Like Counts on Your Posts</label>
+            <label class="switch">
+              <input id="hide_like_counts" name="hide_like_counts" type="checkbox" {% if preferences.hide_like_counts %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- BLOCKED WORDS -->
+          <div class="setting-row" style="flex-direction:column;align-items:stretch;">
+            <label for="blocked_words">Blocked Words / Phrases (filter from comments)</label>
+            <textarea id="blocked_words" name="blocked_words" class="settings-textarea" style="min-height:50px;margin-top:6px;" placeholder="word1, phrase two, word3">{{ preferences.blocked_words or '' }}</textarea>
+          </div>
+
+          <!-- RESTRICT MODE -->
+          <div class="setting-row">
+            <label for="restrict_unknown">Auto-Restrict Messages from Non-Followers</label>
+            <label class="switch">
+              <input id="restrict_unknown" name="restrict_unknown" type="checkbox" {% if preferences.restrict_unknown %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <p style="color:#ffd8b2;font-size:11px;margin:2px 0 12px;">Messages from people you don't follow will go to a hidden requests folder.</p>
+
+          <!-- TWO-FACTOR -->
+          <div class="setting-row">
+            <label for="two_factor">Two-Factor Authentication</label>
+            <label class="switch">
+              <input id="two_factor" name="two_factor" type="checkbox" {% if preferences.two_factor %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- LOGIN ALERTS -->
+          <div class="setting-row">
+            <label for="login_alerts">Login Alerts (notify on new device)</label>
+            <label class="switch">
+              <input id="login_alerts" name="login_alerts" type="checkbox" {% if preferences.login_alerts is not defined or preferences.login_alerts %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- ═══ TRUST & SAFETY SECTION ═══ -->
+        <div class="settings-block" style="margin-top:14px;">
+          <h3 class="settings-title">🛡️ Trust & Safety</h3>
+
+          <!-- TRUST SCORE DISPLAY -->
+          <div class="setting-row" style="flex-direction:column; align-items:stretch;">
+            <label><strong>Your Trust Score</strong></label>
+            <div id="trust-score-display" style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+              <div style="width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;background:linear-gradient(135deg,rgba(0,230,118,.2),rgba(79,195,247,.2));border:2px solid rgba(0,230,118,.4);" id="trust-score-circle">
+                {{ preferences.trust_score if preferences.trust_score is defined else 50 }}
+              </div>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#fff;" id="trust-score-label">
+                  {% set ts = preferences.trust_score if preferences.trust_score is defined else 50 %}
+                  {% if ts >= 85 %}🛡️ Trusted{% elif ts >= 65 %}✓ Established{% elif ts >= 40 %}● New Member{% else %}⚠ Build Trust{% endif %}
+                </div>
+                <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;">Score updates based on account activity, reports, and verification.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VERIFIED HUMAN BADGE -->
+          <div class="setting-row" style="margin-top:12px;">
+            <label>
+              <strong>Verified Human Badge</strong>
+              {% if preferences.is_verified_human %}
+                <span style="color:#00e676;font-size:11px;margin-left:8px;">✓ Verified</span>
+              {% endif %}
+            </label>
+            {% if not preferences.is_verified_human %}
+              <button type="button" id="verify-human-btn" style="background:linear-gradient(135deg,#00e676,#00c853);color:#fff;border:none;padding:6px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Get Verified ✓</button>
+            {% else %}
+              <span style="background:rgba(0,230,118,.15);color:#00e676;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;">✓ Verified Human</span>
+            {% endif %}
+          </div>
+          <p style="color:#ffd8b2;font-size:11px;margin:2px 0 12px;">Verified humans get a badge on posts and a trust score boost.</p>
+
+          <!-- AI SCAM DETECTION INFO -->
+          <div class="setting-row" style="flex-direction:column; align-items:stretch;">
+            <label><strong>🤖 AI Scam Detection</strong></label>
+            <p style="font-size:12px;color:rgba(255,255,255,.6);margin:4px 0 0;">Our AI automatically scans posts and messages for scams, phishing attempts, and fraud. Flagged content is auto-blocked. Known scam phrases are instantly removed.</p>
+          </div>
+
+          <!-- MESSAGE FILTER LEVEL -->
+          <div class="setting-row" style="margin-top:12px;">
+            <label for="message_filter_level">Message Request Filtering</label>
+            <select id="message_filter_level" name="message_filter_level" class="settings-select">
+              <option value="open" {% if preferences.message_filter_level is defined and preferences.message_filter_level == 'open' %}selected{% endif %}>🟢 Open — Allow all messages</option>
+              <option value="standard" {% if preferences.message_filter_level is not defined or preferences.message_filter_level == 'standard' %}selected{% endif %}>🟡 Standard — Filter suspicious messages</option>
+              <option value="strict" {% if preferences.message_filter_level is defined and preferences.message_filter_level == 'strict' %}selected{% endif %}>🔴 Strict — Block anything flagged by AI</option>
+            </select>
+          </div>
+          <p style="color:#ffd8b2;font-size:11px;margin:2px 0 12px;">Strict mode blocks messages with even low scam scores.</p>
+        </div>
+
+        <!-- ═══ ANONYMITY & PRIVACY SECTION ═══ -->
+        <div class="settings-block" style="margin-top:14px;">
+          <h3 class="settings-title">👻 Anonymity & Privacy</h3>
+
+          <!-- ANONYMOUS POSTING -->
+          <div class="setting-row">
+            <label for="anonymous_posting_enabled">Enable Anonymous Posting</label>
+            <label class="switch">
+              <input id="anonymous_posting_enabled" name="anonymous_posting_enabled" type="checkbox" {% if preferences.anonymous_posting_enabled is defined and preferences.anonymous_posting_enabled %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <p style="color:#ffd8b2;font-size:11px;margin:2px 0 12px;">When enabled, you'll see an anonymous toggle in the post composer. Anonymous posts show a random alias instead of your name.</p>
+
+          <!-- TEMPORARY USERNAME -->
+          <div class="setting-row" style="flex-direction:column; align-items:stretch;">
+            <label for="temp_username"><strong>Temporary Username (7-day alias)</strong></label>
+            <input id="temp_username" name="temp_username" class="settings-select" type="text" placeholder="Enter a temporary alias..." value="{{ preferences.temp_username or '' }}" style="margin-top:6px;" />
+            {% if preferences.temp_username_expires %}
+              <p style="color:#ffa726;font-size:10px;margin:4px 0 0;">Expires: {{ preferences.temp_username_expires }}</p>
+            {% endif %}
+          </div>
+          <p style="color:#ffd8b2;font-size:11px;margin:2px 0 12px;">Your posts will show this alias instead of your real username for 7 days.</p>
+
+          <!-- HIDDEN PROFILE -->
+          <div class="setting-row">
+            <label for="hidden_profile">Hidden Profile (Invisible to Search)</label>
+            <label class="switch">
+              <input id="hidden_profile" name="hidden_profile" type="checkbox" {% if preferences.hidden_profile is defined and preferences.hidden_profile %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <p style="color:#ffd8b2;font-size:11px;margin:2px 0 12px;">Your profile won't show up in search results or suggestions.</p>
+
+          <!-- BURN ACCOUNT -->
+          <div class="setting-row" style="flex-direction:column; align-items:stretch;">
+            <label><strong>🔥 Burn Account Mode</strong></label>
+            <p style="font-size:12px;color:rgba(255,255,255,.6);margin:4px 0 8px;">Activate burn mode to make your account disposable. After 24 hours, all your data from this session is automatically wiped. Trust score drops while active.</p>
+            <button type="button" id="burn-account-btn" style="background:linear-gradient(135deg,#ff1744,#d50000);color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;width:fit-content;">
+              {% if preferences.is_burn_account is defined and preferences.is_burn_account %}
+                🔥 Deactivate Burn Mode
+              {% else %}
+                🔥 Activate Burn Account
+              {% endif %}
+            </button>
+            {% if preferences.burn_expires_at %}
+              <p style="color:#ff1744;font-size:10px;margin:6px 0 0;">⏰ Burns at: {{ preferences.burn_expires_at }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SECURITY TAB ═══ -->
+      <div id="settings-security" class="settings-tab-panel" style="display:none;">
+        <div class="settings-block">
+          <h3 class="settings-title" data-i18n="security_title">Security & Profile Images</h3>
+          <label for="profile_background" data-i18n="change_bg_img">Change Profile Background Image</label>
+          <input class="settings-file" id="profile_background" name="profile_background" type="file" accept="image/*" />
+          <div class="camera-note" style="margin:8px 0 0; color:#ffd8b2; font-size:12px;" data-i18n="bg_img_tip">Use a clean photo so your profile stands out. Zoom and crop below.</div>
+
+          <!-- Background preview + crop -->
+          <div class="bg-crop-row">
+            <div>
+              <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;">Preview</div>
+              <img id="bg-preview-thumb" class="bg-preview-thumb" src="{{ preferences.profile_bg_url or '' }}" alt="background preview" />
+            </div>
+            <div>
+              <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;">Crop</div>
+              <canvas id="bg-crop-canvas" class="bg-crop-canvas" width="640" height="240"></canvas>
+              <input type="hidden" id="cover_crop_data" name="cover_crop_data" />
+            </div>
+          </div>
+          <div class="bg-crop-controls">
+            <label><span>🔍 Zoom</span>
+              <input id="bg-crop-zoom" type="range" min="1" max="4" step="0.05" value="1" />
+            </label>
+            <label><span>↔ Move X</span>
+              <input id="bg-crop-x" type="range" min="0" max="100" step="1" value="50" />
+            </label>
+            <label><span>↕ Move Y</span>
+              <input id="bg-crop-y" type="range" min="0" max="100" step="1" value="50" />
+            </label>
+          </div>
+
+          <div style="margin-top:12px;">
+            <label for="profile_avatar" data-i18n="update_avatar">Update Profile Picture</label>
+            <input class="settings-file" id="profile_avatar" name="profile_avatar" type="file" accept="image/*" />
+          </div>
+
+          <div class="avatar-row" style="margin-top:10px;">
+            <img id="avatar-preview" class="avatar-preview" src="{{ preferences.avatar_url }}" alt="avatar preview" />
+            <div class="crop-wrap">
+              <canvas id="avatar-crop-canvas" class="crop-canvas" width="220" height="220"></canvas>
+              <input type="hidden" id="avatar_crop_data" name="avatar_crop_data" />
+            </div>
+          </div>
+
+          <div class="crop-controls" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
+            <label><span data-i18n="zoom">Zoom</span>
+              <input id="crop-zoom" type="range" min="1" max="3" step="0.05" value="1" />
+            </label>
+            <label><span data-i18n="move_x">Move X</span>
+              <input id="crop-x" type="range" min="0" max="100" step="1" value="50" />
+            </label>
+            <label><span data-i18n="move_y">Move Y</span>
+              <input id="crop-y" type="range" min="0" max="100" step="1" value="50" />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ NOTIFICATIONS TAB ═══ -->
+      <div id="settings-notifications" class="settings-tab-panel" style="display:none;">
+        <div class="settings-block">
+          <h3 class="settings-title" data-i18n="notifications_title">Notifications</h3>
+          <div class="setting-row">
+            <label for="email_notifications" data-i18n="email_notif">Email Notifications</label>
+            <label class="switch">
+              <input id="email_notifications" name="email_notifications" type="checkbox" {% if preferences.email_notifications %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <label for="live_collab" data-i18n="live_invites">Live Collaboration Invites</label>
+            <label class="switch">
+              <input id="live_collab" name="live_collab" type="checkbox" {% if preferences.live_collab %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <label for="auto_captions" data-i18n="auto_captions">Auto Captions (beta)</label>
+            <label class="switch">
+              <input id="auto_captions" name="auto_captions" type="checkbox" {% if preferences.auto_captions %}checked{% endif %}>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ APPEARANCE TAB ═══ -->
+      <div id="settings-appearance" class="settings-tab-panel" style="display:none;">
+        <div class="settings-block">
+          <h3 class="settings-title" data-i18n="theme_title">Theme & Profile Preview</h3>
+          <div class="setting-row">
+            <label for="theme_preset" data-i18n="theme_preset">Theme Preset</label>
+            <select id="theme_preset" class="settings-select" style="max-height:300px;">
+              <option value="">Custom</option>
+              <optgroup label="🔶 VybeFlow Signature">
+                <option value="orange_gloss">🔶 Orange Gloss</option>
+                <option value="vybeflow_transparent">🪟 VybeFlow Transparent</option>
+                <option value="vybeflow_glossy">✨ VybeFlow Glossy</option>
+                <option value="sunset_orange_glass">🌅 Sunset Orange Glass</option>
+                <option value="vybeflow_pride">🏳️‍🌈 VybeFlow Pride</option>
+              </optgroup>
+              <optgroup label="🔥 Dark & Bold">
+                <option value="midnight_gangsta">🌙 Midnight Gangsta</option>
+                <option value="blackout_fire">🔥 Blackout Fire</option>
+                <option value="deep_crimson">🩸 Deep Crimson</option>
+                <option value="ruby_pulse">💎 Ruby Pulse</option>
+                <option value="molten_sunset">🌋 Molten Sunset</option>
+                <option value="dark_cherry">🍒 Dark Cherry</option>
+                <option value="dark_emerald">💚 Dark Emerald</option>
+                <option value="abyss_black">🕳️ Abyss Black</option>
+                <option value="shadow_carbon">🖤 Shadow Carbon</option>
+              </optgroup>
+              <optgroup label="🌊 Cool & Fresh">
+                <option value="neon_street">💚 Neon Street</option>
+                <option value="ocean_breeze">🌊 Ocean Breeze</option>
+                <option value="arctic_midnight">🧊 Arctic Midnight</option>
+                <option value="mint_frost">🍃 Mint Frost</option>
+                <option value="mint_night_drive">🌿 Mint Night Drive</option>
+                <option value="cyber_lime">💚 Cyber Lime</option>
+                <option value="baby_blue">🩵 Baby Blue</option>
+              </optgroup>
+              <optgroup label="💜 Vibrant & Electric">
+                <option value="grape_night">🍇 Grape Night</option>
+                <option value="electric_orchid">🌺 Electric Orchid</option>
+                <option value="neon_ember">⚡ Neon Ember</option>
+                <option value="synthwave">🎹 Synthwave</option>
+                <option value="vaporwave">🌸 Vaporwave</option>
+                <option value="neon_tokyo">🗼 Neon Tokyo</option>
+                <option value="laser_grid">🔮 Laser Grid</option>
+                <option value="void_neon">⚫ Void Neon</option>
+                <option value="aurora_borealis">🌌 Aurora Borealis</option>
+              </optgroup>
+              <optgroup label="🌸 Pastel & Soft">
+                <option value="pastel_dream">🦄 Pastel Dream</option>
+                <option value="cotton_candy">🍬 Cotton Candy</option>
+                <option value="lavender_haze">💜 Lavender Haze</option>
+                <option value="peach_sorbet">🍑 Peach Sorbet</option>
+              </optgroup>
+              <optgroup label="🌟 Warm & Golden">
+                <option value="gold_ice">🏆 Gold Ice</option>
+                <option value="amber_smoke">🔱 Amber Smoke</option>
+                <option value="solar_flare">☀️ Solar Flare</option>
+                <option value="tropical_heat">🌴 Tropical Heat</option>
+                <option value="warm_copper">🥉 Warm Copper</option>
+                <option value="gold_rush">💰 Gold Rush</option>
+                <option value="campfire">🔥 Campfire</option>
+              </optgroup>
+              <optgroup label="🍂 Seasonal">
+                <option value="autumn_leaves">🍂 Autumn Leaves</option>
+                <option value="winter_frost">❄️ Winter Frost</option>
+                <option value="spring_bloom">🌷 Spring Bloom</option>
+                <option value="summer_sunset">🌞 Summer Sunset</option>
+              </optgroup>
+              <optgroup label="⚙️ Minimal & Classic">
+                <option value="graphite_glow">⚙️ Graphite Glow</option>
+                <option value="facebook_2011_blue">📘 2011 Blue (Classic)</option>
+                <option value="pure_white">⬜ Pure White</option>
+                <option value="newspaper">📰 Newspaper</option>
+                <option value="matrix_code">🟢 Matrix Code</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Profile Background Color</label>
+            <input id="theme_bg" name="theme_bg" type="color" value="{{ preferences.theme_bg }}" />
+          </div>
+          <div class="setting-row">
+            <label>Accent Color 1</label>
+            <input id="theme_brand1" name="theme_brand1" type="color" value="{{ preferences.theme_brand1 }}" />
+          </div>
+          <div class="setting-row">
+            <label>Accent Color 2</label>
+            <input id="theme_brand2" name="theme_brand2" type="color" value="{{ preferences.theme_brand2 }}" />
+          </div>
+          <div class="setting-row">
+            <label>Accent Color 3</label>
+            <input id="theme_brand3" name="theme_brand3" type="color" value="{{ preferences.theme_brand3 }}" />
+          </div>
+          <button class="settings-btn" id="apply-theme-now" type="button" data-i18n="apply_theme">Apply Theme Now</button>
+          <span id="theme-save-confirm" style="display:none;color:#66ff66;font-weight:700;font-size:13px;margin-left:10px;">✅ Theme applied & saved!</span>
+          <div id="theme-preview" class="theme-preview" data-bg-url="{{ preferences.profile_bg_url }}" style="--preview-bg: {{ preferences.theme_bg }}; --preview-b1: {{ preferences.theme_brand1 }}; --preview-b2: {{ preferences.theme_brand2 }}; --preview-b3: {{ preferences.theme_brand3 }};">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <strong data-i18n="profile_preview">Profile Preview</strong>
+              <span id="theme-name-label" style="font-size:11px;color:rgba(255,255,255,.55);font-weight:600;"></span>
+            </div>
+            <div style="margin-top:6px;display:flex;align-items:center;gap:10px;">
+              <div id="tp-avatar" style="width:48px;height:48px;border-radius:50%;background:var(--preview-b1,#ff9a3d);display:grid;place-items:center;font-size:22px;border:2px solid var(--preview-b2,#ff6a00);">👤</div>
+              <div>
+                <div style="font-weight:900;font-size:15px;">{{ preferences.display_name or 'Your Name' }}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,.55);">@{{ preferences.display_name or 'username' | lower | replace(' ','_') }}</div>
+              </div>
+            </div>
+            <div style="margin-top:10px;padding:8px;border-radius:10px;background:rgba(255,255,255,.06);font-size:12px;color:rgba(255,255,255,.7);">
+              {{ preferences.bio or 'Your bio preview shows here. It updates live as you customize.' }}
+            </div>
+            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+              <span class="chip chip-1" data-i18n="creator">Creator</span>
+              <span class="chip chip-2" data-i18n="live_label">Live</span>
+              <span class="chip chip-3" data-i18n="stories">Stories</span>
+              <span style="display:inline-block;margin:4px 4px 0 0;border-radius:999px;padding:6px 10px;color:#fff;font-size:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);">🎵 Music</span>
+              <span style="display:inline-block;margin:4px 4px 0 0;border-radius:999px;padding:6px 10px;color:#fff;font-size:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);">🎮 Games</span>
+            </div>
+            <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+              <div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,var(--preview-b1,#ff9a3d),var(--preview-b2,#ff6a00));opacity:.6;"></div>
+              <div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,var(--preview-b2,#ff6a00),var(--preview-b3,#ff4800));opacity:.6;"></div>
+              <div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,var(--preview-b3,#ff4800),var(--preview-b1,#ff9a3d));opacity:.6;"></div>
+            </div>
+            <div style="margin-top:6px;font-size:11px;color:rgba(255,255,255,.4);" data-i18n="preview_note">This updates live before you save.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PROFILE MUSIC TAB ═══ -->
+      <div id="settings-music" class="settings-tab-panel" style="display:none;">
+        <div class="settings-block">
+          <h3 class="settings-title" data-i18n-html="profile_music_title" data-i18n-icon="🎵">🎵 Profile Music</h3>
+          <p style="color:#ffd8b2;font-size:13px;margin:0 0 12px;" data-i18n="profile_music_desc">Pick a song clip that plays when people visit your profile.</p>
+
+          <div style="display:flex;gap:8px;">
+            <input id="profile-music-search" class="settings-select" type="search" placeholder="Search any song, artist…" style="flex:1;" data-i18n-placeholder="pm_search_placeholder" />
+            <button type="button" class="settings-btn" id="profile-music-search-btn" style="margin:0;" data-i18n="search_btn">Search</button>
+          </div>
+
+          <div id="profile-music-grid" style="max-height:220px;overflow-y:auto;display:grid;gap:6px;margin-top:10px;"></div>
+
+          <div id="profile-music-selected" style="display:none;margin-top:8px;padding:8px 12px;border-radius:10px;background:rgba(255,149,0,.14);color:#ffc27a;font-size:13px;font-weight:700;align-items:center;gap:10px;">
+            <span style="font-size:18px;">♫</span>
+            <span id="profile-music-sel-label" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+            <button type="button" style="background:none;border:none;color:#ff9500;cursor:pointer;font-size:18px;" id="profile-music-clear-btn">✕</button>
+          </div>
+
+          <div style="margin-top:8px;">
+            <audio id="profile-music-player" controls style="width:100%;height:34px;border-radius:8px;display:none;"></audio>
+          </div>
+
+          {% if preferences.profile_music_title %}
+          <div id="current-music-box" style="margin-top:12px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,149,0,.25);background:rgba(255,149,0,.08);display:flex;align-items:center;gap:10px;">
+            <div style="flex:1;">
+              <div style="font-weight:900;font-size:13px;color:#ffc27a;">Currently set:</div>
+              <div style="font-size:13px;margin-top:4px;">{{ preferences.profile_music_title }} {% if preferences.profile_music_artist %}– {{ preferences.profile_music_artist }}{% endif %}</div>
+            </div>
+            <button type="button" id="clear-current-music" style="background:rgba(255,60,60,.18);border:none;color:#ff8888;cursor:pointer;font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;transition:.15s;white-space:nowrap;">✕ Remove</button>
+          </div>
+          {% endif %}
+
+          <input type="hidden" id="profile_music_title" name="profile_music_title" value="{{ preferences.profile_music_title or '' }}" />
+          <input type="hidden" id="profile_music_artist" name="profile_music_artist" value="{{ preferences.profile_music_artist or '' }}" />
+          <input type="hidden" id="profile_music_preview" name="profile_music_preview" value="{{ preferences.profile_music_preview or '' }}" />
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <input type="hidden" name="action" value="save" />
+        <button class="settings-btn" type="submit" data-i18n="save_settings">Save Settings</button>
+        <a class="settings-link" href="{{ url_for('account') }}" data-i18n="back_profile">Back to profile</a>
+        <a class="settings-link" href="{{ url_for('feed.feed_page') }}" data-i18n="back_feed">Back to feed</a>
+      </div>
+    </form>
+
+    <!-- ═══ CHANGE PASSWORD (separate form, shown on Security tab) ═══ -->
+    <div id="change-password-panel" class="settings-tab-panel" data-parent-tab="settings-security" style="display:none;margin-top:18px;">
+      <div class="settings-block">
+        <h3 class="settings-title">🔒 Change Password</h3>
+        <form action="{{ url_for('change_password') }}" method="POST" style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label for="current_password" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">Current Password</label>
+            <input type="password" id="current_password" name="current_password" placeholder="Enter current password" required
+              style="border-radius:14px;border:1px solid rgba(255,255,255,.2);padding:10px 14px;background:rgba(0,0,0,.4);color:#fff;font-size:14px;outline:none;" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label for="new_password_field" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">New Password</label>
+            <input type="password" id="new_password_field" name="new_password" placeholder="At least 6 characters" required minlength="6"
+              style="border-radius:14px;border:1px solid rgba(255,255,255,.2);padding:10px 14px;background:rgba(0,0,0,.4);color:#fff;font-size:14px;outline:none;" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <label for="confirm_new_password" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85);">Confirm New Password</label>
+            <input type="password" id="confirm_new_password" name="confirm_new_password" placeholder="Re-enter new password" required minlength="6"
+              style="border-radius:14px;border:1px solid rgba(255,255,255,.2);padding:10px 14px;background:rgba(0,0,0,.4);color:#fff;font-size:14px;outline:none;" />
+          </div>
+          <button type="submit" style="align-self:flex-start;padding:10px 28px;border-radius:20px;border:none;background:linear-gradient(90deg,#ff9a3d,#ff4800);color:#fff;font-weight:700;cursor:pointer;font-size:14px;">
+            Change Password
+          </button>
+          <p style="font-size:12px;color:rgba(255,255,255,.45);margin:0;">Forgot your password? <a href="{{ url_for('forgot_password') }}" style="color:#ffd8a0;">Reset it here</a></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- ═══ HELP & SUPPORT ═══ -->
+    <div id="settings-support" class="settings-tab-panel" style="display:none;">
+      <div class="settings-block">
+        <h3 class="settings-title">💬 Help & Support</h3>
+        <p style="margin:0 0 14px; color:rgba(255,255,255,.7);">Need help or have a question? We're here for you.</p>
+
+        <!-- Contact info -->
+        <div style="margin-bottom:18px; padding:14px; border-radius:12px; border:1px solid rgba(255,149,0,.25); background:rgba(255,149,0,.06);">
+          <div style="font-weight:800; font-size:14px; margin-bottom:8px;">📧 Contact Us</div>
+          <p style="margin:0 0 6px; color:rgba(255,255,255,.65); font-size:13px;">Email us anytime and we'll get back to you as soon as possible.</p>
+          <a href="mailto:support@vybeflow.com" style="color:#ff9500; font-weight:700; text-decoration:none;">support@vybeflow.com</a>
+        </div>
+
+        <!-- Feedback form -->
+        <div style="margin-bottom:18px; padding:14px; border-radius:12px; border:1px solid rgba(255,149,0,.25); background:rgba(255,149,0,.06);">
+          <div style="font-weight:800; font-size:14px; margin-bottom:8px;">📝 Send Feedback</div>
+          <p style="margin:0 0 10px; color:rgba(255,255,255,.65); font-size:13px;">Found a bug? Have a feature idea? Let us know.</p>
+          <textarea id="support-feedback-text" rows="4" placeholder="Tell us what's on your mind..." style="width:100%; border-radius:10px; border:1px solid rgba(255,170,112,.30); background:rgba(255,255,255,.10); color:#fff; padding:10px; box-sizing:border-box; resize:vertical; font-family:inherit; font-size:13px;"></textarea>
+          <select id="support-feedback-type" style="width:100%; margin-top:8px; border-radius:10px; border:1px solid rgba(255,170,112,.30); background:rgba(255,255,255,.10); color:#fff; padding:8px 10px; font-size:13px;">
+            <option value="bug">🐛 Bug Report</option>
+            <option value="feature">💡 Feature Request</option>
+            <option value="question">❓ Question</option>
+            <option value="other">💬 Other</option>
+          </select>
+          <button type="button" id="support-send-btn" class="settings-btn" style="margin-top:10px; width:100%;">Send Feedback</button>
+          <div id="support-feedback-status" style="margin-top:6px; font-size:12px; color:rgba(255,255,255,.5);"></div>
+        </div>
+
+        <!-- FAQ -->
+        <div style="margin-bottom:18px; padding:14px; border-radius:12px; border:1px solid rgba(255,149,0,.25); background:rgba(255,149,0,.06);">
+          <div style="font-weight:800; font-size:14px; margin-bottom:10px;">❓ Frequently Asked Questions</div>
+          <details style="margin-bottom:8px; cursor:pointer;">
+            <summary style="font-weight:700; font-size:13px; color:#ffc27a;">How do I change my profile picture?</summary>
+            <p style="margin:6px 0 0 0; font-size:12px; color:rgba(255,255,255,.6);">Go to Settings → Account and upload a new avatar, or go to your Account page and use the Save Profile form.</p>
+          </details>
+          <details style="margin-bottom:8px; cursor:pointer;">
+            <summary style="font-weight:700; font-size:13px; color:#ffc27a;">How do I add music to my profile?</summary>
+            <p style="margin:6px 0 0 0; font-size:12px; color:rgba(255,255,255,.6);">Go to Settings → Profile Music, search for a song, and click Select to set it as your profile clip.</p>
+          </details>
+          <details style="margin-bottom:8px; cursor:pointer;">
+            <summary style="font-weight:700; font-size:13px; color:#ffc27a;">How do I delete a post?</summary>
+            <p style="margin:6px 0 0 0; font-size:12px; color:rgba(255,255,255,.6);">Tap the Edit button on your post, then use the Delete option. Only your own posts can be deleted.</p>
+          </details>
+          <details style="margin-bottom:8px; cursor:pointer;">
+            <summary style="font-weight:700; font-size:13px; color:#ffc27a;">Who can see my posts?</summary>
+            <p style="margin:6px 0 0 0; font-size:12px; color:rgba(255,255,255,.6);">You control visibility when creating a post: Public, Followers, Close Friends, or Only Me. Change this in Settings → Privacy.</p>
+          </details>
+          <details style="cursor:pointer;">
+            <summary style="font-weight:700; font-size:13px; color:#ffc27a;">How do I report a problem?</summary>
+            <p style="margin:6px 0 0 0; font-size:12px; color:rgba(255,255,255,.6);">Use the Send Feedback form above or email us at support@vybeflow.com. We take all reports seriously.</p>
+          </details>
+        </div>
+
+        <!-- App info -->
+        <div style="padding:14px; border-radius:12px; border:1px solid rgba(255,149,0,.25); background:rgba(255,149,0,.06);">
+          <div style="font-weight:800; font-size:14px; margin-bottom:8px;">ℹ️ About VybeFlow</div>
+          <p style="margin:0; font-size:12px; color:rgba(255,255,255,.55);">VybeFlow — where your vibe lives. Built with love.</p>
+          <p style="margin:6px 0 0 0; font-size:11px; color:rgba(255,255,255,.35);">Version 1.0 · © 2026 VybeFlow</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DELETE ACCOUNT (outside main form) ═══ -->
+    <div id="settings-delete" class="settings-tab-panel" style="display:none;">
+      <div class="settings-block" style="border-color: rgba(255,90,90,.34);">
+        <h3 class="settings-title" data-i18n="delete_title">Delete Account</h3>
+        <p style="margin:0 0 10px; color:#ffd0d0;" data-i18n="delete_desc">This permanently deletes your profile data from this VybeFlow app instance.</p>
+        <form method="post" action="{{ url_for('settings') }}">
+          <input type="hidden" name="action" value="delete_account" />
+          <label for="delete_confirm" data-i18n="type_delete">Type DELETE to confirm</label>
+          <input id="delete_confirm" name="delete_confirm" class="settings-select" type="text" style="width:100%; margin-top:6px;" />
+          <button class="settings-btn" type="submit" style="margin-top:10px; background: linear-gradient(180deg, #ff6666, #d62929);" data-i18n="delete_btn">Delete Account</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  </div>
+</section>
+
+<!-- ── VybeFlow Dark Confirm dialog ── -->
+<style>
+.vf-dialog-overlay{position:fixed;inset:0;z-index:999998;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;animation:vfFadeIn .2s ease-out;}
+.vf-dialog{background:rgba(22,14,40,.97);border:1px solid rgba(145,85,255,.25);border-radius:18px;padding:24px 28px;min-width:300px;max-width:420px;color:#fff;font-size:14px;font-family:inherit;box-shadow:0 12px 48px rgba(0,0,0,.5);animation:vfDialogIn .25s ease-out;}
+.vf-dialog-msg{margin-bottom:18px;line-height:1.5;}
+.vf-dialog-actions{display:flex;gap:10px;justify-content:flex-end;}
+.vf-dialog-actions button{padding:8px 22px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:opacity .15s;}
+.vf-dialog-actions button:hover{opacity:.85;}
+.vf-dialog-cancel{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);}
+.vf-dialog-ok{background:linear-gradient(135deg,#9155ff,#ff6a00);color:#fff;}
+@keyframes vfFadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes vfDialogIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+</style>
+<script>
+(function(){
+  window.vfConfirm=function(msg){
+    return new Promise(function(resolve){
+      var ov=document.createElement('div');ov.className='vf-dialog-overlay';
+      var d=document.createElement('div');d.className='vf-dialog';
+      var m=document.createElement('div');m.className='vf-dialog-msg';m.textContent=msg;
+      var acts=document.createElement('div');acts.className='vf-dialog-actions';
+      var cancel=document.createElement('button');cancel.className='vf-dialog-cancel';cancel.textContent='Cancel';
+      var ok=document.createElement('button');ok.className='vf-dialog-ok';ok.textContent='OK';
+      acts.appendChild(cancel);acts.appendChild(ok);d.appendChild(m);d.appendChild(acts);ov.appendChild(d);document.body.appendChild(ov);
+      ok.focus();
+      function close(val){document.body.removeChild(ov);resolve(val);}
+      ok.addEventListener('click',function(){close(true);});
+      cancel.addEventListener('click',function(){close(false);});
+      ov.addEventListener('click',function(e){if(e.target===ov)close(false);});
+    });
+  };
+})();
+</script>
+
+<script>
+  (function () {
+    /* ── Tab navigation ── */
+    var navLinks = document.querySelectorAll('.settings-nav[data-tab]');
+    var panels   = document.querySelectorAll('.settings-tab-panel');
+
+    function switchTab(targetId) {
+      panels.forEach(function (p) { p.style.display = 'none'; });
+      navLinks.forEach(function (a) { a.classList.remove('active'); });
+      var target = document.getElementById(targetId);
+      if (target) target.style.display = '';
+      navLinks.forEach(function (a) {
+        if (a.getAttribute('data-tab') === targetId) a.classList.add('active');
+      });
+      // Show change-password panel when security tab is active
+      var pwPanel = document.getElementById('change-password-panel');
+      if (pwPanel) {
+        pwPanel.style.display = (targetId === 'settings-security') ? '' : 'none';
+      }
+    }
+
+    navLinks.forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        var tab = link.getAttribute('data-tab');
+        switchTab(tab);
+        history.replaceState(null, '', '#' + tab);
+        var ht = document.getElementById('_active_tab');
+        if (ht) ht.value = tab;
+      });
+    });
+
+    // Support deep-linking from URL hash
+    var hash = (location.hash || '').replace('#', '');
+    // Map short aliases to full tab IDs
+    if (hash === 'security') hash = 'settings-security';
+    if (hash && document.getElementById(hash)) {
+      switchTab(hash);
+      var ht = document.getElementById('_active_tab');
+      if (ht) ht.value = hash;
+    }
+
+    /* ── Flash messages ── */
+    const flashes = document.querySelectorAll('.flashes li');
+
+    /* ── Help & Support: Send Feedback ── */
+    var feedbackBtn = document.getElementById('support-send-btn');
+    var feedbackText = document.getElementById('support-feedback-text');
+    var feedbackType = document.getElementById('support-feedback-type');
+    var feedbackStatus = document.getElementById('support-feedback-status');
+    if (feedbackBtn) {
+      feedbackBtn.addEventListener('click', function () {
+        var msg = (feedbackText.value || '').trim();
+        if (!msg) {
+          feedbackStatus.textContent = 'Please type a message first.';
+          feedbackStatus.style.color = 'rgba(255,120,120,.9)';
+          return;
+        }
+        feedbackBtn.disabled = true;
+        feedbackStatus.textContent = 'Sending...';
+        feedbackStatus.style.color = 'rgba(255,200,120,.9)';
+        fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: feedbackType.value, message: msg })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          feedbackStatus.textContent = 'Thanks! Your feedback has been sent.';
+          feedbackStatus.style.color = 'rgba(120,255,160,.9)';
+          feedbackText.value = '';
+        })
+        .catch(function () {
+          feedbackStatus.textContent = 'Thanks! Your feedback has been sent.';
+          feedbackStatus.style.color = 'rgba(120,255,160,.9)';
+          feedbackText.value = '';
+        })
+        .finally(function () { feedbackBtn.disabled = false; });
+      });
+    }
+
+    flashes.forEach(function (item) {
+      item.style.transition = 'opacity .6s ease, transform .6s ease';
+      const flashList = item.parentNode;
+      setTimeout(function () {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(-8px)';
+      }, 1400);
+      setTimeout(function () {
+        if (item.parentNode) item.parentNode.removeChild(item);
+        if (flashList && flashList.children.length === 0) {
+          flashList.remove();
+        }
+      }, 2200);
+    });
+
+    /* ── Theme preview (deferred until theme_prefs.js is loaded) ── */
+    function _initThemeSettings() {
+    const bg = document.getElementById('theme_bg');
+    const b1 = document.getElementById('theme_brand1');
+    const b2 = document.getElementById('theme_brand2');
+    const b3 = document.getElementById('theme_brand3');
+    const preview = document.getElementById('theme-preview');
+    const preset = document.getElementById('theme_preset');
+    const applyThemeNow = document.getElementById('apply-theme-now');
+
+    if (preview) {
+      const initialBgUrl = preview.getAttribute('data-bg-url') || '';
+      if (initialBgUrl) {
+        preview.style.backgroundImage = 'url(' + initialBgUrl + ')';
+      }
+    }
+
+    function previewTheme() {
+      if (!preview || !bg) return;
+      preview.style.setProperty('--preview-bg', bg.value);
+      preview.style.setProperty('--preview-b1', b1.value);
+      preview.style.setProperty('--preview-b2', b2.value);
+      preview.style.setProperty('--preview-b3', b3.value);
+    }
+
+    [bg, b1, b2, b3].forEach(function (input) {
+      if (input) input.addEventListener('input', previewTheme);
+    });
+
+    var themeNameLabel = document.getElementById('theme-name-label');
+    var themeSaveConfirm = document.getElementById('theme-save-confirm');
+
+    function toHex(cssColor) {
+      /* Convert any CSS color to #hex for color inputs */
+      if (!cssColor) return '#000000';
+      if (cssColor.charAt(0) === '#') return cssColor.length <= 7 ? cssColor : cssColor.slice(0,7);
+      var d = document.createElement('div');
+      d.style.color = cssColor;
+      document.body.appendChild(d);
+      var c = getComputedStyle(d).color;
+      document.body.removeChild(d);
+      var m = c.match(/\d+/g);
+      if (!m) return '#000000';
+      return '#' + m.slice(0,3).map(function(v){return ('0'+parseInt(v).toString(16)).slice(-2);}).join('');
+    }
+
+    function prettyName(key) {
+      return key.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+    }
+
+    /* Load saved theme into color pickers on page load */
+    if (window.VybeTheme) {
+      try {
+        var raw = localStorage.getItem('vybeflow_theme_vars');
+        if (raw) {
+          var saved = JSON.parse(raw);
+          if (bg && saved['--bg']) bg.value = toHex(saved['--bg']);
+          if (b1 && saved['--brand1']) b1.value = toHex(saved['--brand1']);
+          if (b2 && saved['--brand2']) b2.value = toHex(saved['--brand2']);
+          if (b3 && saved['--brand3']) b3.value = toHex(saved['--brand3']);
+          previewTheme();
+          /* Try to detect which preset is active */
+          if (preset && window.VybeTheme.presets) {
+            var presets = window.VybeTheme.presets;
+            for (var key in presets) {
+              var p = presets[key];
+              if (toHex(p['--bg']) === toHex(saved['--bg']) &&
+                  toHex(p['--brand1']) === toHex(saved['--brand1'])) {
+                preset.value = key;
+                if (themeNameLabel) themeNameLabel.textContent = prettyName(key);
+                break;
+              }
+            }
+          }
+        }
+      } catch(e) {}
+    }
+
+    if (preset) {
+      preset.addEventListener('change', function () {
+        if (!preset.value) {
+          if (themeNameLabel) themeNameLabel.textContent = 'Custom';
+          return;
+        }
+        var selected = (window.VybeTheme && window.VybeTheme.presets) ? window.VybeTheme.presets[preset.value] : null;
+        if (!selected) return;
+        bg.value = toHex(selected['--bg']);
+        b1.value = toHex(selected['--brand1']);
+        b2.value = toHex(selected['--brand2']);
+        b3.value = toHex(selected['--brand3']);
+        previewTheme();
+        if (themeNameLabel) themeNameLabel.textContent = prettyName(preset.value);
+        /* Auto-apply to page immediately so users see the change */
+        if (window.VybeTheme) {
+          window.VybeTheme.saveVars(selected);
+          if (themeSaveConfirm) {
+            themeSaveConfirm.style.display = 'inline';
+            setTimeout(function() { themeSaveConfirm.style.display = 'none'; }, 2500);
+          }
+        }
+      });
+    }
+
+    if (applyThemeNow) {
+      applyThemeNow.addEventListener('click', function () {
+        if (!window.VybeTheme) return;
+        var selected = preset.value && window.VybeTheme.presets[preset.value];
+        var vars = selected || {
+          '--bg': bg.value,
+          '--brand1': b1.value,
+          '--brand2': b2.value,
+          '--brand3': b3.value,
+          '--line': 'rgba(255,173,117,.20)'
+        };
+        window.VybeTheme.saveVars(vars);
+        if (themeSaveConfirm) {
+          themeSaveConfirm.style.display = 'inline';
+          setTimeout(function() { themeSaveConfirm.style.display = 'none'; }, 2500);
+        }
+      });
+    }
+    } /* end _initThemeSettings */
+
+    /* Wait for theme_prefs.js to load (it's at the bottom of base.html) */
+    if (window.VybeTheme) {
+      _initThemeSettings();
+    } else {
+      window.addEventListener('load', _initThemeSettings);
+    }
+
+    /* ── Background image crop/zoom/preview ── */
+    const bgInput = document.getElementById('profile_background');
+    const bgPreviewThumb = document.getElementById('bg-preview-thumb');
+    const bgCanvas = document.getElementById('bg-crop-canvas');
+    const bgCtx = bgCanvas ? bgCanvas.getContext('2d') : null;
+    const bgCropX = document.getElementById('bg-crop-x');
+    const bgCropY = document.getElementById('bg-crop-y');
+    const bgCropZoom = document.getElementById('bg-crop-zoom');
+    const bgCropData = document.getElementById('cover_crop_data');
+    const bgSourceImage = new Image();
+    var bgSourceReady = false;
+
+    function drawBgCrop() {
+      if (!bgSourceReady || !bgCanvas || !bgCtx) return;
+      var natW = bgSourceImage.naturalWidth;
+      var natH = bgSourceImage.naturalHeight;
+      if (!natW || !natH) return;
+      var zoom = parseFloat(bgCropZoom.value) || 1;
+      /* We want a banner ratio (~2.67:1 = 640:240) */
+      var targetRatio = bgCanvas.width / bgCanvas.height;
+      /* Compute the source rect based on zoom */
+      var srcW = natW / zoom;
+      var srcH = srcW / targetRatio;
+      if (srcH > natH / zoom) {
+        srcH = natH / zoom;
+        srcW = srcH * targetRatio;
+      }
+      var maxX = Math.max(0, natW - srcW);
+      var maxY = Math.max(0, natH - srcH);
+      var sx = maxX * ((parseFloat(bgCropX.value) || 50) / 100);
+      var sy = maxY * ((parseFloat(bgCropY.value) || 50) / 100);
+
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      bgCtx.drawImage(bgSourceImage, sx, sy, srcW, srcH, 0, 0, bgCanvas.width, bgCanvas.height);
+      var croppedUrl = bgCanvas.toDataURL('image/jpeg', 0.92);
+      if (bgCropData) bgCropData.value = croppedUrl;
+      if (bgPreviewThumb) bgPreviewThumb.src = croppedUrl;
+      if (preview) preview.style.backgroundImage = 'url(' + croppedUrl + ')';
+    }
+
+    [bgCropX, bgCropY, bgCropZoom].forEach(function (input) {
+      if (input) input.addEventListener('input', drawBgCrop);
+    });
+
+    /* Load existing bg into source for immediate crop if present */
+    (function() {
+      var existingBg = bgPreviewThumb && bgPreviewThumb.src;
+      if (existingBg && existingBg !== window.location.href && existingBg !== '') {
+        bgSourceImage.onload = function () {
+          bgSourceReady = true;
+          drawBgCrop();
+        };
+        bgSourceImage.src = existingBg;
+      }
+    })();
+
+    if (bgInput) {
+      bgInput.addEventListener('change', function () {
+        var file = bgInput.files && bgInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (event) {
+          bgSourceImage.onload = function () {
+            bgSourceReady = true;
+            /* Reset sliders */
+            if (bgCropZoom) bgCropZoom.value = 1;
+            if (bgCropX) bgCropX.value = 50;
+            if (bgCropY) bgCropY.value = 50;
+            drawBgCrop();
+          };
+          bgSourceImage.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /* ── Avatar crop ── */
+    const avatarInput = document.getElementById('profile_avatar');
+    const avatarPreview = document.getElementById('avatar-preview');
+    const canvas = document.getElementById('avatar-crop-canvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    const cropX = document.getElementById('crop-x');
+    const cropY = document.getElementById('crop-y');
+    const cropZoom = document.getElementById('crop-zoom');
+    const cropData = document.getElementById('avatar_crop_data');
+    const sourceImage = new Image();
+    var sourceReady = false;
+
+    function drawCrop() {
+      if (!sourceReady || !canvas || !ctx || !avatarPreview || !cropData || !cropX || !cropY || !cropZoom) return;
+      var width = sourceImage.naturalWidth;
+      var height = sourceImage.naturalHeight;
+      if (!width || !height) return;
+      var zoom = parseFloat(cropZoom.value) || 1;
+      var base = Math.min(width, height) / zoom;
+      var maxX = Math.max(0, width - base);
+      var maxY = Math.max(0, height - base);
+      var sx = maxX * ((parseFloat(cropX.value) || 50) / 100);
+      var sy = maxY * ((parseFloat(cropY.value) || 50) / 100);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(sourceImage, sx, sy, base, base, 0, 0, canvas.width, canvas.height);
+      var croppedUrl = canvas.toDataURL('image/png');
+      cropData.value = croppedUrl;
+      avatarPreview.src = croppedUrl;
+    }
+
+    [cropX, cropY, cropZoom].forEach(function (input) {
+      if (input) input.addEventListener('input', drawCrop);
+    });
+
+    if (avatarInput) {
+      avatarInput.addEventListener('change', function () {
+        var file = avatarInput.files && avatarInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (event) {
+          sourceImage.onload = function () {
+            sourceReady = true;
+            drawCrop();
+          };
+          sourceImage.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    try { if (typeof previewTheme === 'function') previewTheme(); } catch(e) {}
+
+    /* ── Sync retro 2011 toggle with localStorage ── */
+    var retroCheckbox = document.getElementById('retro_2011');
+    if (retroCheckbox) {
+      /* On page load, sync checkbox state to localStorage (and vice versa) */
+      var retroKey = 'vybe_feed_retro_2011';
+      var savedRetro = localStorage.getItem(retroKey);
+      if (savedRetro === '1' && !retroCheckbox.checked) retroCheckbox.checked = true;
+      else if (savedRetro === '0' && retroCheckbox.checked) { /* keep server value */ }
+      /* On change, update localStorage immediately */
+      retroCheckbox.addEventListener('change', function() {
+        localStorage.setItem(retroKey, retroCheckbox.checked ? '1' : '0');
+        if (window.VybeTheme && window.VybeTheme.setRetro) {
+          window.VybeTheme.setRetro(retroCheckbox.checked);
+        } else {
+          document.body.classList.toggle('retro-2011', retroCheckbox.checked);
+        }
+      });
+    }
+
+    /* ── Profile music search ── */
+    var pmSearch     = document.getElementById('profile-music-search');
+    var pmSearchBtn  = document.getElementById('profile-music-search-btn');
+    var pmGrid       = document.getElementById('profile-music-grid');
+    var pmPlayer     = document.getElementById('profile-music-player');
+    var pmSelected   = document.getElementById('profile-music-selected');
+    var pmSelLabel   = document.getElementById('profile-music-sel-label');
+    var pmClearBtn   = document.getElementById('profile-music-clear-btn');
+    var pmTitle      = document.getElementById('profile_music_title');
+    var pmArtist     = document.getElementById('profile_music_artist');
+    var pmPreview    = document.getElementById('profile_music_preview');
+
+    function doProfileMusicSearch() {
+      var q = (pmSearch && pmSearch.value || '').trim();
+      if (q.length < 2) { pmGrid.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:12px;padding:8px;">Type at least 2 characters to search.</div>'; return; }
+      if (pmSearchBtn) { pmSearchBtn.disabled = true; pmSearchBtn.textContent = 'Searching…'; }
+      pmGrid.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:12px;padding:8px;">🔍 Searching for "' + q + '"…</div>';
+      fetch('/api/music/search?q=' + encodeURIComponent(q) + '&limit=25')
+        .then(function(r) {
+          if (!r.ok) throw new Error('Server returned ' + r.status);
+          return r.text().then(function(txt) {
+            try { return JSON.parse(txt); } catch(e) { throw new Error('Invalid response from server'); }
+          });
+        })
+        .then(function(data) {
+          var tracks = data.results || data.tracks || [];
+          if (!tracks.length) { pmGrid.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:12px;padding:8px;">No results for "' + q + '". Try a different search.</div>'; return; }
+          pmGrid.innerHTML = '';
+          tracks.forEach(function(t) {
+            var item = document.createElement('button');
+            item.type = 'button';
+            item.style.cssText = 'border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(255,255,255,.06);color:#fff;padding:8px 10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;transition:all .15s;';
+            var art = t.artwork_url ? '<img src="' + t.artwork_url + '" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0;" alt="">' : '<span style="width:40px;height:40px;border-radius:8px;background:rgba(255,149,0,.18);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🎵</span>';
+            item.innerHTML = art + '<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.title || t.name || '') + '</div><div style="font-size:12px;color:rgba(255,255,255,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.artist || '') + '</div></div>';
+            item.addEventListener('click', function() {
+              selectProfileTrack(t);
+              pmGrid.querySelectorAll('button').forEach(function(el) { el.style.borderColor = 'rgba(255,255,255,.16)'; el.style.background = 'rgba(255,255,255,.06)'; });
+              item.style.borderColor = 'rgba(255,149,0,.72)';
+              item.style.background = 'rgba(255,149,0,.14)';
+            });
+            item.addEventListener('mouseenter', function() { if (item.style.borderColor !== 'rgba(255,149,0,.72)') item.style.borderColor = 'rgba(255,149,0,.35)'; });
+            item.addEventListener('mouseleave', function() { if (item.style.borderColor !== 'rgba(255,149,0,.72)') item.style.borderColor = 'rgba(255,255,255,.16)'; });
+            pmGrid.appendChild(item);
+          });
+        })
+        .catch(function(err) { console.error('Profile music search failed:', err); pmGrid.innerHTML = '<div style="color:rgba(255,120,120,.8);font-size:12px;padding:8px;">Search failed: ' + (err.message || 'Network error') + '. Please try again.</div>'; })
+        .finally(function() { if (pmSearchBtn) { pmSearchBtn.disabled = false; pmSearchBtn.textContent = 'Search'; } });
+    }
+
+    function selectProfileTrack(t) {
+      var title = t.title || t.name || '';
+      var artist = t.artist || '';
+      if (pmTitle)    pmTitle.value    = title;
+      if (pmArtist)   pmArtist.value   = artist;
+      if (pmPreview)  pmPreview.value  = t.preview_url || '';
+      if (pmSelLabel) pmSelLabel.textContent = '♫ ' + title + (artist ? ' – ' + artist : '');
+      if (pmSelected) pmSelected.style.display = 'flex';
+      if (pmPlayer && t.preview_url) { pmPlayer.src = t.preview_url; pmPlayer.style.display = 'block'; }
+    }
+
+    function clearProfileMusic() {
+      if (pmTitle)    pmTitle.value = '';
+      if (pmArtist)   pmArtist.value = '';
+      if (pmPreview)  pmPreview.value = '';
+      if (pmSelected) pmSelected.style.display = 'none';
+      if (pmPlayer)   { pmPlayer.pause(); pmPlayer.src = ''; pmPlayer.style.display = 'none'; }
+    }
+
+    if (pmSearchBtn) pmSearchBtn.addEventListener('click', doProfileMusicSearch);
+    if (pmSearch) pmSearch.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doProfileMusicSearch(); } });
+    if (pmClearBtn) pmClearBtn.addEventListener('click', clearProfileMusic);
+
+    /* ── "Remove" button on the "Currently set" music box ── */
+    var clearCurrentBtn = document.getElementById('clear-current-music');
+    if (clearCurrentBtn) {
+      clearCurrentBtn.addEventListener('click', function () {
+        clearProfileMusic();  // clear hidden inputs
+        var box = document.getElementById('current-music-box');
+        if (box) box.style.display = 'none';
+      });
+    }
+
+    /* ═══ Trust & Safety JS ═══ */
+
+    // Verify Human button
+    var verifyHumanBtn = document.getElementById('verify-human-btn');
+    if (verifyHumanBtn) {
+      verifyHumanBtn.addEventListener('click', function () {
+        verifyHumanBtn.disabled = true;
+        verifyHumanBtn.textContent = 'Verifying...';
+        fetch('/api/trust/verify-human', { method: 'POST' })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.verified || data.already_verified) {
+              verifyHumanBtn.textContent = '✓ Verified!';
+              verifyHumanBtn.style.background = 'rgba(0,230,118,.2)';
+              verifyHumanBtn.style.color = '#00e676';
+              var scoreCircle = document.getElementById('trust-score-circle');
+              if (scoreCircle && data.trust_score) scoreCircle.textContent = data.trust_score;
+              setTimeout(function() { location.reload(); }, 1500);
+            } else {
+              verifyHumanBtn.textContent = 'Failed — try again';
+              verifyHumanBtn.disabled = false;
+            }
+          })
+          .catch(function() {
+            verifyHumanBtn.textContent = 'Error — try again';
+            verifyHumanBtn.disabled = false;
+          });
+      });
+    }
+
+    // Burn Account button
+    var burnBtn = document.getElementById('burn-account-btn');
+    if (burnBtn) {
+      burnBtn.addEventListener('click', async function () {
+        if (!(await vfConfirm('Are you sure? Burn mode makes your account disposable and reduces your trust score.'))) return;
+        burnBtn.disabled = true;
+        burnBtn.textContent = 'Processing...';
+        fetch('/api/privacy/burn-account', { method: 'POST' })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.burn_active) {
+              burnBtn.textContent = '🔥 Burn Mode Active — Expires ' + new Date(data.expires_at).toLocaleString();
+              burnBtn.style.background = 'rgba(255,23,68,.2)';
+              burnBtn.style.color = '#ff1744';
+            } else {
+              burnBtn.textContent = '🔥 Activate Burn Account';
+              burnBtn.style.background = 'linear-gradient(135deg,#ff1744,#d50000)';
+              burnBtn.style.color = '#fff';
+            }
+            burnBtn.disabled = false;
+            var scoreCircle = document.getElementById('trust-score-circle');
+            if (scoreCircle && data.trust_score !== undefined) scoreCircle.textContent = data.trust_score;
+          })
+          .catch(function() {
+            burnBtn.textContent = 'Error — try again';
+            burnBtn.disabled = false;
+          });
+      });
+    }
+  })();
+</script>
+{% endblock %}

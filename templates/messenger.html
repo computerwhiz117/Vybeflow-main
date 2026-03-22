@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  .msg-shell { max-width: 980px; margin: 18px auto; }
+  .msg-card { border: 1px solid rgba(255,153,90,.12); border-radius: 16px; background: rgba(255,255,255,.03); backdrop-filter: blur(24px) saturate(1.2); padding: 14px; }
+  .msg-row { display: grid; grid-template-columns: 260px 1fr; gap: 12px; }
+  .msg-list { display: grid; gap: 8px; }
+  .msg-contact { width: 100%; text-align: left; border: 1px solid rgba(255,153,90,.08); background: rgba(255,255,255,.03); backdrop-filter: blur(16px); color: var(--text); border-radius: 10px; padding: 10px; cursor: pointer; }
+  .msg-thread { min-height: 280px; border: 1px solid rgba(255,153,90,.08); border-radius: 10px; padding: 10px; background: rgba(255,255,255,.02); backdrop-filter: blur(20px); overflow: auto; }
+  .msg-item { margin-bottom: 8px; padding: 8px; border-radius: 8px; background: rgba(255,255,255,.03); backdrop-filter: blur(12px); }
+  .msg-compose { margin-top: 10px; display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .msg-input, .msg-btn { border: 1px solid rgba(255,153,90,.10); border-radius: 10px; background: rgba(255,255,255,.03); backdrop-filter: blur(12px); color: var(--text); }
+  .msg-input { padding: 10px; }
+  .msg-btn { padding: 10px 14px; cursor: pointer; }
+  .msg-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .msg-link { color: #ffd8b2; text-decoration: none; }
+  @media (max-width: 760px) { .msg-row { grid-template-columns: 1fr; } }
+</style>
+
+<section class="msg-shell">
+  <div class="msg-card">
+    <div class="msg-header">
+      <h2 style="margin:0;">Messenger</h2>
+      <a class="msg-link" href="{{ url_for('feed.feed_page') }}">Back to feed</a>
+    </div>
+
+    <div class="msg-row">
+      <div>
+        <h4 style="margin:0 0 8px;">Contacts</h4>
+        <div id="contact-list" class="msg-list">
+          {% for contact in contacts %}
+          <button type="button" class="msg-contact" data-recipient="{{ contact.email }}">
+            {{ contact.username }}<br><small>{{ contact.email }}</small>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div>
+        <h4 id="thread-title" style="margin:0 0 8px;">Select a contact</h4>
+        <div id="msg-thread" class="msg-thread"></div>
+        <div class="msg-compose">
+          <input id="msg-input" class="msg-input" type="text" placeholder="Type a message" />
+          <button id="msg-send" type="button" class="msg-btn">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  const thread = document.getElementById('msg-thread');
+  const title = document.getElementById('thread-title');
+  const input = document.getElementById('msg-input');
+  const send = document.getElementById('msg-send');
+  let selected = '';
+
+  function render(messages) {
+    thread.innerHTML = '';
+    (messages || []).forEach(function (m) {
+      const row = document.createElement('div');
+      row.className = 'msg-item';
+      row.textContent = m.from + ': ' + m.text + ' • ' + m.at;
+      thread.appendChild(row);
+    });
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  async function loadThread() {
+    if (!selected) return;
+    const res = await fetch("{{ url_for('api_messenger_thread') }}?with=" + encodeURIComponent(selected));
+    const data = await res.json();
+    render(data.messages || []);
+  }
+
+  document.querySelectorAll('.msg-contact').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      selected = btn.dataset.recipient;
+      title.textContent = 'Chat with ' + selected;
+      loadThread();
+    });
+  });
+
+  send.addEventListener('click', async function () {
+    const text = input.value.trim();
+    if (!selected || !text) return;
+    await fetch("{{ url_for('messenger_send') }}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient: selected, text: text })
+    });
+    input.value = '';
+    loadThread();
+  });
+})();
+</script>
+{% endblock %}

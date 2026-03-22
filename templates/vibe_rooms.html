@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block body_class %}vibe-rooms-page{% endblock %}
+{% block content %}
+<style>
+:root{
+  --vbg:#09090f;--vs:rgba(22,22,35,.92);--vb:rgba(139,92,246,.15);
+  --vt:rgba(255,255,255,.92);--vm:rgba(255,255,255,.50);
+  --vp:#8b5cf6;--vpl:#a78bfa;--vg:#10b981;--vr:#ef4444;--vo:#f97316;
+}
+body.vibe-rooms-page{background:var(--vbg)!important}
+body.vibe-rooms-page .auth-wrap{display:block;min-height:0;background:transparent!important}
+body.vibe-rooms-page .app-shell,body.vibe-rooms-page main{background:transparent!important;padding:0;margin:0}
+
+.vrl-w{max-width:1000px;margin:0 auto;padding:24px 16px 60px}
+.vrl-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.vrl-hdr h1{font-size:26px;font-weight:800;margin:0;background:linear-gradient(135deg,var(--vpl),var(--vo));-webkit-background-clip:text;background-clip:text;color:transparent}
+.vrl-new{padding:10px 22px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--vp),#6d28d9);color:#fff;font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;transition:transform .15s}
+.vrl-new:hover{transform:scale(1.04)}
+
+.vrl-types{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+.vrl-pill{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(255,255,255,.04);border:1px solid var(--vb);color:var(--vt);cursor:default}
+
+.vrl-sec{font-size:16px;font-weight:700;color:var(--vpl);margin:24px 0 14px;display:flex;align-items:center;gap:8px}
+
+.vrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.vrl-card{background:var(--vs);border:1px solid var(--vb);border-radius:16px;padding:20px;position:relative;transition:transform .2s,box-shadow .2s}
+.vrl-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(139,92,246,.12)}
+.vrl-badge{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;font-size:10px;font-weight:700;background:rgba(239,68,68,.15);color:var(--vr)}
+.vrl-dot{width:6px;height:6px;border-radius:50%;background:var(--vr);animation:ldot 1.5s infinite}
+@keyframes ldot{0%,100%{opacity:1}50%{opacity:.4}}
+.vrl-ico{font-size:28px;margin-bottom:10px}
+.vrl-nm{font-size:16px;font-weight:700;color:var(--vt);margin-bottom:3px}
+.vrl-desc{font-size:12px;color:var(--vm);line-height:1.4;margin-bottom:10px;max-height:36px;overflow:hidden}
+.vrl-meta{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--vm);margin-bottom:12px}
+.vrl-meta .host{color:var(--vpl);font-weight:600}
+.vrl-foot{display:flex;align-items:center;gap:8px}
+.vrl-join{padding:8px 18px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--vp),#6d28d9);color:#fff;font-weight:700;font-size:12px;cursor:pointer;text-decoration:none;display:inline-block;transition:transform .15s}
+.vrl-join:hover{transform:scale(1.04)}
+.vrl-del{padding:7px 14px;border-radius:10px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.12);color:var(--vr);font-weight:600;font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px}
+.vrl-del:hover{background:rgba(239,68,68,.25)}
+.vrl-sched{padding:3px 10px;border-radius:8px;font-size:10px;font-weight:600;background:rgba(96,165,250,.12);color:#60a5fa}
+.vrl-ended-tag{padding:3px 10px;border-radius:8px;font-size:10px;font-weight:600;background:rgba(107,114,128,.15);color:#6b7280}
+.vrl-empty{text-align:center;padding:40px 20px;color:var(--vm);grid-column:1/-1}
+.vrl-empty .big{font-size:44px;margin-bottom:10px}
+
+@media(max-width:600px){.vrl-grid{grid-template-columns:1fr}}
+</style>
+
+<div class="vrl-w">
+  <div class="vrl-hdr">
+    <h1>&#x1F3A7; Vibe Rooms</h1>
+    <a href="{{ url_for('vibe_rooms.create_room') }}" class="vrl-new">+ New Room</a>
+  </div>
+
+  <div class="vrl-types">
+    {% for key, info in room_types.items() %}
+    <div class="vrl-pill"><span>{{ info.icon }}</span><span>{{ info.label }}</span></div>
+    {% endfor %}
+  </div>
+
+  <!-- Live Now -->
+  <div class="vrl-sec">&#x1F534; Live Now</div>
+  {% if live_rooms %}
+  <div class="vrl-grid">
+    {% for room in live_rooms %}
+    <div class="vrl-card" id="rc-{{ room.id }}">
+      <div class="vrl-badge"><span class="vrl-dot"></span> LIVE</div>
+      <div class="vrl-ico">{{ room_types.get(room.room_type, room_types['custom']).icon }}</div>
+      <div class="vrl-nm">{{ room.name }}</div>
+      <div class="vrl-desc">{{ room.description or '' }}</div>
+      <div class="vrl-meta">
+        <span class="host">{{ room.host.username if room.host else 'Unknown' }}</span>
+        <span>&#x1F465; {{ room.participants|length }}</span>
+      </div>
+      <div class="vrl-foot">
+        <a href="{{ url_for('vibe_rooms.room_view', room_id=room.id) }}" class="vrl-join">Join Room</a>
+        {% if room.host_id == current_user.id %}
+        <button class="vrl-del" onclick="delRoom({{ room.id }})">&#x1F5D1;&#xFE0F; Delete</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="vrl-empty"><div class="big">&#x1F3A7;</div><p>No rooms live right now. Start one!</p></div>
+  {% endif %}
+
+  <!-- Scheduled -->
+  <div class="vrl-sec">&#x1F4C5; Coming Up</div>
+  {% if scheduled_rooms %}
+  <div class="vrl-grid">
+    {% for room in scheduled_rooms %}
+    <div class="vrl-card" id="rc-{{ room.id }}">
+      <div class="vrl-ico">{{ room_types.get(room.room_type, room_types['custom']).icon }}</div>
+      <div class="vrl-nm">{{ room.name }}</div>
+      <div class="vrl-desc">{{ room.description or '' }}</div>
+      <div class="vrl-meta">
+        <span class="host">{{ room.host.username if room.host else 'Unknown' }}</span>
+        {% if room.scheduled_at %}
+        <span class="vrl-sched">&#x1F4C5; {{ room.scheduled_at.strftime('%b %d, %I:%M %p') }}</span>
+        {% endif %}
+      </div>
+      <div class="vrl-foot">
+        <a href="{{ url_for('vibe_rooms.room_view', room_id=room.id) }}" class="vrl-join">View</a>
+        {% if room.host_id == current_user.id %}
+        <button class="vrl-del" onclick="delRoom({{ room.id }})">&#x1F5D1;&#xFE0F; Delete</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="vrl-empty"><div class="big">&#x1F4C5;</div><p>No upcoming rooms scheduled.</p></div>
+  {% endif %}
+
+  <!-- Ended rooms (your rooms you can clean up) -->
+  {% if ended_rooms %}
+  <div class="vrl-sec" style="color:#6b7280">&#x1F4CB; Ended Rooms</div>
+  <div class="vrl-grid">
+    {% for room in ended_rooms %}
+    <div class="vrl-card" id="rc-{{ room.id }}" style="opacity:.7">
+      <div class="vrl-ico">{{ room_types.get(room.room_type, room_types['custom']).icon }}</div>
+      <div class="vrl-nm">{{ room.name }}</div>
+      <div class="vrl-meta">
+        <span class="host">{{ room.host.username if room.host else 'Unknown' }}</span>
+        <span class="vrl-ended-tag">Ended</span>
+      </div>
+      <div class="vrl-foot">
+        {% if room.host_id == current_user.id %}
+        <button class="vrl-del" onclick="delRoom({{ room.id }})">&#x1F5D1;&#xFE0F; Delete</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function delRoom(id){
+  if(window.vfConfirm){
+    vfConfirm('Permanently delete this room?').then(function(ok){
+      if(ok){
+        fetch('/vibe-rooms/'+id+'/delete',{method:'POST',headers:{'X-Requested-With':'fetch'}})
+          .then(function(r){
+            if(r.ok){
+              var card=document.getElementById('rc-'+id);
+              if(card){card.style.transition='opacity .3s,transform .3s';card.style.opacity='0';card.style.transform='scale(.95)';setTimeout(function(){card.remove()},350)}
+              if(window.vfToast) vfToast('Room deleted','success');
+            } else throw r;
+          })
+          .catch(function(){if(window.vfToast) vfToast('Only the room host can delete','error')});
+      }
+    });
+  }
+}
+</script>
+{% endblock %}

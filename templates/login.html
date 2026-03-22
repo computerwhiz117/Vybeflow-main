@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block body_class %}login-page{% endblock %}
+
+{% block content %}
+<style>
+    body.login-page {
+        color: rgba(255,255,255,.95);
+    }
+    body.login-page .landing-shell {
+        display: none !important;
+    }
+    body.login-page .app-shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    /* ── Floating logo ── */
+    @keyframes vfLogoFloat {
+        0%   { transform: translateY(0)    rotate(0deg)   scale(1);    }
+        25%  { transform: translateY(-10px) rotate(3deg)  scale(1.03); }
+        50%  { transform: translateY(-4px)  rotate(-2deg) scale(1.01); }
+        75%  { transform: translateY(-13px) rotate(2deg)  scale(1.04); }
+        100% { transform: translateY(0)    rotate(0deg)   scale(1);    }
+    }
+    @keyframes vfGlow {
+        0%,100% { filter: drop-shadow(0 0 20px rgba(255,106,0,.7)); }
+        50%     { filter: drop-shadow(0 0 54px rgba(255,160,50,.95)); }
+    }
+    .vf-floating-logo {
+        display: block;
+        margin: 0 auto 12px;
+        width: 72px; height: 72px;
+        border-radius: 18px;
+        animation: vfLogoFloat 5s ease-in-out infinite, vfGlow 3s ease-in-out infinite;
+    }
+
+    /* ── See-through glass card ── */
+    body.login-page .login-card {
+        position: relative !important;
+        z-index: 1 !important;
+        overflow: visible !important;
+        max-width: 420px !important;
+        width: min(92%, 420px) !important;
+        margin: 8vh auto 5vh !important;
+        padding: 28px 30px 24px !important;
+        border-radius: 26px !important;
+        border: 1px solid rgba(255,255,255,.08) !important;
+        background: rgba(255,255,255,.02) !important;
+        box-shadow: 0 0 60px rgba(0,0,0,.4) !important;
+        backdrop-filter: blur(6px) saturate(1.1) !important;
+        -webkit-backdrop-filter: blur(6px) saturate(1.1) !important;
+        color: rgba(255,255,255,.95) !important;
+        text-align: center !important;
+    }
+    body.login-page .login-card::before {
+        content: none !important;
+    }
+    body.login-page .login-card h2 {
+        text-align: center !important;
+        margin: 0 0 22px !important;
+        font-size: 22px !important;
+        font-weight: 800 !important;
+        color: #fff !important;
+        text-shadow: none !important;
+    }
+    body.login-page .login-card input[type="text"],
+    body.login-page .login-card input[type="password"],
+    body.login-page .login-card input[type="email"] {
+        width: 100% !important;
+        padding: 11px 16px !important;
+        border-radius: 24px !important;
+        border: 1px solid rgba(255,255,255,.18) !important;
+        background: rgba(255,255,255,.08) !important;
+        color: #fff !important;
+        outline: none !important;
+        font-size: 14px !important;
+        box-sizing: border-box !important;
+        margin-bottom: 12px !important;
+        box-shadow: none !important;
+    }
+    body.login-page .login-card input::placeholder {
+        color: rgba(255,255,255,.55) !important;
+    }
+    body.login-page .login-card input:focus {
+        border-color: rgba(255,140,0,.55) !important;
+        box-shadow: 0 0 0 3px rgba(255,100,0,.18) !important;
+    }
+    body.login-page .login-card .remember-me-row {
+        display: flex;
+        align-items: center;
+        margin: -2px 0 14px;
+        text-align: left;
+    }
+    body.login-page .login-card .remember-me-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: rgba(255,220,180,.85);
+        cursor: pointer;
+        user-select: none;
+    }
+    body.login-page .login-card .remember-me-label input[type="checkbox"] {
+        width: 16px; height: 16px;
+        accent-color: #ff7300;
+        margin: 0;
+        cursor: pointer;
+    }
+    body.login-page .login-card .login-btn {
+        width: 100% !important;
+        padding: 11px !important;
+        border-radius: 24px !important;
+        border: none !important;
+        background: linear-gradient(90deg, #ff9a3d, #ff6a00, #ff4800) !important;
+        color: #fff !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        cursor: pointer !important;
+        box-shadow: 0 0 14px rgba(255,120,0,.5), 0 0 36px rgba(255,80,0,.3), 0 0 60px rgba(255,60,0,.15) !important;
+        transition: transform .18s, box-shadow .18s !important;
+    }
+    body.login-page .login-card .login-btn:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 0 20px rgba(255,120,0,.7), 0 0 50px rgba(255,80,0,.45), 0 0 80px rgba(255,60,0,.25) !important;
+    }
+    body.login-page .login-card p {
+        text-align: center !important;
+        margin-top: 12px !important;
+        font-size: 14px !important;
+    }
+    body.login-page .login-card .vv-action-btn,
+    body.login-page .login-card a {
+        color: #ffd8a0 !important;
+        text-decoration: none !important;
+        font-weight: 600 !important;
+        text-shadow: 0 0 8px rgba(255,120,0,.3) !important;
+    }
+    body.login-page .login-card a:hover {
+        text-decoration: underline !important;
+        filter: none !important;
+        text-shadow: none !important;
+    }
+    body.login-page .login-card .password-strength {
+        margin: -6px 0 10px !important;
+    }
+</style>
+
+<div class="login-card">
+    <img src="{{ url_for('static', filename='VFlogo_clean.png') }}" alt="VybeFlow" class="vf-floating-logo" />
+    <h2 data-i18n="login_title">Login to VybeFlow</h2>
+
+    <form action="{{ url_for('login') }}" method="POST" data-remember-users="login">
+        <input type="text" id="login-identifier" name="username" list="remembered-users" value="{{ last_login_identifier or '' }}" placeholder="Email or Username" data-i18n-placeholder="email_or_username" autocomplete="username" required>
+        <datalist id="remembered-users"></datalist>
+        <input type="password" id="login-password" name="password" placeholder="Password" data-i18n-placeholder="password" autocomplete="current-password" required>
+        <div class="password-strength" data-strength-for="login-password">
+            <div class="strength-bars">
+                <span></span><span></span><span></span><span></span>
+            </div>
+            <small class="strength-text" data-i18n="strength_start">Start typing to check password strength.</small>
+            <small class="strength-hint" data-i18n="strength_tip">Use 12+ chars, uppercase, lowercase, numbers, and symbols to harden your password.</small>
+        </div>
+
+        <div class="remember-me-row">
+            <label class="remember-me-label">
+                <input type="checkbox" name="remember_me" id="remember_me" value="1">
+                <span data-i18n="remember_me">Remember me</span>
+            </label>
+        </div>
+
+        <button type="submit" class="login-btn" data-i18n="login_btn">Login</button>
+    </form>
+
+    <p><a href="{{ url_for('forgot_password') }}" data-i18n="forgot_password">Forgot password?</a></p>
+
+    <p><span data-i18n="need_account">Need an account?</span> <a href="{{ url_for('register') }}" data-i18n="sign_up_here">Sign up here</a></p>
+</div>
+{% endblock %}

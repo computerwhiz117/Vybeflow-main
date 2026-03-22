@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Call Lobby - VybeFlow</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090d1f;
+      --panel: rgba(19, 24, 45, 0.88);
+      --panel-soft: rgba(255, 255, 255, 0.06);
+      --text: #f6f3ff;
+      --muted: #b7bdd9;
+      --accent: #ff8f3d;
+      --accent-soft: rgba(255, 143, 61, 0.14);
+      --border: rgba(255, 255, 255, 0.12);
+      --success: #43d39e;
+      --warning: #ffd166;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 143, 61, 0.22), transparent 24%),
+        radial-gradient(circle at top right, rgba(106, 72, 255, 0.14), transparent 24%),
+        linear-gradient(180deg, #090d1f 0%, #0f1633 100%);
+    }
+
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand img {
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 6px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn,
+    button {
+      border: 1px solid rgba(255, 170, 109, 0.55);
+      background: rgba(255, 143, 61, 0.12);
+      color: var(--text);
+      padding: 11px 16px;
+      border-radius: 999px;
+      text-decoration: none;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+    .btn:hover,
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 18px rgba(255, 143, 61, 0.24);
+      background: rgba(255, 143, 61, 0.18);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 22px 52px rgba(0, 0, 0, 0.26);
+    }
+
+    .card p { color: var(--muted); }
+
+    .flash-list {
+      list-style: none;
+      margin: 0 0 18px;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .flash-list li {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(67, 211, 158, 0.12);
+      border: 1px solid rgba(67, 211, 158, 0.25);
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 8px;
+      font-weight: 700;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      outline: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .room-card {
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 18px;
+    }
+
+    .room-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .badge.active { color: var(--success); border-color: rgba(67, 211, 158, 0.35); }
+    .badge.waiting { color: var(--warning); border-color: rgba(255, 209, 102, 0.35); }
+
+    .invite-box {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .invite-box code {
+      flex: 1 1 300px;
+      color: #ffdcb6;
+      word-break: break-all;
+      font-family: monospace;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 36px 18px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+    }
+
+    ul { padding-left: 18px; color: var(--muted); }
+    li + li { margin-top: 8px; }
+
+    @media (max-width: 860px) {
+      .hero,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="brand">
+        <img src="/static/VFlogo_cool.png" alt="VybeFlow logo">
+        <div>
+          <h1 style="margin-bottom:6px;">Video Call Lobby</h1>
+          <p style="margin:0; color:#b7bdd9;">Launch private one-to-one video sessions with your VybeFlow community.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn" href="{{ url_for('feed') }}">Feed</a>
+        <a class="btn" href="{{ url_for('profile') }}">Profile</a>
+        <a class="btn" href="{{ url_for('settings') }}">Settings</a>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flash-list">
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <section class="hero">
+      <article class="card">
+        <h2>Start a new call</h2>
+        <p>Create a room, copy the invite link, and have another logged-in member join from their browser.</p>
+        <form method="post">
+          <label for="topic">Call topic</label>
+          <input id="topic" type="text" name="topic" maxlength="120" placeholder="Late-night producer session" value="{{ user.username }}'s Video Call">
+          <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;">
+            <button type="submit">Create Room</button>
+            <a class="btn" href="{{ url_for('home') }}">Home</a>
+          </div>
+        </form>
+      </article>
+
+      <article class="card">
+        <h2>How it works</h2>
+        <ul>
+          <li>Create a room and share the generated link.</li>
+          <li>The second participant joins the same room from another account.</li>
+          <li>Browsers establish a direct WebRTC connection with camera and microphone controls.</li>
+        </ul>
+        <p style="margin-bottom:0;">Signed in as <strong>{{ user.username }}</strong>.</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <div style="display:flex; justify-content:space-between; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:16px;">
+        <div>
+          <h2 style="margin-bottom:6px;">Your recent call rooms</h2>
+          <p style="margin:0;">Resume a waiting session or jump back into an active room.</p>
+        </div>
+      </div>
+
+      {% if rooms %}
+        <div class="grid">
+          {% for room in rooms %}
+            <article class="room-card">
+              <div class="room-meta">
+                <span class="badge {{ 'active' if room.status == 'active' else 'waiting' }}">{{ room.status }}</span>
+                <span class="badge">{{ 'Host' if room.host_user_id == user.id else 'Guest' }}</span>
+                <span class="badge">{{ room.room_code }}</span>
+              </div>
+              <h3 style="margin-bottom:6px;">{{ room.topic }}</h3>
+              <p style="margin-bottom:10px;">
+                Created {{ room.created_at.strftime('%b %d, %Y %I:%M %p') }} ·
+                Participants: {{ 1 + (1 if room.guest_user_id else 0) }}
+              </p>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <a class="btn" href="{{ url_for('video_call_room', room_code=room.room_code) }}">Open Room</a>
+              </div>
+              <div class="invite-box">
+                <code id="invite-{{ room.room_code }}">{{ base_url }}{{ url_for('video_call_room', room_code=room.room_code) }}</code>
+                <button type="button" class="copy-btn" data-copy-target="invite-{{ room.room_code }}">Copy</button>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty">
+          No call rooms yet. Create your first video room to start collaborating live.
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <script>
+    document.querySelectorAll('.copy-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copyTarget);
+        if (!target) {
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(target.textContent.trim());
+          const previous = button.textContent;
+          button.textContent = 'Copied';
+          setTimeout(() => {
+            button.textContent = previous;
+          }, 1400);
+        } catch (error) {
+          button.textContent = 'Copy failed';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

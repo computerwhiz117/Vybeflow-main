@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Create</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/overlay-fixes.css') }}">
+  <style>
+    /* Preview must be relative */
+    .previewBox, #vybePreview { position: relative; }
+
+    /* Sticker layer sits on top of preview media */
+    .sticker-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none; /* layer itself ignores clicks */
+    }
+
+    /* Each sticker is draggable (pointer-events enabled) */
+    .sticker {
+      position: absolute;
+      width: 110px;
+      height: 110px;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      user-select: none;
+      touch-action: none;
+      background: transparent !important; /* force no background */
+      border: none !important;
+      outline: none !important;
+      filter: drop-shadow(0 14px 28px rgba(0,0,0,.55));
+    }
+
+    /* Optional hover */
+    .sticker:hover {
+      filter: drop-shadow(0 16px 34px rgba(0,0,0,.7));
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 700px at 40% 20%, rgba(255,120,0,.22), transparent 55%),
+                  radial-gradient(900px 600px at 65% 55%, rgba(255,70,0,.16), transparent 60%),
+                  #05060b;
+      color: #f6f7ff;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    /* IMPORTANT: no pointer-events traps */
+    .frame {
+      width: min(1060px, 95vw);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(15,10,6,.55);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 80px rgba(0,0,0,.55);
+      padding: 18px;
+      position: relative;
+      pointer-events: auto; /* <- critical */
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    h1 { font-size: 28px; margin: 0; letter-spacing: .5px; }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 12px 0 14px;
+    }
+    .tab {
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,130,0,.10);
+      color: #fff;
+      cursor: pointer;
+      user-select: none;
+      text-align: center;
+    }
+    .tab.active {
+      background: rgba(255,130,0,.22);
+      border-color: rgba(255,170,80,.38);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 14px;
+    }
+
+    .panel {
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(20,20,20,.35);
+      padding: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      opacity: .8;
+      margin-bottom: 8px;
+      letter-spacing: .08em;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.28);
+      color: #fff;
+      padding: 12px;
+      outline: none;
+    }
+
+    .btnrow { display: grid; gap: 10px; margin-top: 10px; }
+    .btn {
+      width: 100%;
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25);
+      color: #fff;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn:hover { background: rgba(255,130,0,.12); }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    select, input[type="text"]{
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.28);
+      color: #fff;
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    .upload {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: center;
+    }
+    input[type="file"]{
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.28);
+      color: #fff;
+      padding: 10px 12px;
+    }
+
+    .publish {
+      border-radius: 999px;
+      border: 1px solid rgba(255,170,80,.55);
+      background: radial-gradient(circle at 30% 30%, rgba(255,170,80,.45), rgba(255,110,0,.22));
+      color: #fff;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .previewBox {
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      height: 360px;
+      overflow: hidden;
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    .previewInner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    .previewInner video, .previewInner img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+
+    .stickerLayer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none; /* stickers shouldn't block clicks */
+    }
+    .sticker {
+      position: absolute;
+      width: 96px;
+      height: 96px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      filter: drop-shadow(0 10px 24px rgba(0,0,0,.55));
+    }
+
+    /* 3D emoji effect */
+    .emoji3d {
+      font-size: 58px;
+      position: absolute;
+      left: 50%;
+      top: 25%;
+      transform: translate(-50%, -50%);
+      animation: spin3d 1.8s linear infinite;
+      text-shadow: 0 10px 30px rgba(0,0,0,.65);
+      pointer-events: none;
+    }
+    @keyframes spin3d {
+      0%   { transform: translate(-50%, -50%) rotateY(0deg) rotateX(10deg); }
+      50%  { transform: translate(-50%, -50%) rotateY(180deg) rotateX(-10deg); }
+      100% { transform: translate(-50%, -50%) rotateY(360deg) rotateX(10deg); }
+    }
+
+    /* modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      display: none;
+      place-items: center;
+      z-index: 9999;
+      pointer-events: auto;
+    }
+    .modal.open { display: grid; }
+    .modalCard {
+      width: min(520px, 92vw);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(20,20,20,.85);
+      padding: 14px;
+      backdrop-filter: blur(10px);
+    }
+    .modalTop {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .x {
+      border: 0;
+      background: transparent;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .emojiGrid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+    }
+    .emojiPick {
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+      cursor: pointer;
+      font-size: 20px;
+      padding: 8px 0;
+      text-align: center;
+    }
+    .emojiPick:hover { background: rgba(255,130,0,.14); }
+
+    .msg { margin-top: 10px; font-size: 13px; opacity: .9; }
+    .error { color: #ffb0b0; }
+    .ok { color: #b9ffcf; }
+
+    /* ✅ Make ALL background/overlay layers ignore clicks */
+    .vf-bg,
+    .bg,
+    .background,
+    .overlay,
+    .backdrop,
+    .glow,
+    .blur,
+    .fx,
+    canvas,
+    .frame::before,
+    .frame::after,
+    body::before,
+    body::after {
+      pointer-events: none !important;
+    }
+
+    /* ✅ Ensure your actual UI CAN receive clicks */
+    .frame,
+    .modal,
+    .modalCard,
+    .panel,
+    form,
+    input,
+    textarea,
+    button,
+    select,
+    a {
+      pointer-events: auto !important;
+    }
+
+    /* ✅ Ensure the UI is on top */
+    .frame {
+      position: relative;
+      z-index: 10;
+    }
+  
+    /* ================================
+       ONE-FIX: Unblock ALL clicks
+       Paste at the very bottom of CSS
+    ==================================== */
+  
+    /* 1) Put your create UI above everything */
+    .create,
+    .create * ,
+    .frame,
+    .frame * ,
+    .modal,
+    .modal * {
+      position: relative;
+      z-index: 9999;
+    }
+  
+    /* 2) Make ALL common overlay/background layers ignore clicks */
+    .vf-bg,
+    .bg,
+    .background,
+    .overlay,
+    .backdrop,
+    .glow,
+    .blur,
+    .fx,
+    .effects,
+    .particles,
+    canvas,
+    video.bg,
+    img.bg,
+    body::before,
+    body::after,
+    html::before,
+    html::after,
+    .frame::before,
+    .frame::after,
+    .create::before,
+    .create::after {
+      pointer-events: none !important;
+    }
+  
+    /* 3) Re-enable clicks on real controls (in case a parent disabled them) */
+    button,
+    a,
+    input,
+    textarea,
+    select,
+    label {
+      pointer-events: auto !important;
+    }
+  
+    /* 4) If your overlay is a full-screen div, ensure it can't sit on top */
+    .vf-bg,
+    .overlay,
+    .backdrop,
+    .bg,
+    canvas {
+      z-index: 0 !important;
+    }
+  
+    /* 5) Ensure your actual create container is clickable */
+    .create,
+    .frame {
+      pointer-events: auto !important;
+    }
+  </style>
+  /* ================================
+     CLICK FIX: overlays can't steal clicks
+     Paste at the bottom of your CSS
+  ================================ */
+
+  /* Put your create UI above everything */
+  .create,
+  .create-wrap,
+  .create-modal,
+  .frame,
+  .create-container,
+  #create,
+  #createModal {
+    position: relative !important;
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Common overlay/background layers: make them ignore clicks */
+  .vf-bg,
+  .vf-overlay,
+  .overlay,
+  .backdrop,
+  .bg,
+  .background,
+  .blur,
+  .glow,
+  .fx,
+  .effects,
+  .particles,
+  canvas,
+  video.bg,
+  img.bg,
+  body::before,
+  body::after,
+  html::before,
+  html::after,
+  .frame::before,
+  .frame::after,
+  .create::before,
+  .create::after {
+    pointer-events: none !important;
+  }
+
+  /* Ensure the real controls can be clicked */
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  label {
+    pointer-events: auto !important;
+  }
+
+  /* If an overlay element is full screen, force it behind */
+  .vf-bg,
+  .vf-overlay,
+  .overlay,
+  .backdrop,
+  .bg,
+  canvas {
+    z-index: 0 !important;
+  }
+</head>
+<body>
+
+  <div class="frame">
+    <div class="top">
+      <div>
+        <h1>Create</h1>
+        <div style="opacity:.75;font-size:13px;">Choose what you want to share</div>
+      </div>
+      <a href="/" style="color:#ffd1a6;text-decoration:none;">Back</a>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-type="post">📝 Post</div>
+      <div class="tab" data-type="reel">🎞️ Vibe Snap</div>
+      <div class="tab" data-type="live">🔴 Go Live</div>
+    </div>
+
+    <form id="createForm" class="grid" enctype="multipart/form-data">
+      <input type="hidden" name="post_type" id="post_type" value="post"/>
+      <input type="hidden" name="gif_url" id="gif_url" value=""/>
+      <input type="hidden" name="stickers_json" id="stickers_json" value="[]"/>
+      <input type="hidden" name="emoji3d" id="emoji3d" value=""/>
+
+      <div class="panel">
+        <label>CAPTION</label>
+        <textarea name="caption" id="caption" placeholder="Say something..."></textarea>
+
+        <div class="btnrow">
+          <button class="btn" type="button" id="btnEmoji">😊 Emoji (adds to caption)</button>
+          <button class="btn" type="button" id="btnEmoji3D">🧊 3D Animated Emoji (adds to preview)</button>
+          <button class="btn" type="button" id="btnSticker">✨ Stickers (adds to preview)</button>
+          <button class="btn" type="button" id="btnGif">🎬 GIF (paste a GIF URL)</button>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Background</label>
+            <select name="background" id="background">
+              <option value="sunset">Sunset</option>
+              <option value="night">Night</option>
+              <option value="glass">Glass</option>
+            </select>
+          </div>
+          <div>
+            <label>Visibility</label>
+            <select name="visibility" id="visibility">
+              <option value="public">Public</option>
+              <option value="friends">Friends</option>
+              <option value="private">Private</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="upload">
+          <input type="file" name="media" id="media" accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v" />
+          <button class="publish" type="submit" id="publishBtn">Publish</button>
+        </div>
+
+        <div id="status" class="msg"></div>
+      </div>
+
+      <div class="panel">
+        <label>PREVIEW</label>
+        <div id="vybePreview" class="previewBox">
+          <div class="sticker-layer" id="stickerLayer"></div>
+          <div id="mediaPreview"></div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+          <button type="button" class="stBtn" data-src="/static/stickers/fire.png">🔥 Fire</button>
+          <button type="button" class="stBtn" data-src="/static/stickers/star.png">⭐ Star</button>
+          <button type="button" class="stBtn" data-src="/static/stickers/heart.png">❤️ Heart</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Emoji modal -->
+  <div class="modal" id="emojiModal" aria-hidden="true">
+    <div class="modalCard">
+      <div class="modalTop">
+        <strong>Pick an emoji</strong>
+        <button class="x" type="button" data-close="emojiModal">✕</button>
+      </div>
+      <div class="emojiGrid" id="emojiGrid"></div>
+    </div>
+  </div>
+
+  <!-- GIF modal -->
+  <div class="modal" id="gifModal" aria-hidden="true">
+    <div class="modalCard">
+      <div class="modalTop">
+        <strong>Add a GIF</strong>
+        <button class="x" type="button" data-close="gifModal">✕</button>
+      </div>
+      <div style="display:grid; gap:10px;">
+        <input type="text" id="gifInput" placeholder="Paste a direct GIF URL (ends with .gif)"/>
+        <button class="publish" type="button" id="gifApply">Apply GIF</button>
+        <div style="opacity:.7;font-size:12px;">Tip: paste a direct .gif URL. This keeps it simple + reliable.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticker modal -->
+  <div class="modal" id="stickerModal" aria-hidden="true">
+    <div class="modalCard">
+      <div class="modalTop">
+        <strong>Add a sticker</strong>
+        <button class="x" type="button" data-close="stickerModal">✕</button>
+      </div>
+      <div style="display:grid; gap:10px;">
+        <div style="opacity:.8;font-size:12px;">
+          Put sticker PNGs in <code>/static/stickers/</code> and list them below.
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="publish" type="button" data-sticker="/static/stickers/star.png">⭐ star.png</button>
+          <button class="publish" type="button" data-sticker="/static/stickers/fire.png">🔥 fire.png</button>
+          <button class="publish" type="button" data-sticker="/static/stickers/heart.png">❤️ heart.png</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // --- Sticker creation + drag
+  const preview = document.getElementById("vybePreview");
+  const stickerLayer = document.getElementById("stickerLayer");
+
+  function ensureRelative(el) {
+    if (getComputedStyle(el).position === "static") el.style.position = "relative";
+  }
+
+  function addSticker(src, xPct = 50, yPct = 55) {
+    ensureRelative(preview);
+
+    const img = document.createElement("img");
+    img.className = "sticker";
+    img.src = src;
+    img.alt = "sticker";
+
+    img.style.left = xPct + "%";
+    img.style.top  = yPct + "%";
+
+    stickerLayer.appendChild(img);
+
+    makeDraggable(img, preview);
+    return img;
+  }
+
+  function makeDraggable(node, boundsEl) {
+    let dragging = false;
+
+    const start = (e) => {
+      dragging = true;
+      node.setPointerCapture?.(e.pointerId);
+    };
+
+    const move = (e) => {
+      if (!dragging) return;
+
+      const r = boundsEl.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width) * 100;
+      const y = ((e.clientY - r.top) / r.height) * 100;
+
+      // clamp to bounds
+      const cx = Math.max(0, Math.min(100, x));
+      const cy = Math.max(0, Math.min(100, y));
+
+      node.style.left = cx + "%";
+      node.style.top  = cy + "%";
+    };
+
+    const end = () => { dragging = false; };
+
+    node.addEventListener("pointerdown", start);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", end);
+  }
+
+  // Example sticker buttons
+  document.querySelectorAll(".stBtn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const src = btn.getAttribute("data-src");
+      addSticker(src, 55, 55);
+    });
+  });
+
+  // --- Collect stickers for backend
+  function collectStickers() {
+    return [...stickerLayer.querySelectorAll(".sticker")].map(s => ({
+      src: s.getAttribute("src"),
+      left: s.style.left,
+      top: s.style.top,
+      w: s.style.width,
+      h: s.style.height
+    }));
+  }
+
+  // --- Submit (update to save stickers/emoji3d)
+  const form = document.getElementById("createForm");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setStatus("Publishing...", "");
+
+    // Save stickers and emoji3d to hidden inputs
+    document.getElementById("stickers_json").value = JSON.stringify(collectStickers());
+    document.getElementById("emoji3d").value = emojiFxHidden.value;
+
+    try {
+      const fd = new FormData(form);
+      fd.set("post_type", postType.value);
+      fd.set("gif_url", gifUrlHidden.value);
+      fd.set("stickers_json", document.getElementById("stickers_json").value);
+      fd.set("emoji3d", document.getElementById("emoji3d").value);
+
+      const data = await publishPostVF(fd);
+
+      if (!data.ok) {
+        setStatus(data.error || "Failed to publish.", "error");
+        return;
+      }
+
+      if (data.offline) {
+        setStatus("📴 Saved offline. Will sync when online.", "ok");
+      } else {
+        setStatus("Posted ✅", "ok");
+      }
+
+      // Reset UI
+      caption.value = "";
+      media.value = "";
+      gifUrlHidden.value = "";
+      stickers = [];
+      document.getElementById("stickers_json").value = "[]";
+      document.getElementById("emoji3d").value = "";
+
+      // clear preview
+      preview.innerHTML = '<div style="opacity:.75;font-size:13px;">Your post preview will show here.</div><div class="sticker-layer" id="stickerLayer"></div>';
+
+      // rebind stickerLayer reference
+      window.setTimeout(() => location.href = "/create", 450); // optional
+    } catch (err) {
+      setStatus("Network/JS error: " + err.message, "error");
+    }
+  });
+(() => {
+  const tabs = document.getElementById("tabs");
+  const postType = document.getElementById("post_type");
+  const caption = document.getElementById("caption");
+  const media = document.getElementById("media");
+  const previewInner = document.getElementById("previewInner");
+  const stickerLayer = document.getElementById("stickerLayer");
+  const statusEl = document.getElementById("status");
+
+  const emojiModal = document.getElementById("emojiModal");
+  const gifModal = document.getElementById("gifModal");
+  const stickerModal = document.getElementById("stickerModal");
+
+  const gifUrlHidden = document.getElementById("gif_url");
+  const stickersHidden = document.getElementById("stickers");
+  const emojiFxHidden = document.getElementById("emoji_fx");
+
+  let currentPreviewNode = null;
+  let stickers = [];
+
+  // --- Tabs
+  tabs.addEventListener("click", (e) => {
+    const t = e.target.closest(".tab");
+    if (!t) return;
+    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    postType.value = t.dataset.type;
+  });
+
+  // --- Preview helpers
+  function clearPreviewMediaOnly() {
+    if (currentPreviewNode) currentPreviewNode.remove();
+    currentPreviewNode = null;
+    // keep sticker layer + 3d emoji if present
+  }
+
+  function ensureStickerLayerOnTop() {
+    // stickerLayer is already absolute; ensure it stays last
+    stickerLayer.remove();
+    previewInner.appendChild(stickerLayer);
+  }
+
+  function setStatus(msg, kind) {
+    statusEl.className = "msg " + (kind || "");
+    statusEl.textContent = msg || "";
+  }
+
+  // --- File preview (image/video)
+  media.addEventListener("change", () => {
+    setStatus("");
+    gifUrlHidden.value = ""; // if user uploads media, drop gif url (optional)
+    clearPreviewMediaOnly();
+
+    const file = media.files && media.files[0];
+    renderMediaPreview(file);
+    ensureStickerLayerOnTop();
+  });
+
+  // --- Modal open/close
+  function openModal(m) { m.classList.add("open"); m.setAttribute("aria-hidden", "false"); }
+  function closeModal(m) { m.classList.remove("open"); m.setAttribute("aria-hidden", "true"); }
+
+  document.body.addEventListener("click", (e) => {
+    const closeId = e.target.getAttribute("data-close");
+    if (closeId) closeModal(document.getElementById(closeId));
+    if (e.target.classList.contains("modal")) closeModal(e.target);
+  });
+
+  // --- Emoji picker
+  const emojiList = "😀 😁 😂 🤣 😎 😈 🔥 💯 ❤️ 😭 😤 🤝 🧠 🧊 ⭐ 🎯 🚀".split(" ");
+  const emojiGrid = document.getElementById("emojiGrid");
+  emojiList.forEach(em => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "emojiPick";
+    b.textContent = em;
+    b.addEventListener("click", () => {
+      caption.value = (caption.value ? caption.value + " " : "") + em;
+      closeModal(emojiModal);
+      caption.focus();
+    });
+    emojiGrid.appendChild(b);
+  });
+
+  document.getElementById("btnEmoji").addEventListener("click", () => openModal(emojiModal));
+
+  // --- 3D animated emoji (CSS)
+  document.getElementById("btnEmoji3D").addEventListener("click", () => {
+    // Remove existing
+    const old = previewInner.querySelector(".emoji3d");
+    if (old) old.remove();
+
+    const em = "🧊"; // you can change this or prompt user
+    const node = document.createElement("div");
+    node.className = "emoji3d";
+    node.textContent = em;
+    previewInner.appendChild(node);
+
+    emojiFxHidden.value = em; // saved in post
+    ensureStickerLayerOnTop();
+  });
+
+  // --- GIF (simple URL)
+  document.getElementById("btnGif").addEventListener("click", () => openModal(gifModal));
+  document.getElementById("gifApply").addEventListener("click", () => {
+    const val = document.getElementById("gifInput").value.trim();
+    if (!val) return;
+
+    // Clear uploaded media selection (optional)
+    media.value = "";
+    clearPreviewMediaOnly();
+
+    const im = document.createElement("img");
+    im.src = val;
+    im.alt = "GIF";
+    currentPreviewNode = im;
+    previewInner.prepend(im);
+
+    gifUrlHidden.value = val;
+    closeModal(gifModal);
+    ensureStickerLayerOnTop();
+  });
+
+  // --- Stickers (local images)
+  document.getElementById("btnSticker").addEventListener("click", () => openModal(stickerModal));
+
+  stickerModal.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-sticker]");
+    if (!btn) return;
+
+    const src = btn.getAttribute("data-sticker");
+    const x = 50 + Math.round((Math.random() - 0.5) * 40);
+    const y = 55 + Math.round((Math.random() - 0.5) * 30);
+
+    stickers.push({ src, x, y });
+    stickersHidden.value = JSON.stringify(stickers);
+
+    const s = document.createElement("img");
+    s.className = "sticker";
+    s.src = src;
+    s.style.left = x + "%";
+    s.style.top = y + "%";
+    stickerLayer.appendChild(s);
+
+    closeModal(stickerModal);
+  });
+
+  // --- Submit (THIS is where most apps break)
+  const form = document.getElementById("createForm");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setStatus("Publishing...", "");
+
+    try {
+      const fd = new FormData(form);
+
+      // Add hidden fields (FormData already includes inputs, but safe)
+      fd.set("post_type", postType.value);
+      fd.set("gif_url", gifUrlHidden.value);
+      fd.set("stickers", stickersHidden.value);
+      fd.set("emoji_fx", emojiFxHidden.value);
+
+      const data = await publishPostVF(fd);
+
+      if (!data.ok) {
+        setStatus(data.error || "Failed to publish.", "error");
+        return;
+      }
+
+      if (data.offline) {
+        setStatus("📴 Saved offline. Will sync when online.", "ok");
+      } else {
+        setStatus("Posted ✅", "ok");
+      }
+
+      // Reset UI
+      caption.value = "";
+      media.value = "";
+      gifUrlHidden.value = "";
+      stickers = [];
+      stickersHidden.value = "[]";
+      emojiFxHidden.value = "";
+
+      // clear preview
+      previewInner.innerHTML = '<div style="opacity:.75;font-size:13px;">Your post preview will show here.</div>';
+      const layer = document.createElement("div");
+      layer.className = "stickerLayer";
+      layer.id = "stickerLayer";
+      previewInner.appendChild(layer);
+
+      // rebind stickerLayer reference
+      window.setTimeout(() => location.href = "/create", 450); // optional
+    } catch (err) {
+      setStatus("Network/JS error: " + err.message, "error");
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

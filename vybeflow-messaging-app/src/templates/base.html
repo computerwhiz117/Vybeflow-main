@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VybeFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <section class="landing-shell">
+        <div class="vf-orb">
+            <h1 class="vf-title">Welcome to VybeFlow</h1>
+            <p class="vf-subtitle">Share your vibes with the world — authentic, fast, fun.</p>
+            <div class="cta-row">
+                <a class="cta-btn" href="{{ url_for('auth.login') }}">Login</a>
+                <a class="cta-btn" href="{{ url_for('auth.register') }}">Sign up</a>
+            </div>
+            <div class="lang-select-wrap">
+                <select class="lang-select" aria-label="Language">
+                    <option>us English</option>
+                </select>
+            </div>
+        </div>
+    </section>
+    <main>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

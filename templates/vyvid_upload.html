@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+{% block body_class %}vyvid-page{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --vv-bg:     #0d0a12;
+    --vv-card:   rgba(255,255,255,.03);
+    --vv-line:   rgba(180,120,255,.22);
+    --vv-text:   rgba(255,255,255,.92);
+    --vv-muted:  rgba(255,255,255,.55);
+    --vv-brand:  #9b4dff;
+    --vv-brand2: #c94dff;
+    --vv-radius: 14px;
+  }
+  body.vyvid-page {
+    background:
+      radial-gradient(1000px 600px at 50% 10%, rgba(100,0,200,.28), transparent 60%),
+      radial-gradient(700px 500px at 10% 50%, rgba(160,0,255,.16), transparent 65%),
+      linear-gradient(180deg, #0d0a12 0%, #0a0810 60%, #08060d 100%);
+    color: var(--vv-text);
+    min-height: 100vh;
+  }
+
+  .vyvid-upload-shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .upload-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--vv-line);
+  }
+  .upload-header h1 {
+    font-size: 24px;
+    font-weight: 900;
+    margin: 0;
+    background: linear-gradient(90deg, #bf7fff, #ff4dff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .upload-card {
+    background: rgba(30, 18, 50, 0.10);
+    border: 1px solid var(--vv-line);
+    border-radius: var(--vv-radius);
+    padding: 28px;
+    backdrop-filter: blur(24px) saturate(1.2);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 16px 48px rgba(0,0,0,.4), 0 0 40px rgba(155,77,255,.14);
+  }
+
+  .form-field { margin-bottom: 18px; }
+  .form-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--vv-muted);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .form-field input[type="text"],
+  .form-field input[type="file"],
+  .form-field textarea,
+  .form-field select {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--vv-line);
+    background: rgba(255,255,255,.06);
+    color: var(--vv-text);
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: .2s;
+  }
+  .form-field input:focus,
+  .form-field textarea:focus,
+  .form-field select:focus {
+    border-color: var(--vv-brand);
+    box-shadow: 0 0 0 3px rgba(155,77,255,.18);
+  }
+  .form-field textarea { resize: vertical; min-height: 80px; }
+  .form-field select option { background: #1a0d2e; }
+
+  .form-field .field-hint {
+    font-size: 12px;
+    color: var(--vv-muted);
+    margin-top: 5px;
+    line-height: 1.5;
+  }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .form-row { grid-template-columns: 1fr; } }
+
+  /* Rating selector cards */
+  .rating-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .rating-option { position: relative; }
+  .rating-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .rating-label {
+    display: block;
+    padding: 12px 10px;
+    border-radius: 12px;
+    border: 2px solid var(--vv-line);
+    background: var(--vv-card);
+    text-align: center;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .rating-label .rl-badge {
+    display: block;
+    font-size: 13px;
+    font-weight: 900;
+    padding: 3px 0;
+    margin-bottom: 5px;
+    border-radius: 6px;
+  }
+  .rating-label .rl-title { font-size: 13px; font-weight: 700; color: var(--vv-text); }
+  .rating-label .rl-desc  { font-size: 11px; color: var(--vv-muted); margin-top: 2px; }
+
+  .rating-option input[type="radio"]:checked + .rating-label.general-lbl {
+    border-color: #10b981; background: rgba(16,185,129,.12);
+  }
+  .rating-option input[type="radio"]:checked + .rating-label.teen-lbl {
+    border-color: #fbbf24; background: rgba(251,191,36,.10);
+  }
+  .rating-option input[type="radio"]:checked + .rating-label.mature-lbl {
+    border-color: #ff4466; background: rgba(255,68,102,.10);
+  }
+
+  .rl-badge.g  { background: rgba(16,185,129,.8); color: #fff; }
+  .rl-badge.t  { background: rgba(251,191,36,.8); color: #000; }
+  .rl-badge.m  { background: rgba(255,44,77,.85); color: #fff; }
+
+  .upload-submit {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--vv-brand), var(--vv-brand2));
+    color: #fff;
+    font-weight: 800;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(155,77,255,.38);
+    margin-top: 8px;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .upload-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgba(155,77,255,.5);
+  }
+
+  .lbl-disabled { opacity: .45; cursor: not-allowed; }
+
+  /* Upload progress */
+  .upload-progress-wrap {
+    display: none;
+    margin-top: 16px;
+  }
+  .upload-progress-bar-bg {
+    height: 10px;
+    border-radius: 99px;
+    background: rgba(255,255,255,.08);
+    overflow: hidden;
+  }
+  .upload-progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--vv-brand), #ff4dff);
+    transition: width .2s ease;
+  }
+  .upload-progress-label {
+    font-size: 13px;
+    color: var(--vv-muted);
+    margin-top: 6px;
+    text-align: center;
+  }
+  .upload-submit:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .upload-notice {
+    margin-top: 20px;
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(155,77,255,.07);
+    border: 1px solid var(--vv-line);
+    font-size: 13px;
+    color: var(--vv-muted);
+    line-height: 1.6;
+  }
+  .upload-notice strong { color: var(--vv-text); }
+
+  /* Flash */
+  .vv-flash { padding: 10px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 18px; }
+  .vv-flash.error   { background: rgba(255,68,102,.12); border: 1px solid rgba(255,68,102,.3); color: #ff8099; }
+  .vv-flash.success { background: rgba(16,185,129,.10); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
+  .vv-flash.warning { background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.3); color: #fde68a; }
+
+  /* ID-verified badge in header */
+  .id-verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(16,185,129,.15);
+    border: 1px solid rgba(16,185,129,.35);
+    color: #6ee7b7;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+</style>
+
+<div class="vyvid-upload-shell">
+  <div class="upload-header">
+    <a href="{{ url_for('vyvid.vyvid_home') }}" style="color:var(--vv-muted);font-size:20px;text-decoration:none;">←</a>
+    <h1>📺 Upload to Vyvid</h1>
+    {% if id_verified %}
+      <span class="id-verified-badge">🪪 ID Verified</span>
+    {% endif %}
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="vv-flash {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="upload-card">
+    <form
+      method="POST"
+      action="{{ url_for('vyvid.vyvid_upload_submit') }}"
+      enctype="multipart/form-data"
+    >
+
+      <div class="form-field">
+        <label for="title">Video Title *</label>
+        <input type="text" id="title" name="title" placeholder="Give your video a title..." required maxlength="200" />
+      </div>
+
+      <div class="form-field">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" placeholder="What is this video about?..." rows="3"></textarea>
+      </div>
+
+      <div class="form-field">
+        <label>Content Rating *</label>
+        <div class="rating-picker">
+          <div class="rating-option">
+            <input type="radio" id="rating-general" name="content_rating" value="general" checked />
+            <label for="rating-general" class="rating-label general-lbl">
+              <span class="rl-badge g">G</span>
+              <span class="rl-title">General</span>
+              <span class="rl-desc">Safe for all audiences</span>
+            </label>
+          </div>
+          <div class="rating-option">
+            <input type="radio" id="rating-teen" name="content_rating" value="teen" />
+            <label for="rating-teen" class="rating-label teen-lbl">
+              <span class="rl-badge t">T</span>
+              <span class="rl-title">Teen</span>
+              <span class="rl-desc">Mild language, mild themes</span>
+            </label>
+          </div>
+          <div class="rating-option">
+            <input type="radio" id="rating-mature" name="content_rating" value="mature"
+              {% if not user.adult_verified %}disabled{% endif %} />
+            <label for="rating-mature" class="rating-label mature-lbl{% if not user.adult_verified %} lbl-disabled{% endif %}">
+              <span class="rl-badge m">18+</span>
+              <span class="rl-title">Mature</span>
+              <span class="rl-desc">
+                {% if user.adult_verified %}Explicit language, adult content{% else %}Requires age verification{% endif %}
+              </span>
+            </label>
+          </div>
+        </div>
+        {% if not user.adult_verified %}
+          <p class="field-hint">
+            🔒 Mature rating requires
+            <a href="{{ url_for('vyvid.vyvid_age_gate') }}" style="color:#bf7fff;">age verification</a>.
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="category">Category</label>
+          <select id="category" name="category">
+            {% for cat in categories %}
+              <option value="{{ cat }}">{{ cat | replace('_', ' ') | title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="tags">Tags (comma-separated)</label>
+          <input type="text" id="tags" name="tags" placeholder="comedy, podcast, rant..." maxlength="300" />
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="video_file">Video File * (MP4, WebM, MOV)</label>
+        <input type="file" id="video_file" name="video_file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.m4v" required />
+        <p class="field-hint">Maximum size depends on your server configuration. MP4 recommended.</p>
+      </div>
+
+      <div class="form-field">
+        <label for="thumbnail">Thumbnail (Optional — JPG/PNG/WebP)</label>
+        <input type="file" id="thumbnail" name="thumbnail" accept="image/jpeg,image/png,image/webp" />
+        <p class="field-hint">Recommended: 1280×720 (16:9). A frame will be used if none is provided.</p>
+      </div>
+
+      <button type="submit" class="upload-submit">📤 Upload Video</button>
+
+      <div class="upload-progress-wrap" id="uploadProgressWrap">
+        <div class="upload-progress-bar-bg">
+          <div class="upload-progress-bar-fill" id="uploadProgressFill"></div>
+        </div>
+        <p class="upload-progress-label" id="uploadProgressLabel">Uploading… 0%</p>
+      </div>
+    </form>
+  </div>
+
+  <div class="upload-notice">
+      <strong>Advertiser Placement:</strong> Your video's rating determines which advertisers can
+      place ads on it. <em>General</em> videos attract family-friendly brands. <em>Teen</em> content
+      attracts podcasts and mature discussions. <em>Mature (18+)</em> content is assigned to
+      adult-category advertisers only — allowing niche monetisation without universal censorship. <br />
+      <br />
+      <strong>Mature content</strong> is reviewed before going live to ensure compliance with
+      Vyvid's content policy.
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+<script>
+(function () {
+  var form = document.querySelector('form[action*="upload_submit"]');
+  if (!form) return;
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn   = form.querySelector('.upload-submit');
+    var wrap  = document.getElementById('uploadProgressWrap');
+    var fill  = document.getElementById('uploadProgressFill');
+    var label = document.getElementById('uploadProgressLabel');
+
+    btn.disabled    = true;
+    btn.textContent = '⏳ Uploading…';
+    wrap.style.display = 'block';
+
+    var xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', function (ev) {
+      if (!ev.lengthComputable) return;
+      var pct = Math.round((ev.loaded / ev.total) * 100);
+      fill.style.width = pct + '%';
+      if (pct < 100) {
+        label.textContent = 'Uploading… ' + pct + '%';
+      } else {
+        label.textContent = '⚙️ Processing your video…';
+        btn.textContent   = '⚙️ Processing…';
+      }
+    });
+
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 500) {
+        fill.style.width  = '100%';
+        label.textContent = '✅ Upload complete! Taking you there…';
+        window.location.href = xhr.responseURL || '/vyvid/';
+      } else {
+        label.textContent   = '❌ Upload failed. Please try again.';
+        btn.disabled        = false;
+        btn.textContent     = '📤 Upload Video';
+        wrap.style.display  = 'none';
+      }
+    };
+
+    xhr.onerror = function () {
+      label.textContent   = '❌ Network error. Please try again.';
+      btn.disabled        = false;
+      btn.textContent     = '📤 Upload Video';
+      wrap.style.display  = 'none';
+    };
+
+    xhr.open('POST', form.action);
+    xhr.send(new FormData(form));
+  });
+}());
+</script>

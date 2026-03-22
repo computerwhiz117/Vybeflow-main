@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .pro-page{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+  .pro-hero{background:linear-gradient(135deg,rgba(255,149,0,.15),rgba(255,77,0,.08));border:1px solid rgba(255,149,0,.3);border-radius:18px;padding:28px;margin-bottom:24px;}
+  .pro-hero h1{margin:0 0 6px;font-size:24px;font-weight:900;color:#ffb562;}
+  .pro-hero p{margin:0;color:rgba(255,255,255,.55);font-size:14px;}
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:#ff9a3d;text-decoration:none;font-size:14px;font-weight:700;margin-bottom:16px;}
+  .back-link:hover{text-decoration:underline;}
+  .job-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+  .job-filter{padding:6px 14px;border-radius:20px;border:1px solid rgba(255,149,0,.25);background:rgba(255,149,0,.06);color:rgba(255,255,255,.7);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;text-decoration:none;}
+  .job-filter:hover,.job-filter.active{background:rgba(255,149,0,.2);border-color:rgba(255,149,0,.5);color:#ffb562;}
+  .job-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,149,0,.15);border-radius:14px;padding:18px;margin-bottom:12px;transition:all .2s;}
+  .job-card:hover{background:rgba(255,149,0,.08);border-color:rgba(255,149,0,.3);}
+  .job-card h3{margin:0 0 4px;font-size:16px;font-weight:800;color:#ffb562;}
+  .job-card .company{font-size:13px;color:rgba(255,255,255,.6);margin-bottom:8px;}
+  .job-card .details{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:rgba(255,255,255,.45);}
+  .job-card .details span{display:flex;align-items:center;gap:4px;}
+  .job-card .description{font-size:13px;color:rgba(255,255,255,.55);margin:10px 0;line-height:1.5;}
+  .job-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+  .job-tag{padding:3px 10px;border-radius:12px;background:rgba(255,149,0,.1);color:#ff9a3d;font-size:11px;font-weight:600;}
+  .job-apply{display:inline-block;padding:8px 20px;border-radius:10px;background:linear-gradient(135deg,#ff9a3d,#ff4800);color:#fff;font-size:13px;font-weight:700;text-decoration:none;margin-top:12px;transition:all .2s;border:none;cursor:pointer;}
+  .job-apply:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,100,0,.3);}
+  .search-bar{width:100%;padding:12px 16px;border-radius:12px;border:1px solid rgba(255,149,0,.25);background:rgba(255,255,255,.06);color:rgba(255,255,255,.9);font-size:14px;margin-bottom:16px;outline:none;}
+  .search-bar:focus{border-color:rgba(255,149,0,.5);background:rgba(255,255,255,.08);}
+  .search-bar::placeholder{color:rgba(255,255,255,.35);}
+  .empty-state{text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-size:14px;}
+  .empty-state .icon{font-size:48px;margin-bottom:12px;}
+</style>
+<div class="pro-page">
+  <a href="{{ url_for('pro_dashboard') }}" class="back-link">← Back to Dashboard</a>
+
+  <div class="pro-hero">
+    <h1>🔍 Job Board</h1>
+    <p>Find opportunities that match your skills and ambitions</p>
+  </div>
+
+  <input type="text" class="search-bar" id="job-search" placeholder="Search jobs, companies, skills..." oninput="filterJobs()">
+
+  <div class="job-filters">
+    <a class="job-filter active" onclick="setFilter('all',this)">All</a>
+    <a class="job-filter" onclick="setFilter('fulltime',this)">Full-Time</a>
+    <a class="job-filter" onclick="setFilter('parttime',this)">Part-Time</a>
+    <a class="job-filter" onclick="setFilter('freelance',this)">Freelance</a>
+    <a class="job-filter" onclick="setFilter('internship',this)">Internship</a>
+    <a class="job-filter" onclick="setFilter('remote',this)">Remote</a>
+  </div>
+
+  <div id="job-listings">
+    <!-- Sample job listings -->
+    <div class="job-card" data-type="fulltime" data-search="software engineer fulltime techcorp python javascript react">
+      <h3>Software Engineer</h3>
+      <div class="company">TechCorp Inc. — San Francisco, CA</div>
+      <div class="details">
+        <span>💰 $85k - $120k</span>
+        <span>🕐 Full-Time</span>
+        <span>📍 Remote / Hybrid</span>
+      </div>
+      <div class="description">Looking for a motivated software engineer with experience in Python, JavaScript, and React. Join our growing team and ship products that millions use.</div>
+      <div class="job-tags">
+        <span class="job-tag">Python</span>
+        <span class="job-tag">JavaScript</span>
+        <span class="job-tag">React</span>
+        <span class="job-tag">Remote</span>
+      </div>
+      <button class="job-apply" onclick="vfToast('Application feature coming soon!')">Apply Now</button>
+    </div>
+
+    <div class="job-card" data-type="freelance" data-search="graphic designer freelance creative agency brand design photoshop">
+      <h3>Graphic Designer</h3>
+      <div class="company">Creative Agency Co. — Remote</div>
+      <div class="details">
+        <span>💰 $40 - $65/hr</span>
+        <span>🕐 Freelance</span>
+        <span>📍 Remote</span>
+      </div>
+      <div class="description">We need a talented graphic designer for branding projects. Must have strong portfolio with brand identity work. Photoshop and Illustrator required.</div>
+      <div class="job-tags">
+        <span class="job-tag">Design</span>
+        <span class="job-tag">Photoshop</span>
+        <span class="job-tag">Branding</span>
+        <span class="job-tag">Freelance</span>
+      </div>
+      <button class="job-apply" onclick="vfToast('Application feature coming soon!')">Apply Now</button>
+    </div>
+
+    <div class="job-card" data-type="internship" data-search="marketing intern internship socialmedia digital marketing content">
+      <h3>Marketing Intern</h3>
+      <div class="company">VybeMedia Group — New York, NY</div>
+      <div class="details">
+        <span>💰 $18 - $22/hr</span>
+        <span>🕐 Internship</span>
+        <span>📍 On-site</span>
+      </div>
+      <div class="description">Great opportunity for college students interested in social media marketing. You'll help manage campaigns, create content, and analyze engagement metrics.</div>
+      <div class="job-tags">
+        <span class="job-tag">Marketing</span>
+        <span class="job-tag">Social Media</span>
+        <span class="job-tag">Content</span>
+        <span class="job-tag">Internship</span>
+      </div>
+      <button class="job-apply" onclick="vfToast('Application feature coming soon!')">Apply Now</button>
+    </div>
+
+    <div class="job-card" data-type="parttime" data-search="video editor parttime content creator youtube tiktok premiere">
+      <h3>Video Editor</h3>
+      <div class="company">StreetVision Studios — Los Angeles, CA</div>
+      <div class="details">
+        <span>💰 $25 - $40/hr</span>
+        <span>🕐 Part-Time</span>
+        <span>📍 Remote</span>
+      </div>
+      <div class="description">Looking for a creative video editor for YouTube and TikTok content. Must know Premiere Pro or DaVinci Resolve. Music video editing experience a plus.</div>
+      <div class="job-tags">
+        <span class="job-tag">Video Editing</span>
+        <span class="job-tag">Premiere Pro</span>
+        <span class="job-tag">YouTube</span>
+        <span class="job-tag">Part-Time</span>
+      </div>
+      <button class="job-apply" onclick="vfToast('Application feature coming soon!')">Apply Now</button>
+    </div>
+
+    <div class="job-card" data-type="fulltime remote" data-search="data analyst fulltime remote analytics sql tableau business intelligence">
+      <h3>Data Analyst</h3>
+      <div class="company">DataDriven Solutions — Remote</div>
+      <div class="details">
+        <span>💰 $65k - $90k</span>
+        <span>🕐 Full-Time</span>
+        <span>📍 Fully Remote</span>
+      </div>
+      <div class="description">Join our analytics team to help businesses make data-driven decisions. SQL, Tableau, and Excel required. Python or R experience preferred.</div>
+      <div class="job-tags">
+        <span class="job-tag">SQL</span>
+        <span class="job-tag">Tableau</span>
+        <span class="job-tag">Analytics</span>
+        <span class="job-tag">Remote</span>
+      </div>
+      <button class="job-apply" onclick="vfToast('Application feature coming soon!')">Apply Now</button>
+    </div>
+
+    <div class="job-card" data-type="fulltime" data-search="community manager fulltime social media engagement community building">
+      <h3>Community Manager</h3>
+      <div class="company">VybeFlow — Remote</div>
+      <div class="details">
+        <span>💰 $55k - $75k</span>
+        <span>🕐 Full-Time</span>
+        <span>📍 Remote</span>
+      </div>
+      <div class="description">Help grow and manage the VybeFlow community. You'll engage with users, organize events, moderate content, and build relationships with creators.</div>
+      <div class="job-tags">
+        <span class="job-tag">Community</span>
+        <span class="job-tag">Social Media</span>
+        <span class="job-tag">Management</span>
+        <span class="job-tag">Remote</span>
+      </div>
+      <button class="job-apply" onclick="vfToast('Application feature coming soon!')">Apply Now</button>
+    </div>
+  </div>
+
+  <div class="empty-state" id="no-results" style="display:none;">
+    <div class="icon">🔍</div>
+    <div>No jobs match your search. Try different keywords or filters.</div>
+  </div>
+</div>
+
+<script>
+  let currentFilter = 'all';
+
+  function setFilter(type, el) {
+    currentFilter = type;
+    document.querySelectorAll('.job-filter').forEach(f => f.classList.remove('active'));
+    el.classList.add('active');
+    filterJobs();
+  }
+
+  function filterJobs() {
+    const query = (document.getElementById('job-search').value || '').toLowerCase();
+    const cards = document.querySelectorAll('.job-card');
+    let visible = 0;
+    cards.forEach(card => {
+      const type = card.dataset.type || '';
+      const search = (card.dataset.search || '').toLowerCase();
+      const matchesFilter = currentFilter === 'all' || type.includes(currentFilter);
+      const matchesSearch = !query || search.includes(query);
+      if (matchesFilter && matchesSearch) {
+        card.style.display = '';
+        visible++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+    document.getElementById('no-results').style.display = visible === 0 ? '' : 'none';
+  }
+</script>
+{% endblock %}

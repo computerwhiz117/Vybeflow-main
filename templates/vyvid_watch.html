@@ -1,0 +1,975 @@
+{% extends "base.html" %}
+{% block body_class %}vyvid-page vyvid-watch-page{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --vv-bg:     #0d0a12;
+    --vv-card:   rgba(255,255,255,.03);
+    --vv-card2:  rgba(255,255,255,.06);
+    --vv-line:   rgba(180,120,255,.22);
+    --vv-text:   rgba(255,255,255,.92);
+    --vv-muted:  rgba(255,255,255,.55);
+    --vv-brand:  #9b4dff;
+    --vv-brand2: #c94dff;
+    --vv-red:    #ff4466;
+    --vv-green:  #10b981;
+    --vv-radius: 14px;
+  }
+
+  body.vyvid-page {
+    background:
+      radial-gradient(1000px 600px at 50% 10%, rgba(100,0,200,.28), transparent 60%),
+      radial-gradient(700px 500px at 10% 50%, rgba(160,0,255,.16), transparent 65%),
+      radial-gradient(700px 600px at 90% 60%, rgba(200,0,150,.14), transparent 65%),
+      linear-gradient(180deg, #0d0a12 0%, #0a0810 60%, #08060d 100%);
+    color: var(--vv-text);
+    min-height: 100vh;
+  }
+
+  .vyvid-watch-shell {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 0 12px 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── Mini header ─── */
+  .vyvid-mini-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0 10px;
+    border-bottom: 1px solid var(--vv-line);
+    margin-bottom: 20px;
+  }
+  .vv-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--vv-line);
+    background: var(--vv-card);
+    color: var(--vv-text);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .15s;
+  }
+  .vv-back-btn:hover { background: var(--vv-card2); }
+
+  .vyvid-logo-sm {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 900;
+    background: linear-gradient(90deg, #bf7fff, #ff4dff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ─── Watch layout ─── */
+  .watch-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .watch-layout { grid-template-columns: 1fr; }
+    .watch-sidebar { display: none; }
+  }
+
+  /* ─── Player ─── */
+  .vv-player-wrap {
+    background: #000;
+    border-radius: var(--vv-radius);
+    overflow: hidden;
+    border: 1px solid var(--vv-line);
+    box-shadow: 0 16px 48px rgba(0,0,0,.55), 0 0 40px rgba(155,77,255,.18);
+  }
+
+  .vv-player-wrap video {
+    width: 100%;
+    max-height: 72vh;
+    display: block;
+    background: #000;
+  }
+
+  /* ─── Video info below player ─── */
+  .vv-video-info {
+    margin-top: 16px;
+  }
+
+  .vv-video-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .vv-video-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--vv-text);
+    line-height: 1.3;
+    flex: 1;
+    margin: 0;
+  }
+
+  .vv-rating-badge {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 3px;
+  }
+  .vv-rating-badge.general  { background: rgba(16,185,129,.85); color: #fff; }
+  .vv-rating-badge.teen     { background: rgba(251,191,36,.85); color: #000; }
+  .vv-rating-badge.mature   { background: rgba(255,44,77,.88); color: #fff; }
+  .vv-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .vv-stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: var(--vv-muted);
+  }
+
+  .vv-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .vv-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--vv-line);
+    background: var(--vv-card);
+    color: var(--vv-text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .vv-action-btn:hover { background: var(--vv-card2); border-color: rgba(155,77,255,.45); }
+  .vv-action-btn.liked {
+    background: rgba(155,77,255,.22);
+    border-color: rgba(155,77,255,.55);
+    color: #c490ff;
+  }
+
+  /* ─── Scan status banner (owner only) ─── */
+  .scan-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: var(--vv-radius);
+    margin-bottom: 14px;
+    border: 1px solid var(--vv-line);
+  }
+  .scan-banner.scanning {
+    background: rgba(155,77,255,.08);
+    border-color: rgba(155,77,255,.3);
+    animation: scan-pulse 2s infinite;
+  }
+  .scan-banner.clean {
+    background: rgba(16,185,129,.07);
+    border-color: rgba(16,185,129,.28);
+  }
+  .scan-banner.suggestive {
+    background: rgba(251,191,36,.07);
+    border-color: rgba(251,191,36,.28);
+  }
+  .scan-banner.explicit, .scan-banner.adult-id-required {
+    background: rgba(255,44,77,.09);
+    border-color: rgba(255,44,77,.35);
+  }
+  .scan-banner.error {
+    background: rgba(255,68,102,.08);
+    border-color: rgba(255,68,102,.28);
+  }
+
+  @keyframes scan-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(155,77,255,.25); }
+    50%       { box-shadow: 0 0 18px 4px rgba(155,77,255,.2); }
+  }
+
+  .scan-banner-icon { font-size: 26px; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+  .scan-banner-body { flex: 1; }
+  .scan-banner-title {
+    font-size: 14px; font-weight: 800; margin: 0 0 4px;
+  }
+  .scan-banner.scanning  .scan-banner-title { color: #bf7fff; }
+  .scan-banner.clean     .scan-banner-title { color: #6ee7b7; }
+  .scan-banner.suggestive .scan-banner-title { color: #fde68a; }
+  .scan-banner.explicit .scan-banner-title,
+  .scan-banner.adult-id-required .scan-banner-title { color: #ff8099; }
+  .scan-banner.error .scan-banner-title { color: #ff8099; }
+
+  .scan-banner-text { font-size: 13px; color: var(--vv-muted); margin: 0 0 8px; line-height: 1.55; }
+
+  .scan-banner-progress {
+    height: 4px;
+    border-radius: 99px;
+    background: rgba(255,255,255,.1);
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .scan-banner-progress-fill {
+    height: 100%;
+    width: 30%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--vv-brand), #ff4dff);
+    animation: scan-bar 1.8s ease-in-out infinite;
+  }
+  @keyframes scan-bar {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(450%); }
+  }
+
+  .scan-genre-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border-radius: 20px;
+    background: rgba(155,77,255,.2);
+    border: 1px solid rgba(155,77,255,.35);
+    color: #bf7fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .id-verify-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #ff4466, #c94dff);
+    color: #fff;
+    font-weight: 800;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    margin-top: 6px;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 6px 18px rgba(255,68,102,.32);
+  }
+  .id-verify-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(255,68,102,.45);
+  }
+
+  /* ─── Genre chip in stats row ─── */
+  .vv-genre-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(155,77,255,.14);
+    border: 1px solid rgba(155,77,255,.28);
+    color: #bf7fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* ─── Author card ─── */
+  .vv-author-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 14px;
+    background: var(--vv-card);
+    border: 1px solid var(--vv-line);
+    border-radius: var(--vv-radius);
+  }
+
+  .vv-author-avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(155,77,255,.4);
+    background: rgba(155,77,255,.2);
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .vv-author-info { flex: 1; }
+  .vv-author-name { font-size: 15px; font-weight: 700; color: var(--vv-text); margin: 0; }
+  .vv-author-sub  { font-size: 12px; color: var(--vv-muted); margin: 2px 0 0; }
+
+  /* ─── Description ─── */
+  .vv-description {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--vv-card);
+    border: 1px solid var(--vv-line);
+    border-radius: var(--vv-radius);
+    font-size: 14px;
+    color: var(--vv-muted);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .vv-tags {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .vv-tag {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(155,77,255,.12);
+    border: 1px solid rgba(155,77,255,.28);
+    color: #bf7fff;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* ─── Comments ─── */
+  .vv-comments-section {
+    margin-top: 24px;
+  }
+  .vv-comments-section h3 {
+    font-size: 16px; font-weight: 800; color: var(--vv-text);
+    margin: 0 0 14px;
+  }
+
+  .vv-comment-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    align-items: flex-end;
+  }
+  .vv-comment-input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--vv-line);
+    background: rgba(255,255,255,.07);
+    color: var(--vv-text);
+    font-size: 14px;
+    outline: none;
+    resize: vertical;
+    min-height: 44px;
+    max-height: 140px;
+    font-family: inherit;
+  }
+  .vv-comment-input:focus {
+    border-color: var(--vv-brand);
+    box-shadow: 0 0 0 3px rgba(155,77,255,.18);
+  }
+  .vv-comment-submit {
+    padding: 10px 18px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--vv-brand), var(--vv-brand2));
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .vv-comment {
+    display: flex;
+    gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+
+  .vv-comment-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(155,77,255,.2);
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .vv-comment-body { flex: 1; }
+  .vv-comment-author {
+    font-size: 13px; font-weight: 700; color: var(--vv-text);
+    display: inline;
+  }
+  .vv-comment-time {
+    font-size: 11px; color: var(--vv-muted);
+    margin-left: 8px;
+  }
+  .vv-comment-text {
+    font-size: 14px; color: var(--vv-muted);
+    margin: 4px 0 0;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  /* ─── Sidebar: related ─── */
+  .watch-sidebar { display: flex; flex-direction: column; gap: 14px; }
+
+  .sidebar-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--vv-text);
+    margin: 0 0 10px;
+  }
+
+  .vv-related-card {
+    display: flex;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--vv-text);
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--vv-line);
+    background: var(--vv-card);
+    transition: .15s;
+  }
+  .vv-related-card:hover {
+    background: var(--vv-card2);
+    border-color: rgba(155,77,255,.4);
+  }
+
+  .vv-related-thumb {
+    width: 110px;
+    height: 62px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(0,0,0,.35);
+    position: relative;
+  }
+  .vv-related-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .vv-related-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    background: rgba(155,77,255,.1);
+  }
+  .vv-related-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 9px;
+    font-weight: 800;
+  }
+  .vv-related-badge.general { background: rgba(16,185,129,.85); color: #fff; }
+  .vv-related-badge.teen    { background: rgba(251,191,36,.85); color: #000; }
+  .vv-related-badge.mature  { background: rgba(255,44,77,.88); color: #fff; }
+
+  .vv-related-info { flex: 1; overflow: hidden; }
+  .vv-related-title {
+    font-size: 13px;
+    font-weight: 700;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.3;
+    color: var(--vv-text);
+  }
+  .vv-related-meta {
+    font-size: 11px;
+    color: var(--vv-muted);
+    margin-top: 4px;
+  }
+</style>
+
+<div class="vyvid-watch-shell">
+  <!-- Mini header -->
+  <div class="vyvid-mini-header">
+    <a class="vv-back-btn" href="{{ url_for('vyvid.vyvid_home') }}">← Back to Vyvid</a>
+    <a class="vyvid-logo-sm" href="{{ url_for('vyvid.vyvid_home') }}">📺 Vyvid</a>
+  </div>
+
+  <div class="watch-layout">
+    <!-- Main column -->
+    <div class="watch-main">
+
+      <!-- ═══ AI Scan Status Banner (only visible to the video's uploader) ═══ -->
+      {% if user and video.author_id == user.id %}
+        {% set scan_st = video.scan_status %}
+
+        {% if scan_st in ('pending', 'scanning') %}
+          <div class="scan-banner scanning" id="scanBanner">
+            <span class="scan-banner-icon">🤖</span>
+            <div class="scan-banner-body">
+              <p class="scan-banner-title">AI Content Scan In Progress…</p>
+              <p class="scan-banner-text">
+                Our AI is analysing your video for content rating and genre detection.
+                This usually completes within a few seconds.
+              </p>
+              <div class="scan-banner-progress"><div class="scan-banner-progress-fill"></div></div>
+            </div>
+          </div>
+
+        {% elif scan_st == 'clean' %}
+          <div class="scan-banner clean" id="scanBanner">
+            <span class="scan-banner-icon">✅</span>
+            <div class="scan-banner-body">
+              <p class="scan-banner-title">AI Scan Complete — Content Looks Clean</p>
+              <p class="scan-banner-text">
+                No explicit content was detected. Your video is live.
+                {% if video.scan_genre %}
+                  Detected genre: <span class="scan-genre-badge">🎬 {{ video.scan_genre | replace('_', ' ') | title }}</span>
+                {% endif %}
+              </p>
+            </div>
+          </div>
+
+        {% elif scan_st == 'suggestive' %}
+          <div class="scan-banner suggestive" id="scanBanner">
+            <span class="scan-banner-icon">⚠️</span>
+            <div class="scan-banner-body">
+              <p class="scan-banner-title">AI Scan — Suggestive Content Detected</p>
+              <p class="scan-banner-text">
+                Mild suggestive content was detected. Your video has been marked 18+ Mature and is live.
+                {% if video.scan_genre %}
+                  Detected genre: <span class="scan-genre-badge">🎬 {{ video.scan_genre | replace('_', ' ') | title }}</span>
+                {% endif %}
+              </p>
+            </div>
+          </div>
+
+        {% elif scan_st == 'explicit' and video.adult_id_required %}
+          <div class="scan-banner adult-id-required" id="scanBanner">
+            <span class="scan-banner-icon">🔞</span>
+            <div class="scan-banner-body">
+              <p class="scan-banner-title">Adult Content Detected — ID Verification Required</p>
+              <p class="scan-banner-text">
+                Our AI detected <strong>explicit adult/pornographic content</strong> in your video.
+                To comply with legal requirements for publishing adult content, we need to confirm you are 18+
+                with a government-issued ID. <strong>Only your date of birth will be seen</strong> — your ID
+                photo is never stored on our servers.
+              </p>
+              <a class="id-verify-btn" href="{{ url_for('vyvid.adult_id_verify_page', video_id=video.id) }}">
+                🪪 Verify My Age with ID
+              </a>
+            </div>
+          </div>
+
+        {% elif scan_st == 'explicit' and video.is_approved %}
+          {# Already adult-verified uploader — no re-verification needed, video is live #}
+          <div class="scan-banner suggestive" id="scanBanner">
+            <span class="scan-banner-icon">✅</span>
+            <div class="scan-banner-body">
+              <p class="scan-banner-title">Adult Content Detected — Video Is Live (18+ Mature)</p>
+              <p class="scan-banner-text">
+                Explicit content was detected and your video has been automatically upgraded to the
+                18+ Mature rating. Since you are already adult-verified, your video is live and has
+                been noted for moderation review.
+                {% if video.scan_genre %}
+                  Detected genre: <span class="scan-genre-badge">🎬 {{ video.scan_genre | replace('_', ' ') | title }}</span>
+                {% endif %}
+              </p>
+            </div>
+          </div>
+
+        {% elif scan_st == 'explicit' %}
+          <div class="scan-banner explicit" id="scanBanner">
+            <span class="scan-banner-icon">🔞</span>
+            <div class="scan-banner-body">
+              <p class="scan-banner-title">Explicit Content Detected — Under Moderation Review</p>
+              <p class="scan-banner-text">
+                Explicit content was detected. Your video has been placed under moderation review.
+                It will be approved or rejected by our team shortly.
+                {% if video.scan_genre %}
+                  Detected genre: <span class="scan-genre-badge">🎬 {{ video.scan_genre | replace('_', ' ') | title }}</span>
+                {% endif %}
+              </p>
+            </div>
+          </div>
+
+        {% elif scan_st == 'error' %}
+          <div class="scan-banner error" id="scanBanner">
+            <span class="scan-banner-icon">⚠️</span>
+            <div class="scan-banner-body">
+              <p class="scan-banner-title">Scan Could Not Complete</p>
+              <p class="scan-banner-text">
+                The AI scanner encountered an issue with your video. Our moderation team has been notified.
+              </p>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
+
+      <!-- Player -->
+      <div class="vv-player-wrap">
+        <video
+          controls
+          autoplay
+          preload="metadata"
+          src="{{ video.video_url }}"
+          {% if video.thumbnail_url %}poster="{{ video.thumbnail_url }}"{% endif %}
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
+
+      <!-- Title & stats -->
+      <div class="vv-video-info">
+        <div class="vv-video-title-row">
+          <h1 class="vv-video-title">{{ video.title }}</h1>
+          <span class="vv-rating-badge {{ video.content_rating }}">
+            {% if video.content_rating == 'general' %}G — General
+            {% elif video.content_rating == 'teen' %}T — Teen
+            {% else %}18+ Mature{% endif %}
+          </span>
+        </div>
+
+        <div class="vv-stats-row">
+          <span class="vv-stat">👁 {{ "{:,}".format(video.views_count) }} views</span>
+          <span class="vv-stat">❤ <span id="like-count">{{ video.likes_count }}</span> likes</span>
+          <span class="vv-stat">💬 {{ video.comments_count }} comments</span>
+          <span class="vv-stat">🏷 {{ video.category | replace('_', ' ') | title }}</span>
+          {% if video.scan_genre and video.scan_genre != 'other' %}
+            <span class="vv-genre-chip" id="genreChip">
+              🎬 {{ video.scan_genre | replace('_', ' ') | title }}
+            </span>
+          {% else %}
+            <span class="vv-genre-chip" id="genreChip" {% if not video.scan_genre %}style="display:none"{% endif %}>
+              🎬 <span id="genreLabel">{{ (video.scan_genre or '') | replace('_', ' ') | title }}</span>
+            </span>
+          {% endif %}
+        </div>
+
+        <div class="vv-actions-row">
+          <button
+            class="vv-action-btn {% if liked %}liked{% endif %}"
+            id="like-btn"
+            data-vid="{{ video.id }}"
+            onclick="toggleLike(this.dataset.vid)"
+          >
+            {% if liked %}❤ Liked{% else %}🤍 Like{% endif %}
+          </button>
+          <button class="vv-action-btn" onclick="shareVideo()">🔗 Share</button>
+        </div>
+      </div>
+
+      <!-- Author -->
+      <div class="vv-author-card">
+        {% if video.author and video.author.avatar_url %}
+          <img class="vv-author-avatar" src="{{ video.author.avatar_url }}" alt="{{ video.author.display_name or video.author.username }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+          <div class="vv-author-avatar" style="display:none">👤</div>
+        {% else %}
+          <div class="vv-author-avatar">👤</div>
+        {% endif %}
+        <div class="vv-author-info">
+          <p class="vv-author-name">{{ (video.author.display_name or video.author.username) if video.author else 'Unknown' }}</p>
+          <p class="vv-author-sub">Vyvid creator</p>
+        </div>
+      </div>
+
+      <!-- Description -->
+      {% if video.description %}
+        <div class="vv-description">{{ video.description }}</div>
+      {% endif %}
+
+      <!-- Tags -->
+      {% if video.tags %}
+        <div class="vv-tags">
+          {% for tag in video.tags.split(',') %}
+            {% set t = tag.strip() %}
+            {% if t %}
+              <span class="vv-tag">#{{ t }}</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Comments -->
+      <div class="vv-comments-section">
+        <h3>💬 Comments</h3>
+        <div class="vv-comment-form">
+          <textarea
+            class="vv-comment-input"
+            id="comment-input"
+            placeholder="Add a comment..."
+            rows="1"
+          ></textarea>
+          <button class="vv-comment-submit" data-vid="{{ video.id }}" onclick="postComment(this.dataset.vid)">Post</button>
+        </div>
+
+        <div id="comments-list">
+          {% for c in comments %}
+            <div class="vv-comment">
+              {% if c.author and c.author.avatar_url %}
+                <img class="vv-comment-avatar" src="{{ c.author.avatar_url }}" alt="{{ c.author.username }}" onerror="this.style.display='none'" />
+              {% else %}
+                <div class="vv-comment-avatar">👤</div>
+              {% endif %}
+              <div class="vv-comment-body">
+                <span class="vv-comment-author">{{ c.author.username if c.author else 'User' }}</span>
+                <span class="vv-comment-time">{{ c.created_at.strftime('%b %d') if c.created_at else '' }}</span>
+                <p class="vv-comment-text">{{ c.body }}</p>
+              </div>
+            </div>
+          {% else %}
+            <p id="no-comments-msg" style="color:var(--vv-muted);font-size:14px;padding:10px 0;">
+              No comments yet. Be the first!
+            </p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar: related videos -->
+    <aside class="watch-sidebar">
+      <p class="sidebar-title">Up Next</p>
+      {% for v in related %}
+        <a class="vv-related-card" href="{{ url_for('vyvid.vyvid_watch', video_id=v.id) }}">
+          <div class="vv-related-thumb">
+            {% if v.thumbnail_url %}
+              <img src="{{ v.thumbnail_url }}" alt="{{ v.title }}" loading="lazy" />
+            {% else %}
+              <div class="vv-related-thumb-placeholder">🎬</div>
+            {% endif %}
+            <span class="vv-related-badge {{ v.content_rating }}">
+              {% if v.content_rating == 'general' %}G
+              {% elif v.content_rating == 'teen' %}T
+              {% else %}18+{% endif %}
+            </span>
+          </div>
+          <div class="vv-related-info">
+            <div class="vv-related-title">{{ v.title }}</div>
+            <div class="vv-related-meta">👁 {{ "{:,}".format(v.views_count) }} · ❤ {{ v.likes_count }}</div>
+          </div>
+        </a>
+      {% else %}
+        <p style="color:var(--vv-muted);font-size:13px;">No related videos found.</p>
+      {% endfor %}
+    </aside>
+  </div>
+</div>
+
+<!-- Server-side values passed via data attributes so the script block stays Jinja-free -->
+<div id="vyvid-watch-data"
+     data-video-id="{{ video.id }}"
+     data-is-owner="{{ 'true' if user and video.author_id == user.id else 'false' }}"
+     data-scan-status="{{ video.scan_status }}"
+     style="display:none" aria-hidden="true"></div>
+
+<script>
+// @ts-nocheck
+async function toggleLike(videoId) {
+  const btn = document.getElementById('like-btn');
+  const countEl = document.getElementById('like-count');
+  try {
+    const res = await fetch(`/vyvid/api/like/${videoId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      btn.classList.toggle('liked', data.liked);
+      btn.textContent = data.liked ? '❤ Liked' : '🤍 Like';
+      countEl.textContent = data.likes;
+    }
+  } catch(e) { console.error('Like failed', e); }
+}
+
+async function postComment(videoId) {
+  const input = document.getElementById('comment-input');
+  const body = input.value.trim();
+  if (!body) return;
+
+  try {
+    const res = await fetch(`/vyvid/api/comment/${videoId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const c = data.comment;
+      const noMsg = document.getElementById('no-comments-msg');
+      if (noMsg) noMsg.remove();
+
+      const list = document.getElementById('comments-list');
+      const div = document.createElement('div');
+      div.className = 'vv-comment';
+      div.innerHTML = `
+        <div class="vv-comment-avatar" style="display:grid;place-items:center;">👤</div>
+        <div class="vv-comment-body">
+          <span class="vv-comment-author">${c.author_username}</span>
+          <span class="vv-comment-time">Just now</span>
+          <p class="vv-comment-text">${c.body.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
+        </div>
+      `;
+      list.insertBefore(div, list.firstChild);
+      input.value = '';
+    }
+  } catch(e) { console.error('Comment failed', e); }
+}
+
+function shareVideo() {
+  if (navigator.share) {
+    navigator.share({ title: document.title, url: window.location.href });
+  } else {
+    navigator.clipboard.writeText(window.location.href)
+      .then(() => vfToast('Link copied!','success'));
+  }
+}
+
+// ─── Real-time AI scan status polling (uploader only) ───────────────────────
+(function () {
+  var _d            = document.getElementById('vyvid-watch-data').dataset;
+  var VIDEO_ID      = parseInt(_d.videoId, 10);
+  var IS_OWNER      = _d.isOwner === 'true';
+  var INITIAL_STATUS = _d.scanStatus;
+
+  if (!IS_OWNER) return;
+  if (INITIAL_STATUS !== 'pending' && INITIAL_STATUS !== 'scanning') return;
+
+  var pollInterval = null;
+  var banner       = document.getElementById('scanBanner');
+  var genreChip    = document.getElementById('genreChip');
+  var genreLabel   = document.getElementById('genreLabel');
+
+  function toTitleCase(str) {
+    return str.replace(/_/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+  }
+
+  function updateBanner(data) {
+    if (!banner) return;
+
+    var status = data.scan_status;
+
+    if (status === 'pending' || status === 'scanning') return; // keep animating
+
+    // Remove existing state classes
+    banner.classList.remove('scanning', 'clean', 'suggestive', 'explicit', 'adult-id-required', 'error');
+
+    var icon = '✅', title = '', text = '';
+
+    if (status === 'clean') {
+      banner.classList.add('clean');
+      icon  = '✅';
+      title = 'AI Scan Complete — Content Looks Clean';
+      text  = 'No explicit content was detected. Your video is live.';
+    } else if (status === 'suggestive') {
+      banner.classList.add('suggestive');
+      icon  = '⚠️';
+      title = 'AI Scan — Suggestive Content Detected';
+      text  = 'Mild suggestive content was detected. Your video has been marked 18+ Mature and is live.';
+    } else if (status === 'explicit' && data.adult_id_required) {
+      banner.classList.add('adult-id-required');
+      icon  = '🔞';
+      title = 'Adult Content Detected — ID Verification Required';
+      text  = 'Our AI detected <strong>explicit adult/pornographic content</strong> in your video. '
+            + 'To comply with legal requirements, we need to confirm you are 18+ with a government-issued ID. '
+            + '<strong>Only your date of birth will be seen</strong> — your ID photo is never stored.';
+      // Show ID verify button
+      var verifyBtn = document.createElement('a');
+      verifyBtn.className = 'id-verify-btn';
+      verifyBtn.href = '/vyvid/adult-id-verify/' + VIDEO_ID;
+      verifyBtn.innerHTML = '🪪 Verify My Age with ID';
+      banner.querySelector('.scan-banner-body').appendChild(verifyBtn);
+    } else if (status === 'explicit' && data.is_approved) {
+      // Already adult-verified uploader — video is live at mature rating
+      banner.classList.add('suggestive');
+      icon  = '✅';
+      title = 'Adult Content Detected — Video Is Live (18+ Mature)';
+      text  = 'Explicit content was detected. Since you are already adult-verified, your video is live '
+            + 'under the 18+ Mature rating and has been noted for moderation review.';
+    } else if (status === 'explicit') {
+      banner.classList.add('explicit');
+      icon  = '🔞';
+      title = 'Explicit Content Detected — Under Moderation Review';
+      text  = 'Explicit content was detected. Your video is under review by our moderation team.';
+    } else {
+      banner.classList.add('error');
+      icon  = '⚠️';
+      title = 'Scan Could Not Complete';
+      text  = 'The AI scanner encountered an issue. Our moderation team has been notified.';
+    }
+
+    // Rebuild banner content
+    var body = banner.querySelector('.scan-banner-body');
+    body.innerHTML = '';
+
+    var titleEl = document.createElement('p');
+    titleEl.className = 'scan-banner-title';
+    titleEl.textContent = title;
+    body.appendChild(titleEl);
+
+    var textEl = document.createElement('p');
+    textEl.className = 'scan-banner-text';
+    textEl.innerHTML = text;
+
+    // Append genre badge if available
+    if (data.scan_genre && data.scan_genre !== 'other') {
+      textEl.innerHTML += ' Detected genre: <span class="scan-genre-badge">🎬 '
+                        + toTitleCase(data.scan_genre) + '</span>';
+    }
+    body.appendChild(textEl);
+
+    banner.querySelector('.scan-banner-icon').textContent = icon;
+
+    // Update genre chip in stats row
+    if (data.scan_genre && data.scan_genre !== 'other') {
+      if (genreChip) {
+        genreChip.style.display = '';
+        if (genreLabel) genreLabel.textContent = toTitleCase(data.scan_genre);
+        else genreChip.innerHTML = '🎬 ' + toTitleCase(data.scan_genre);
+      }
+    }
+
+    // Stop polling — scan is done
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+  }
+
+  function poll() {
+    fetch('/vyvid/api/scan-status/' + VIDEO_ID)
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.ok) updateBanner(data);
+      })
+      .catch(function(){});   // silently ignore network errors
+  }
+
+  // Start polling every 2.5 seconds
+  pollInterval = setInterval(poll, 2500);
+  // Also poll once right away (in case scan completed during page load)
+  setTimeout(poll, 800);
+})();
+</script>
+{% endblock %}

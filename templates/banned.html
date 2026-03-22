@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block body_class %}feed-page{% endblock %}
+
+{% block content %}
+<style>
+  .ban-shell { min-height: 100vh; display: grid; place-items: center; }
+  .ban-card {
+    width: min(92%, 600px);
+    border-radius: 18px;
+    border: 1px solid rgba(255,120,120,.35);
+    background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.07));
+    backdrop-filter: blur(14px);
+    box-shadow: 0 0 32px rgba(255,80,80,.25), 0 14px 36px rgba(0,0,0,.34);
+    padding: 24px;
+    color: #fff;
+  }
+  .ban-stamp {
+    margin-top: 12px;
+    display: inline-block;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: #ffb6b6;
+    border: 2px solid #ff7575;
+    border-radius: 10px;
+    padding: 8px 12px;
+  }
+  .ban-link { color: #ffd8b2; }
+</style>
+
+<section class="ban-shell">
+  <div class="ban-card">
+    <h1>Account Banned</h1>
+    <p>Your account has been automatically restricted after repeated content policy violations.</p>
+    <p>Reason: {{ ban.reason }}</p>
+    <p>Warnings: {{ ban.warnings }}</p>
+    <div class="ban-stamp">{{ ban.stamp }}</div>
+    <p style="margin-top: 14px;"><a class="ban-link" href="{{ url_for('login') }}">Return to login</a></p>
+  </div>
+</section>
+{% endblock %}
